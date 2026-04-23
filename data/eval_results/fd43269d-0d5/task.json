@@ -1,0 +1,1290 @@
+{
+  "task_id": "fd43269d-0d5",
+  "model_id": "7dada8ef-7cf",
+  "model_name": "audio_cnn_fp32_0420_0055",
+  "model_framework": "onnx",
+  "model_path": "/home/pub/code/eduplatform/data/uploaded_models/G06/7dada8ef-7cf.onnx",
+  "testset_id": "audio_20260422_135107",
+  "testset_name": "期末声音测试",
+  "course": "audio",
+  "group_id": "G06",
+  "status": "completed",
+  "created_at": "2026-04-22T13:54:34.459316",
+  "started_at": "2026-04-22T13:54:34.522497",
+  "completed_at": "2026-04-22T13:54:39.199486",
+  "progress": 100,
+  "total_samples": 233,
+  "processed_samples": 233,
+  "metrics": {
+    "accuracy": 0.13304721030042918,
+    "precision": 0.13588588588588588,
+    "recall": 0.13588588588588588,
+    "f1_score": 0.13588588588588588,
+    "total_samples": 233,
+    "correct": 31,
+    "per_class": {
+      "anger": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 27
+      },
+      "fear": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 28
+      },
+      "happy": {
+        "precision": 0.16666666666666666,
+        "recall": 0.16666666666666666,
+        "f1": 0.16666666666666666,
+        "support": 42
+      },
+      "neutral": {
+        "precision": 0.6486486486486487,
+        "recall": 0.6486486486486487,
+        "f1": 0.6486486486486487,
+        "support": 37
+      },
+      "sad": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 48
+      },
+      "surprise": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 51
+      }
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        7,
+        20,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        7,
+        21,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        7,
+        35,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        13,
+        24,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        18,
+        30,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        18,
+        32,
+        0,
+        0
+      ]
+    ],
+    "emotion_list": [
+      "anger",
+      "fear",
+      "happy",
+      "neutral",
+      "sad",
+      "surprise"
+    ]
+  },
+  "predictions": [
+    {
+      "filename": "G06_M21_surprise_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17710861563682556
+    },
+    {
+      "filename": "G02_M05_neutral_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17583464086055756
+    },
+    {
+      "filename": "G06_M21_sad_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17336298525333405
+    },
+    {
+      "filename": "G03_M06_neutral_002.wav",
+      "predicted": "happy",
+      "confidence": 0.17637646198272705
+    },
+    {
+      "filename": "G06_M21_neutral_001.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G04_M07_neutral_005.wav",
+      "predicted": "neutral",
+      "confidence": 0.17399363219738007
+    },
+    {
+      "filename": "G03_M06_sad_005.wav",
+      "predicted": "happy",
+      "confidence": 0.17405292391777039
+    },
+    {
+      "filename": "G02_M05_neutral_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17474022507667542
+    },
+    {
+      "filename": "G01_M04_neutral_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17476840317249298
+    },
+    {
+      "filename": "G03_M06_happy_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17945481836795807
+    },
+    {
+      "filename": "G06_M21_happy_007.wav",
+      "predicted": "neutral",
+      "confidence": 0.17665642499923706
+    },
+    {
+      "filename": "G06_M21_sad_006.wav",
+      "predicted": "neutral",
+      "confidence": 0.17843034863471985
+    },
+    {
+      "filename": "G03_M06_sad_002.wav",
+      "predicted": "happy",
+      "confidence": 0.17427434027194977
+    },
+    {
+      "filename": "G07_M10_happy_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.1815384030342102
+    },
+    {
+      "filename": "G02_M05_neutral_005.wav",
+      "predicted": "happy",
+      "confidence": 0.17432093620300293
+    },
+    {
+      "filename": "G04_M07_neutral_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.1743358075618744
+    },
+    {
+      "filename": "G01_M04_surprise_005.wav",
+      "predicted": "happy",
+      "confidence": 0.17761200666427612
+    },
+    {
+      "filename": "G02_M05_fear_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17322643101215363
+    },
+    {
+      "filename": "G05_M08_surprise_001.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G07_M10_anger_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17501609027385712
+    },
+    {
+      "filename": "G03_M06_surprise_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17582841217517853
+    },
+    {
+      "filename": "G03_M06_happy_003.wav",
+      "predicted": "happy",
+      "confidence": 0.17675821483135223
+    },
+    {
+      "filename": "G06_M21_happy_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17731522023677826
+    },
+    {
+      "filename": "G02_M05_happy_006.wav",
+      "predicted": "happy",
+      "confidence": 0.17369738221168518
+    },
+    {
+      "filename": "G07_M10_anger_005.wav",
+      "predicted": "neutral",
+      "confidence": 0.1777452826499939
+    },
+    {
+      "filename": "G04_M07_happy_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.178442120552063
+    },
+    {
+      "filename": "G02_M05_fear_003.wav",
+      "predicted": "happy",
+      "confidence": 0.17311625182628632
+    },
+    {
+      "filename": "G01_M04_sad_006.wav",
+      "predicted": "neutral",
+      "confidence": 0.17566847801208496
+    },
+    {
+      "filename": "G02_M05_neutral_007.wav",
+      "predicted": "neutral",
+      "confidence": 0.17739231884479523
+    },
+    {
+      "filename": "G01_M04_surprise_010.wav",
+      "predicted": "happy",
+      "confidence": 0.17340345680713654
+    },
+    {
+      "filename": "G04_M07_sad_005.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G03_M06_fear_007.wav",
+      "predicted": "neutral",
+      "confidence": 0.1756599247455597
+    },
+    {
+      "filename": "G07_M10_happy_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17725591361522675
+    },
+    {
+      "filename": "G06_M21_happy_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17516440153121948
+    },
+    {
+      "filename": "G03_M06_anger_002.wav",
+      "predicted": "happy",
+      "confidence": 0.17577198147773743
+    },
+    {
+      "filename": "G04_M07_fear_003.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G02_M05_anger_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17330628633499146
+    },
+    {
+      "filename": "G02_M05_anger_006.wav",
+      "predicted": "neutral",
+      "confidence": 0.1756625771522522
+    },
+    {
+      "filename": "G04_M07_happy_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17603951692581177
+    },
+    {
+      "filename": "G02_M05_surprise_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.1708994358778
+    },
+    {
+      "filename": "G03_M06_anger_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17202524840831757
+    },
+    {
+      "filename": "G04_M07_neutral_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17633609473705292
+    },
+    {
+      "filename": "G01_M04_sad_008.wav",
+      "predicted": "happy",
+      "confidence": 0.17303772270679474
+    },
+    {
+      "filename": "G06_M21_sad_010.wav",
+      "predicted": "neutral",
+      "confidence": 0.17265373468399048
+    },
+    {
+      "filename": "G06_M21_sad_008.wav",
+      "predicted": "neutral",
+      "confidence": 0.17645259201526642
+    },
+    {
+      "filename": "G04_M07_anger_002.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G03_M06_happy_005.wav",
+      "predicted": "neutral",
+      "confidence": 0.17787466943264008
+    },
+    {
+      "filename": "G03_M06_fear_005.wav",
+      "predicted": "neutral",
+      "confidence": 0.17649894952774048
+    },
+    {
+      "filename": "G02_M05_neutral_004.wav",
+      "predicted": "happy",
+      "confidence": 0.17449384927749634
+    },
+    {
+      "filename": "G01_M04_surprise_008.wav",
+      "predicted": "neutral",
+      "confidence": 0.175319105386734
+    },
+    {
+      "filename": "G06_M21_happy_009.wav",
+      "predicted": "neutral",
+      "confidence": 0.17683574557304382
+    },
+    {
+      "filename": "G01_M04_fear_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17489348351955414
+    },
+    {
+      "filename": "G07_M10_neutral_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.1760856807231903
+    },
+    {
+      "filename": "G01_M04_surprise_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.1729019284248352
+    },
+    {
+      "filename": "G03_M06_happy_008.wav",
+      "predicted": "neutral",
+      "confidence": 0.17961767315864563
+    },
+    {
+      "filename": "G07_M10_surprise_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.18007640540599823
+    },
+    {
+      "filename": "G04_M07_sad_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.1776971071958542
+    },
+    {
+      "filename": "G02_M05_sad_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.1723005771636963
+    },
+    {
+      "filename": "G02_M05_sad_005.wav",
+      "predicted": "happy",
+      "confidence": 0.1725350022315979
+    },
+    {
+      "filename": "G01_M04_sad_011.wav",
+      "predicted": "neutral",
+      "confidence": 0.18119177222251892
+    },
+    {
+      "filename": "G06_M21_anger_003.wav",
+      "predicted": "happy",
+      "confidence": 0.17393699288368225
+    },
+    {
+      "filename": "G03_M06_surprise_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17366154491901398
+    },
+    {
+      "filename": "G06_M21_anger_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17577336728572845
+    },
+    {
+      "filename": "G03_M06_fear_008.wav",
+      "predicted": "neutral",
+      "confidence": 0.17494910955429077
+    },
+    {
+      "filename": "G01_M04_anger_001.wav",
+      "predicted": "happy",
+      "confidence": 0.17474591732025146
+    },
+    {
+      "filename": "G03_M06_neutral_007.wav",
+      "predicted": "happy",
+      "confidence": 0.17430053651332855
+    },
+    {
+      "filename": "G03_M06_happy_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17772266268730164
+    },
+    {
+      "filename": "G04_M07_surprise_006.wav",
+      "predicted": "neutral",
+      "confidence": 0.1749114841222763
+    },
+    {
+      "filename": "G07_M10_fear_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17640900611877441
+    },
+    {
+      "filename": "G01_M04_sad_007.wav",
+      "predicted": "neutral",
+      "confidence": 0.1733112931251526
+    },
+    {
+      "filename": "G03_M06_anger_008.wav",
+      "predicted": "neutral",
+      "confidence": 0.1811816245317459
+    },
+    {
+      "filename": "G05_M08_sad_001.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G07_M10_happy_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17652776837348938
+    },
+    {
+      "filename": "G06_M21_happy_014.wav",
+      "predicted": "neutral",
+      "confidence": 0.17518597841262817
+    },
+    {
+      "filename": "G02_M05_neutral_006.wav",
+      "predicted": "happy",
+      "confidence": 0.17397645115852356
+    },
+    {
+      "filename": "G06_M21_fear_003.wav",
+      "predicted": "happy",
+      "confidence": 0.17289958894252777
+    },
+    {
+      "filename": "G02_M05_surprise_005.wav",
+      "predicted": "happy",
+      "confidence": 0.17226405441761017
+    },
+    {
+      "filename": "G06_M21_happy_008.wav",
+      "predicted": "neutral",
+      "confidence": 0.17803917825222015
+    },
+    {
+      "filename": "G02_M05_happy_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17564749717712402
+    },
+    {
+      "filename": "G04_M07_neutral_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.1743248552083969
+    },
+    {
+      "filename": "G02_M05_sad_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17302097380161285
+    },
+    {
+      "filename": "G02_M05_happy_004.wav",
+      "predicted": "happy",
+      "confidence": 0.17275935411453247
+    },
+    {
+      "filename": "G05_M08_surprise_003.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G01_M04_fear_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17569665610790253
+    },
+    {
+      "filename": "G06_M21_sad_003.wav",
+      "predicted": "happy",
+      "confidence": 0.17330938577651978
+    },
+    {
+      "filename": "G06_M21_happy_006.wav",
+      "predicted": "neutral",
+      "confidence": 0.17031557857990265
+    },
+    {
+      "filename": "G03_M06_neutral_003.wav",
+      "predicted": "happy",
+      "confidence": 0.17728625237941742
+    },
+    {
+      "filename": "G02_M05_surprise_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17602887749671936
+    },
+    {
+      "filename": "G04_M07_happy_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.1785583794116974
+    },
+    {
+      "filename": "G04_M07_neutral_008.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G06_M21_happy_010.wav",
+      "predicted": "neutral",
+      "confidence": 0.17734897136688232
+    },
+    {
+      "filename": "G02_M05_anger_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17769527435302734
+    },
+    {
+      "filename": "G01_M04_surprise_006.wav",
+      "predicted": "neutral",
+      "confidence": 0.17384424805641174
+    },
+    {
+      "filename": "G01_M04_surprise_001.wav",
+      "predicted": "fear",
+      "confidence": 0.17273138463497162
+    },
+    {
+      "filename": "G02_M05_happy_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17468491196632385
+    },
+    {
+      "filename": "G02_M05_surprise_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17581722140312195
+    },
+    {
+      "filename": "G01_M04_happy_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.18146765232086182
+    },
+    {
+      "filename": "G01_M04_sad_012.wav",
+      "predicted": "neutral",
+      "confidence": 0.1760500818490982
+    },
+    {
+      "filename": "G03_M06_fear_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17697983980178833
+    },
+    {
+      "filename": "G07_M10_fear_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17901238799095154
+    },
+    {
+      "filename": "G03_M06_surprise_006.wav",
+      "predicted": "neutral",
+      "confidence": 0.17970767617225647
+    },
+    {
+      "filename": "G07_M10_sad_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.1779177188873291
+    },
+    {
+      "filename": "G04_M07_sad_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.1721370667219162
+    },
+    {
+      "filename": "G03_M06_sad_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.1755455583333969
+    },
+    {
+      "filename": "G03_M06_sad_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17517952620983124
+    },
+    {
+      "filename": "G01_M04_sad_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.18463405966758728
+    },
+    {
+      "filename": "G01_M04_surprise_007.wav",
+      "predicted": "neutral",
+      "confidence": 0.17543509602546692
+    },
+    {
+      "filename": "G06_M21_fear_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.1744069755077362
+    },
+    {
+      "filename": "G03_M06_surprise_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17727218568325043
+    },
+    {
+      "filename": "G07_M10_sad_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.18806049227714539
+    },
+    {
+      "filename": "G02_M05_happy_005.wav",
+      "predicted": "neutral",
+      "confidence": 0.17291900515556335
+    },
+    {
+      "filename": "G03_M06_anger_007.wav",
+      "predicted": "happy",
+      "confidence": 0.17603419721126556
+    },
+    {
+      "filename": "G03_M06_neutral_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17671367526054382
+    },
+    {
+      "filename": "G06_M21_happy_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.1733902245759964
+    },
+    {
+      "filename": "G04_M07_surprise_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.1757279485464096
+    },
+    {
+      "filename": "G07_M10_happy_005.wav",
+      "predicted": "neutral",
+      "confidence": 0.17784374952316284
+    },
+    {
+      "filename": "G07_M10_neutral_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17804089188575745
+    },
+    {
+      "filename": "G02_M05_anger_005.wav",
+      "predicted": "neutral",
+      "confidence": 0.17358365654945374
+    },
+    {
+      "filename": "G06_M21_neutral_005.wav",
+      "predicted": "neutral",
+      "confidence": 0.17943374812602997
+    },
+    {
+      "filename": "G04_M07_happy_004.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G07_M14_surprise_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.1745181530714035
+    },
+    {
+      "filename": "G04_M07_sad_006.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G06_M21_sad_005.wav",
+      "predicted": "happy",
+      "confidence": 0.1715395599603653
+    },
+    {
+      "filename": "G01_M04_happy_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17487500607967377
+    },
+    {
+      "filename": "G02_M05_neutral_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17664827406406403
+    },
+    {
+      "filename": "G03_M06_sad_004.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G03_M06_surprise_007.wav",
+      "predicted": "neutral",
+      "confidence": 0.17348496615886688
+    },
+    {
+      "filename": "G05_M08_neutral_001.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G03_M06_sad_006.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G07_M10_fear_002.wav",
+      "predicted": "happy",
+      "confidence": 0.1725316047668457
+    },
+    {
+      "filename": "G03_M06_neutral_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17573395371437073
+    },
+    {
+      "filename": "G04_M07_fear_005.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G04_M07_fear_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17384707927703857
+    },
+    {
+      "filename": "G03_M06_happy_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17847377061843872
+    },
+    {
+      "filename": "G01_M04_sad_009.wav",
+      "predicted": "neutral",
+      "confidence": 0.1764654815196991
+    },
+    {
+      "filename": "G06_M21_neutral_007.wav",
+      "predicted": "neutral",
+      "confidence": 0.17112793028354645
+    },
+    {
+      "filename": "G03_M06_surprise_009.wav",
+      "predicted": "neutral",
+      "confidence": 0.1773570030927658
+    },
+    {
+      "filename": "G06_M21_happy_012.wav",
+      "predicted": "neutral",
+      "confidence": 0.17668110132217407
+    },
+    {
+      "filename": "G02_M05_fear_005.wav",
+      "predicted": "happy",
+      "confidence": 0.1714724898338318
+    },
+    {
+      "filename": "G07_M10_happy_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.18273989856243134
+    },
+    {
+      "filename": "G04_M07_sad_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17383573949337006
+    },
+    {
+      "filename": "G03_M06_anger_005.wav",
+      "predicted": "neutral",
+      "confidence": 0.1738109290599823
+    },
+    {
+      "filename": "G04_M07_neutral_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17689715325832367
+    },
+    {
+      "filename": "G07_M10_anger_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.18715354800224304
+    },
+    {
+      "filename": "G07_M10_neutral_004.wav",
+      "predicted": "happy",
+      "confidence": 0.17473867535591125
+    },
+    {
+      "filename": "G02_M05_happy_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17372705042362213
+    },
+    {
+      "filename": "G02_M05_anger_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17722757160663605
+    },
+    {
+      "filename": "G03_M06_fear_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17390401661396027
+    },
+    {
+      "filename": "G03_M06_neutral_006.wav",
+      "predicted": "neutral",
+      "confidence": 0.17638538777828217
+    },
+    {
+      "filename": "G06_M21_happy_015.wav",
+      "predicted": "neutral",
+      "confidence": 0.17454756796360016
+    },
+    {
+      "filename": "G06_M21_sad_001.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G07_M10_surprise_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.18010669946670532
+    },
+    {
+      "filename": "G07_M10_surprise_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17520949244499207
+    },
+    {
+      "filename": "G02_M05_surprise_009.wav",
+      "predicted": "happy",
+      "confidence": 0.17345120012760162
+    },
+    {
+      "filename": "G02_M05_anger_007.wav",
+      "predicted": "neutral",
+      "confidence": 0.17278555035591125
+    },
+    {
+      "filename": "G04_M07_neutral_006.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G02_M05_surprise_008.wav",
+      "predicted": "neutral",
+      "confidence": 0.17357462644577026
+    },
+    {
+      "filename": "G06_M21_surprise_005.wav",
+      "predicted": "happy",
+      "confidence": 0.1736563891172409
+    },
+    {
+      "filename": "G02_M05_sad_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17197316884994507
+    },
+    {
+      "filename": "G03_M06_anger_006.wav",
+      "predicted": "neutral",
+      "confidence": 0.17809587717056274
+    },
+    {
+      "filename": "G05_M08_surprise_002.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G03_M06_surprise_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.173341304063797
+    },
+    {
+      "filename": "G06_M21_happy_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17746233940124512
+    },
+    {
+      "filename": "G01_M04_neutral_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.1783478707075119
+    },
+    {
+      "filename": "G07_M10_sad_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17704345285892487
+    },
+    {
+      "filename": "G01_M04_surprise_011.wav",
+      "predicted": "neutral",
+      "confidence": 0.1763898879289627
+    },
+    {
+      "filename": "G02_M05_fear_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17804987728595734
+    },
+    {
+      "filename": "G02_M05_fear_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.1705445945262909
+    },
+    {
+      "filename": "G02_M05_sad_006.wav",
+      "predicted": "happy",
+      "confidence": 0.17408666014671326
+    },
+    {
+      "filename": "G03_M06_anger_001.wav",
+      "predicted": "happy",
+      "confidence": 0.17722973227500916
+    },
+    {
+      "filename": "G06_M21_happy_005.wav",
+      "predicted": "happy",
+      "confidence": 0.1734403371810913
+    },
+    {
+      "filename": "G05_M08_sad_002.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G03_M06_neutral_005.wav",
+      "predicted": "neutral",
+      "confidence": 0.17505180835723877
+    },
+    {
+      "filename": "G06_M21_neutral_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.18091295659542084
+    },
+    {
+      "filename": "G04_M07_surprise_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17727471888065338
+    },
+    {
+      "filename": "G04_M07_surprise_005.wav",
+      "predicted": "happy",
+      "confidence": 0.17784401774406433
+    },
+    {
+      "filename": "G06_M21_fear_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17576465010643005
+    },
+    {
+      "filename": "G07_M10_anger_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17178891599178314
+    },
+    {
+      "filename": "G06_M21_neutral_003.wav",
+      "predicted": "happy",
+      "confidence": 0.1762179285287857
+    },
+    {
+      "filename": "G03_M06_anger_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17767006158828735
+    },
+    {
+      "filename": "G03_M06_fear_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.1765507161617279
+    },
+    {
+      "filename": "G03_M06_neutral_008.wav",
+      "predicted": "happy",
+      "confidence": 0.1727588027715683
+    },
+    {
+      "filename": "G03_M06_surprise_008.wav",
+      "predicted": "neutral",
+      "confidence": 0.17944863438606262
+    },
+    {
+      "filename": "G03_M06_sad_007.wav",
+      "predicted": "neutral",
+      "confidence": 0.1769317090511322
+    },
+    {
+      "filename": "G06_M21_happy_013.wav",
+      "predicted": "neutral",
+      "confidence": 0.17339269816875458
+    },
+    {
+      "filename": "G01_M04_sad_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17386728525161743
+    },
+    {
+      "filename": "G03_M06_fear_006.wav",
+      "predicted": "neutral",
+      "confidence": 0.17913755774497986
+    },
+    {
+      "filename": "G01_M04_happy_005.wav",
+      "predicted": "happy",
+      "confidence": 0.17881612479686737
+    },
+    {
+      "filename": "G06_M21_happy_011.wav",
+      "predicted": "neutral",
+      "confidence": 0.17398442327976227
+    },
+    {
+      "filename": "G01_M04_sad_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17933520674705505
+    },
+    {
+      "filename": "G06_M21_sad_007.wav",
+      "predicted": "happy",
+      "confidence": 0.1734042465686798
+    },
+    {
+      "filename": "G02_M05_surprise_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17780515551567078
+    },
+    {
+      "filename": "G03_M06_fear_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.1746818721294403
+    },
+    {
+      "filename": "G02_M05_surprise_006.wav",
+      "predicted": "happy",
+      "confidence": 0.17292971909046173
+    },
+    {
+      "filename": "G01_M04_surprise_004.wav",
+      "predicted": "happy",
+      "confidence": 0.17936433851718903
+    },
+    {
+      "filename": "G03_M06_surprise_005.wav",
+      "predicted": "neutral",
+      "confidence": 0.17980796098709106
+    },
+    {
+      "filename": "G07_M10_surprise_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17989066243171692
+    },
+    {
+      "filename": "G04_M07_anger_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.17525334656238556
+    },
+    {
+      "filename": "G04_M07_surprise_002.wav",
+      "predicted": "happy",
+      "confidence": 0.17659015953540802
+    },
+    {
+      "filename": "G01_M04_surprise_003.wav",
+      "predicted": "happy",
+      "confidence": 0.17555314302444458
+    },
+    {
+      "filename": "G04_M07_surprise_003.wav",
+      "predicted": "happy",
+      "confidence": 0.17702984809875488
+    },
+    {
+      "filename": "G03_M06_happy_007.wav",
+      "predicted": "neutral",
+      "confidence": 0.17809972167015076
+    },
+    {
+      "filename": "G01_M04_surprise_009.wav",
+      "predicted": "happy",
+      "confidence": 0.1743200570344925
+    },
+    {
+      "filename": "G04_M07_neutral_007.wav",
+      "predicted": "neutral",
+      "confidence": 0.18045663833618164
+    },
+    {
+      "filename": "G04_M07_fear_004.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G06_M21_surprise_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17572937905788422
+    },
+    {
+      "filename": "G07_M10_fear_005.wav",
+      "predicted": "neutral",
+      "confidence": 0.17775170505046844
+    },
+    {
+      "filename": "G01_M04_happy_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17900753021240234
+    },
+    {
+      "filename": "G03_M06_happy_006.wav",
+      "predicted": "happy",
+      "confidence": 0.17479999363422394
+    },
+    {
+      "filename": "G04_M07_anger_003.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G07_M10_fear_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.18013235926628113
+    },
+    {
+      "filename": "G07_M10_sad_005.wav",
+      "predicted": "neutral",
+      "confidence": 0.17695225775241852
+    },
+    {
+      "filename": "G06_M21_surprise_001.wav",
+      "predicted": "happy",
+      "confidence": 0.17327627539634705
+    },
+    {
+      "filename": "G06_M21_neutral_006.wav",
+      "predicted": "neutral",
+      "confidence": 0.17244288325309753
+    },
+    {
+      "filename": "G01_M04_sad_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17778395116329193
+    },
+    {
+      "filename": "G07_M10_surprise_005.wav",
+      "predicted": "neutral",
+      "confidence": 0.17918868362903595
+    },
+    {
+      "filename": "G06_M21_anger_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17894820868968964
+    },
+    {
+      "filename": "G06_M21_sad_009.wav",
+      "predicted": "happy",
+      "confidence": 0.17412470281124115
+    },
+    {
+      "filename": "G02_M05_surprise_010.wav",
+      "predicted": "neutral",
+      "confidence": 0.17639778554439545
+    },
+    {
+      "filename": "G04_M07_sad_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17579896748065948
+    },
+    {
+      "filename": "G01_M04_sad_005.wav",
+      "predicted": "happy",
+      "confidence": 0.1760854721069336
+    },
+    {
+      "filename": "G06_M21_sad_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17521686851978302
+    },
+    {
+      "filename": "G06_M21_neutral_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.1769692599773407
+    },
+    {
+      "filename": "G07_M10_neutral_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17705662548542023
+    },
+    {
+      "filename": "G04_M07_fear_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.18353208899497986
+    },
+    {
+      "filename": "G07_M10_anger_001.wav",
+      "predicted": "neutral",
+      "confidence": 0.18400879204273224
+    },
+    {
+      "filename": "G07_M10_sad_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17981061339378357
+    },
+    {
+      "filename": "G02_M05_sad_003.wav",
+      "predicted": "neutral",
+      "confidence": 0.17597715556621552
+    },
+    {
+      "filename": "G04_M07_surprise_007.wav",
+      "predicted": "happy",
+      "confidence": 0.1736769676208496
+    },
+    {
+      "filename": "G02_M05_surprise_007.wav",
+      "predicted": "happy",
+      "confidence": 0.17247164249420166
+    },
+    {
+      "filename": "G06_M21_surprise_002.wav",
+      "predicted": "neutral",
+      "confidence": 0.17765437066555023
+    },
+    {
+      "filename": "G02_M05_anger_004.wav",
+      "predicted": "neutral",
+      "confidence": 0.17366068065166473
+    },
+    {
+      "filename": "G01_M04_sad_010.wav",
+      "predicted": "happy",
+      "confidence": 0.17215798795223236
+    }
+  ],
+  "error": null
+}

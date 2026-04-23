@@ -1,0 +1,21 @@
+{
+  "task_id": "1854cda7-f5f",
+  "model_id": "8795031f-2d9",
+  "model_name": "face_cnn_fp32_1_1",
+  "model_framework": "onnx",
+  "model_path": "/home/pub/code/eduplatform/data/uploaded_models/G07/8795031f-2d9.onnx",
+  "testset_id": "face_20260420_013233",
+  "testset_name": "model_face_0420_0132",
+  "course": "face",
+  "group_id": "G07",
+  "status": "pending",
+  "created_at": "2026-04-21T13:51:03.161135",
+  "started_at": null,
+  "completed_at": null,
+  "progress": 0,
+  "total_samples": 0,
+  "processed_samples": 0,
+  "metrics": null,
+  "predictions": [],
+  "error": null
+}

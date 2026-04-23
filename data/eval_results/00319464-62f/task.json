@@ -1,0 +1,21 @@
+{
+  "task_id": "00319464-62f",
+  "model_id": "c3fd3c45-58d",
+  "model_name": "face_cnn_model",
+  "model_framework": "tensorflow",
+  "model_path": "/home/pub/code/eduplatform/data/uploaded_models/G07/c3fd3c45-58d.h5",
+  "testset_id": "face_20260420_021445",
+  "testset_name": "face_G06_0420_0214",
+  "course": "face",
+  "group_id": "G07",
+  "status": "pending",
+  "created_at": "2026-04-21T13:51:02.861833",
+  "started_at": null,
+  "completed_at": null,
+  "progress": 0,
+  "total_samples": 0,
+  "processed_samples": 0,
+  "metrics": null,
+  "predictions": [],
+  "error": null
+}

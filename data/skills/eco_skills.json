@@ -1,0 +1,113 @@
+{
+  "course": "eco_bottle",
+  "current_lesson": 4,
+  "unlocked_skills": [
+    "data_collect",
+    "data_explore",
+    "data_augment",
+    "data_contribute",
+    "preprocess",
+    "model_select",
+    "param_tune",
+    "ai_ask",
+    "ai_analyze",
+    "ai_code_gen"
+  ],
+  "skill_tree": {
+    "data_skills": {
+      "name": "数据技能",
+      "skills": [
+        {
+          "id": "data_collect",
+          "name": "数据采集",
+          "unlock_lesson": 1,
+          "description": "在界面上手动模拟生态瓶传感器数据",
+          "icon": "📊",
+          "status": "unlocked"
+        },
+        {
+          "id": "data_explore",
+          "name": "数据探索",
+          "unlock_lesson": 2,
+          "description": "绘制折线图、发现规律",
+          "icon": "🔍",
+          "status": "unlocked"
+        },
+        {
+          "id": "data_augment",
+          "name": "数据增强",
+          "unlock_lesson": 3,
+          "description": "模拟不同光照条件",
+          "icon": "🔄",
+          "status": "unlocked"
+        },
+        {
+          "id": "data_contribute",
+          "name": "数据贡献",
+          "unlock_lesson": 4,
+          "description": "上传数据参与全局预测",
+          "icon": "📤",
+          "status": "unlocked"
+        }
+      ]
+    },
+    "algorithm_skills": {
+      "name": "算法技能",
+      "skills": [
+        {
+          "id": "preprocess",
+          "name": "预处理分析",
+          "unlock_lesson": 2,
+          "description": "趋势提取、异常检测",
+          "icon": "📐",
+          "status": "unlocked"
+        },
+        {
+          "id": "model_select",
+          "name": "模型选择",
+          "unlock_lesson": 3,
+          "description": "线性回归、LSTM等",
+          "icon": "🤖",
+          "status": "unlocked"
+        },
+        {
+          "id": "param_tune",
+          "name": "参数调优",
+          "unlock_lesson": 4,
+          "description": "调整预测窗口大小",
+          "icon": "🔧",
+          "status": "unlocked"
+        }
+      ]
+    },
+    "ai_skills": {
+      "name": "AI技能",
+      "skills": [
+        {
+          "id": "ai_ask",
+          "name": "AI助手提问",
+          "unlock_lesson": 1,
+          "description": "向大模型询问预测问题",
+          "icon": "💬",
+          "status": "unlocked"
+        },
+        {
+          "id": "ai_analyze",
+          "name": "AI数据分析",
+          "unlock_lesson": 2,
+          "description": "获取数据洞察",
+          "icon": "📊",
+          "status": "unlocked"
+        },
+        {
+          "id": "ai_code_gen",
+          "name": "AI代码生成",
+          "unlock_lesson": 3,
+          "description": "生成预测代码模板",
+          "icon": "💻",
+          "status": "unlocked"
+        }
+      ]
+    }
+  }
+}

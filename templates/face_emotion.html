@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% block title %}表情识别 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Camera layer stack ────────────────────────────────── */
+  .camera-container {
+    position: relative;
+    background: #0D0D1A;
+    border-radius: 16px;
+    overflow: hidden;
+    min-height: 300px;
+  }
+  /* Layer 1 – live video (always behind, fills container) */
+  #videoEl {
+    display: none;           /* hidden until camera starts */
+    width: 100%;
+    border-radius: 16px;
+    vertical-align: top;
+    transform: scaleX(-1);   /* mirror so it feels natural */
+  }
+  /* Layer 2 – annotated output (absolute overlay) */
+  #outputImg {
+    display: none;           /* hidden until first server response */
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 16px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  #outputImg.visible { opacity: 1; }
+  /* Hidden capture canvas */
+  #videoCanvas { display: none; }
+
+  .emotion-bar { height: 28px; border-radius: 12px; transition: width 0.5s ease; min-width: 4px; }
+  .landmark-hint { font-size: 0.85rem; color: #aaa; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+  <div class="page-header-icon">😊</div>
+  <h1 class="page-title">表情识别实验室</h1>
+  <p class="page-subtitle">面对摄像头做出不同表情，看 AI 如何"看懂"你的情绪！</p>
+</div>
+
+<div class="container pb-5">
+  <!-- Instruction Banner -->
+  <div class="instruction-banner mb-4">
+    <div class="instruction-step">
+      <span class="step-num">1</span>
+      <span>点击「开始识别」打开摄像头</span>
+    </div>
+    <div class="instruction-arrow">→</div>
+    <div class="instruction-step">
+      <span class="step-num">2</span>
+      <span>做出各种表情</span>
+    </div>
+    <div class="instruction-arrow">→</div>
+    <div class="instruction-step">
+      <span class="step-num">3</span>
+      <span>观察 AI 识别结果和关键点</span>
+    </div>
+  </div>
+
+  <!-- 自定义模型选择器 -->
+  <div class="model-selector" id="modelSelector">
+    <div class="model-selector-label">
+      <i class="bi bi-cpu"></i> 选择 AI 模型
+      <span style="margin-left: auto; font-weight: 400; color: #64748b; font-size: 0.7rem;">切换模型实时生效</span>
+    </div>
+    <select id="modelSelect" onchange="switchModel()">
+      <option value="">加载中...</option>
+    </select>
+    <div class="model-info" id="modelInfo">
+      <span class="badge">加载中</span>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left: Camera Feed -->
+    <div class="col-lg-7">
+      <div class="content-card h-100">
+        <div class="content-card-header">
+          <i class="bi bi-camera-video-fill"></i> 实时画面
+          <span id="faceCountBadge" class="badge-count ms-2">未检测到人脸</span>
+        </div>
+        <div class="camera-container">
+          <!-- Layer 1: 实时视频流（摄像头开启后立即显示） -->
+          <video id="videoEl" autoplay playsinline muted></video>
+          <!-- Layer 2: 服务器标注图（首次响应后叠加显示） -->
+          <img id="outputImg" src="" alt="">
+          <!-- 隐藏的截帧画布 -->
+          <canvas id="videoCanvas"></canvas>
+          <!-- 占位界面（摄像头未开启时显示） -->
+          <div id="cameraPlaceholder" class="camera-placeholder">
+            <div class="placeholder-content">
+              <div class="placeholder-icon">📷</div>
+              <p>点击下方按钮开始摄像头</p>
+            </div>
+          </div>
+        </div>
+        <div class="camera-controls mt-3 d-flex gap-2 justify-content-center">
+          <button id="startBtn" class="btn-fun btn-green" onclick="startCamera()">
+            <i class="bi bi-camera-video-fill"></i> 开始识别
+          </button>
+          <button id="stopBtn" class="btn-fun btn-red d-none" onclick="stopCamera()">
+            <i class="bi bi-stop-circle-fill"></i> 停止
+          </button>
+        </div>
+        <p class="landmark-hint text-center mt-2">
+          💡 绿色小点是 AI 检测到的脸部关键点（共 68 个），彩色方框表示识别到的情绪
+        </p>
+      </div>
+    </div>
+
+    <!-- Right: Emotion Results -->
+    <div class="col-lg-5">
+      <div class="content-card h-100">
+        <div class="content-card-header">
+          <i class="bi bi-bar-chart-fill"></i> 情绪分析结果
+        </div>
+
+        <!-- Current Emotion Display -->
+        <div class="current-emotion-display text-center mb-4">
+          <div id="emotionEmoji" class="big-emoji">🤔</div>
+          <div id="emotionLabel" class="emotion-label-big">等待识别...</div>
+          <div id="emotionConfidence" class="emotion-confidence"></div>
+        </div>
+
+        <!-- Emotion Bars -->
+        <div class="emotion-bars" id="emotionBars">
+          {% set emotions = [
+            ('生气', '😠', '#FF6B6B'),
+            ('厌恶', '🤢', '#6BCB77'),
+            ('害怕', '😨', '#C77DFF'),
+            ('开心', '😊', '#FFD166'),
+            ('难过', '😢', '#4D9DE0'),
+            ('惊讶', '😮', '#3BB273'),
+            ('平静', '😐', '#A8DADC')
+          ] %}
+          {% for label, emoji, color in emotions %}
+          <div class="emotion-bar-row mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="emotion-bar-label">{{ emoji }} {{ label }}</span>
+              <span class="emotion-bar-pct" id="pct_{{ loop.index0 }}">0%</span>
+            </div>
+            <div class="emotion-bar-bg">
+              <div class="emotion-bar" id="bar_{{ loop.index0 }}"
+                   style="width:0%; background:{{ color }}"></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Status -->
+        <div id="statusMsg" class="status-msg mt-3 text-center">📡 等待摄像头启动...</div>
+      </div>
+    </div>
+  </div>
+  <!-- Knowledge Card -->
+  <div class="knowledge-card mt-4">
+    <div class="knowledge-icon">🧠</div>
+    <div>
+      <strong>AI 是怎么识别表情的？</strong><br>
+      <span>计算机先找到脸的位置，再标出 68 个特征点（如眼角、嘴角、眉毛等），
+      然后把这些信息输入到一个"深度神经网络"模型，模型经过了数万张表情图片的训练，
+      就能判断你现在是什么情绪啦！</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/face_emotion.js') }}"></script>
+<script>
+// ── 自定义模型选择器 ─────────────────────────────────────────────────────────
+let customModels = [];
+let currentModelId = null;
+
+function loadCustomModels() {
+  fetch('/api/models/list?course=face')
+    .then(r => r.json())
+    .then(data => {
+      customModels = data.models || [];
+      renderModelSelector();
+    })
+    .catch(err => {
+      console.log('加载自定义模型失败:', err);
+    });
+}
+
+function renderModelSelector() {
+  const select = document.getElementById('modelSelect');
+  const modelInfo = document.getElementById('modelInfo');
+  if (!select) return;
+
+  // 清空选项
+  select.innerHTML = '';
+
+  // 添加默认选项
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = '';
+  defaultOpt.textContent = '🤖 系统默认模型';
+  select.appendChild(defaultOpt);
+
+  // 添加自定义模型
+  if (customModels.length > 0) {
+    customModels.forEach(model => {
+      const opt = document.createElement('option');
+      opt.value = model.id;
+      opt.textContent = `📦 ${model.model_name} (${(model.accuracy * 100).toFixed(1)}%)`;
+      if (model.is_default) {
+        opt.textContent += ' ⭐默认';
+      }
+      select.appendChild(opt);
+    });
+  }
+
+  // 默认选中第一个或默认模型
+  if (currentModelId) {
+    select.value = currentModelId;
+  }
+
+  updateModelInfo();
+}
+
+function updateModelInfo() {
+  const select = document.getElementById('modelSelect');
+  const modelInfo = document.getElementById('modelInfo');
+  if (!select || !modelInfo) return;
+
+  const selectedId = select.value;
+
+  if (!selectedId) {
+    modelInfo.innerHTML = '<span class="badge">系统默认</span><span>使用平台预训练模型</span>';
+    currentModelId = null;
+  } else {
+    const model = customModels.find(m => m.id === selectedId);
+    if (model) {
+      modelInfo.innerHTML = `
+        <span class="badge">${model.framework || 'tensorflow'}</span>
+        <span class="accuracy">准确率: ${(model.accuracy * 100).toFixed(1)}%</span>
+        <span style="color: ${model.is_active ? '#10b981' : '#ef4444'}">
+          ${model.is_active ? '● 启用' : '○ 停用'}
+        </span>
+      `;
+      currentModelId = selectedId;
+    }
+  }
+}
+
+function switchModel() {
+  updateModelInfo();
+  // 如果当前正在运行，重启摄像头以使用新模型
+  if (isRunning) {
+    stopCamera();
+    setTimeout(startCamera, 500);
+  }
+}
+
+// 获取当前使用的模型ID
+function getCurrentModelId() {
+  return currentModelId;
+}
+
+// 页面加载完成后加载自定义模型
+document.addEventListener('DOMContentLoaded', () => {
+  loadCustomModels();
+});
+</script>
+{% endblock %}

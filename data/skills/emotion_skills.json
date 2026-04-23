@@ -1,0 +1,113 @@
+{
+  "course": "emotion_computing",
+  "current_lesson": 4,
+  "unlocked_skills": [
+    "data_collect",
+    "data_label",
+    "data_augment",
+    "data_contribute",
+    "preprocess",
+    "model_select",
+    "param_tune",
+    "ai_ask",
+    "ai_review",
+    "ai_optimize"
+  ],
+  "skill_tree": {
+    "data_skills": {
+      "name": "数据技能",
+      "skills": [
+        {
+          "id": "data_collect",
+          "name": "数据采集",
+          "unlock_lesson": 1,
+          "description": "使用摄像头采集表情数据",
+          "icon": "📷",
+          "status": "unlocked"
+        },
+        {
+          "id": "data_label",
+          "name": "数据标注",
+          "unlock_lesson": 2,
+          "description": "为自己采集的数据打标签",
+          "icon": "🏷️",
+          "status": "unlocked"
+        },
+        {
+          "id": "data_augment",
+          "name": "数据增强",
+          "unlock_lesson": 3,
+          "description": "通过变换扩充数据集",
+          "icon": "🔄",
+          "status": "unlocked"
+        },
+        {
+          "id": "data_contribute",
+          "name": "数据贡献",
+          "unlock_lesson": 4,
+          "description": "上传数据参与全局测试",
+          "icon": "📤",
+          "status": "unlocked"
+        }
+      ]
+    },
+    "algorithm_skills": {
+      "name": "算法技能",
+      "skills": [
+        {
+          "id": "preprocess",
+          "name": "预处理调整",
+          "unlock_lesson": 2,
+          "description": "调整图像尺寸、对比度等参数",
+          "icon": "⚙️",
+          "status": "unlocked"
+        },
+        {
+          "id": "model_select",
+          "name": "模型选择",
+          "unlock_lesson": 3,
+          "description": "切换不同预训练模型",
+          "icon": "🤖",
+          "status": "unlocked"
+        },
+        {
+          "id": "param_tune",
+          "name": "参数调优",
+          "unlock_lesson": 4,
+          "description": "调整模型超参数",
+          "icon": "🔧",
+          "status": "unlocked"
+        }
+      ]
+    },
+    "ai_skills": {
+      "name": "AI技能",
+      "skills": [
+        {
+          "id": "ai_ask",
+          "name": "AI助手提问",
+          "unlock_lesson": 1,
+          "description": "向大模型询问技术问题",
+          "icon": "💬",
+          "status": "unlocked"
+        },
+        {
+          "id": "ai_review",
+          "name": "AI代码审查",
+          "unlock_lesson": 2,
+          "description": "让AI帮你检查代码",
+          "icon": "🔍",
+          "status": "unlocked"
+        },
+        {
+          "id": "ai_optimize",
+          "name": "AI优化建议",
+          "unlock_lesson": 3,
+          "description": "获取AI的算法改进建议",
+          "icon": "✨",
+          "status": "unlocked"
+        }
+      ]
+    }
+  }
+}

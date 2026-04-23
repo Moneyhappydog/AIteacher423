@@ -1,0 +1,516 @@
+{% extends "base.html" %}
+{% block title %}表情数据标注工作台 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<style>
+  .annotator-layout {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 992px) {
+    .annotator-layout { grid-template-columns: 1fr; }
+  }
+  .annotation-main-img {
+    width: 100%;
+    max-height: 420px;
+    object-fit: contain;
+    border-radius: 12px;
+    border: 3px solid #e0e0e0;
+    background: #0D0D1A;
+  }
+  .emotion-btn-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+  }
+  .emotion-annotate-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.6rem 0.4rem;
+    border-radius: 12px;
+    border: 2px solid #e0e0e0;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.8rem;
+    font-weight: 600;
+    gap: 0.2rem;
+  }
+  .emotion-annotate-btn:hover {
+    transform: scale(1.05);
+    border-color: #7C3AED;
+    box-shadow: 0 0 8px rgba(124,58,237,0.2);
+  }
+  .emotion-annotate-btn.selected {
+    border-color: #7C3AED;
+    background: #EDE9FE;
+    transform: scale(1.08);
+    box-shadow: 0 0 12px rgba(124,58,237,0.3);
+  }
+  .emotion-annotate-btn .emoji { font-size: 1.6rem; line-height: 1; }
+  .nav-arrow-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid #d1d5db;
+    background: white;
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-arrow-btn:hover { border-color: #7C3AED; background: #EDE9FE; transform: scale(1.1); }
+  .label-standard-card {
+    background: #FAFAFA;
+    border-radius: 12px;
+    padding: 0.8rem;
+    border: 1px solid #e5e7eb;
+  }
+  .label-standard-card li {
+    font-size: 0.82rem;
+    padding: 0.2rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .mini-stat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    background: #EDE9FE;
+    color: #7C3AED;
+    font-weight: 600;
+  }
+  .thumbnail-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 0.5rem;
+    padding: 0.4rem 0;
+    max-height: 220px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .thumb-item {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid #e0e0e0;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .thumb-item:hover { border-color: #7C3AED; transform: scale(1.05); }
+  .thumb-item.current { border-color: #7C3AED; box-shadow: 0 0 8px rgba(124,58,237,0.4); }
+  .thumb-item.done { border-color: #10B981; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+  <div class="page-header-icon">📝</div>
+  <h1 class="page-title">表情数据标注工作台</h1>
+  <p class="page-subtitle">仔细审核每一张图片，为AI模型标注正确的情绪标签！</p>
+</div>
+
+<!-- Tab 切换导航 -->
+<div class="container">
+  <ul class="nav nav-tabs mb-4" style="border-bottom:2px solid #e0e0e0">
+    <li class="nav-item">
+      <a class="nav-link" href="/data/collect/" style="font-weight:700;color:#6b7280;border-radius:8px 8px 0 0">
+        <i class="bi bi-camera"></i> 数据采集
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link active" href="/data/annotation/" style="font-weight:700;color:#7C3AED;border-bottom:3px solid #7C3AED;background:#EDE9FE;border-radius:8px 8px 0 0">
+        <i class="bi bi-pen"></i> 数据标注
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/data/annotated/" style="font-weight:700;color:#6b7280;border-radius:8px 8px 0 0">
+        <i class="bi bi-check2-square"></i> 已标注数据
+      </a>
+    </li>
+  </ul>
+</div>
+
+<div class="container pb-5">
+  <!-- 顶部状态栏 -->
+  <div class="content-card mb-3">
+    <div class="d-flex align-items-center flex-wrap gap-3">
+      <div>
+        {% if session.get('role') == 'group' %}
+        <label class="form-label small fw-bold mb-0">小组（当前账号）</label>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="fw-semibold">{{ session.get('username', '—') }}</span>
+          {% if session.get('group_id') %}
+          <span class="badge bg-secondary">{{ session.get('group_id') }}</span>
+          {% endif %}
+        </div>
+        <input type="hidden" id="sessionGroupId" value="{{ session.get('group_id', '')|e }}">
+        {% else %}
+        <label class="form-label small fw-bold mb-0">选择小组</label>
+        <select class="form-select form-select-sm" id="groupSelect" style="width:140px" onchange="loadAnnotationData()">
+          <option value="G01">第1组 (G01)</option>
+          <option value="G02">第2组 (G02)</option>
+          <option value="G03">第3组 (G03)</option>
+          <option value="G04">第4组 (G04)</option>
+          <option value="G05">第5组 (G05)</option>
+          <option value="G06">第6组 (G06)</option>
+          <option value="G07">第7组 (G07)</option>
+          <option value="G08">第8组 (G08)</option>
+          <option value="G09">第9组 (G09)</option>
+          <option value="G10">第10组 (G10)</option>
+        </select>
+        {% endif %}
+      </div>
+      <div>
+        <span class="badge bg-warning text-dark" id="pendingBadge">
+          <i class="bi bi-hourglass-split"></i> 待标注: <span id="pendingCount">0</span>张
+        </span>
+        <span class="badge bg-success ms-1" id="doneBadge">
+          <i class="bi bi-check-circle"></i> 已完成: <span id="doneCount">0</span>张
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 主布局：左侧大图 + 右侧面板 -->
+  <div class="annotator-layout">
+    <!-- 左侧：图片展示区 -->
+    <div>
+      <div class="content-card">
+        <div class="content-card-header d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-image"></i> 图片详情</span>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-secondary" id="imgIndexLabel">1</span>
+            <span class="mini-stat-chip" id="preLabelChip">
+              <i class="bi bi-tag"></i> 标注标签: <span id="preLabelText">等待标注...</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- 大图展示 -->
+        <div class="text-center mt-3" id="imgDisplayArea">
+          <img src="" alt="待标注图片" class="annotation-main-img" id="mainImg" style="display:none">
+          <div class="text-muted py-5" id="emptyPlaceholder">
+            <div style="font-size:4rem">📷</div>
+            <p class="mt-2">本小组暂无待标注数据</p>
+            <p class="small text-muted">请先到 <a href="/data/collect/">数据采集</a> 页面采集图片</p>
+          </div>
+        </div>
+
+        <!-- 导航按钮 -->
+        <div class="d-flex justify-content-center align-items-center gap-4 mt-3">
+          <button class="nav-arrow-btn" onclick="prevImage()" id="prevBtn" title="上一张">◀</button>
+          <div class="d-flex gap-2">
+            <button class="btn-fun btn-sm btn-outline" onclick="skipImage()">
+              <i class="bi bi-skip-forward"></i> 跳过
+            </button>
+          </div>
+          <button class="nav-arrow-btn" onclick="nextImage()" id="nextBtn" title="下一张">▶</button>
+        </div>
+
+        <!-- 确认按钮 -->
+        <div class="text-center mt-3">
+          <button class="btn-fun btn-green btn-lg px-5" onclick="confirmAnnotation()" id="confirmBtn" disabled>
+            <i class="bi bi-check-circle-fill"></i> 确认标注
+          </button>
+        </div>
+
+        <!-- 缩略图条 -->
+        <div class="thumbnail-strip mt-3" id="thumbStrip">
+          <!-- 动态生成 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：标注标准 + 情绪按钮 -->
+    <div>
+      <!-- 标注标准参考 -->
+      <div class="content-card mb-3">
+        <div class="content-card-header"><i class="bi bi-book-fill"></i> 标注标准参考</div>
+        <div class="label-standard-card mt-2">
+          <ul class="list-unstyled mb-0">
+            <li><span>😊</span> <strong>高兴</strong>: 嘴角上扬、眼睛微眯</li>
+            <li><span>😢</span> <strong>难过</strong>: 嘴角下垂、眉毛上扬</li>
+            <li><span>😠</span> <strong>愤怒</strong>: 眉头下压、嘴唇紧闭</li>
+            <li><span>😮</span> <strong>惊讶</strong>: 嘴巴张开、眉毛抬起</li>
+            <li><span>😨</span> <strong>恐惧</strong>: 眉毛抬起、眼睛张大</li>
+            <li><span>🤢</span> <strong>厌恶</strong>: 鼻子皱起、嘴角下拉</li>
+            <li><span>😐</span> <strong>平静</strong>: 表情自然放松、无明显特征</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- 情绪选择按钮 -->
+      <div class="content-card mb-3">
+        <div class="content-card-header"><i class="bi bi-cursor-fill"></i> 选择标注</div>
+        <div class="emotion-btn-grid mt-3" id="emotionBtnGrid">
+          <button class="emotion-annotate-btn" data-emotion="happy" onclick="selectEmotion('happy')">
+            <span class="emoji">😊</span>
+            <span>高兴</span>
+          </button>
+          <button class="emotion-annotate-btn" data-emotion="sad" onclick="selectEmotion('sad')">
+            <span class="emoji">😢</span>
+            <span>难过</span>
+          </button>
+          <button class="emotion-annotate-btn" data-emotion="angry" onclick="selectEmotion('angry')">
+            <span class="emoji">😠</span>
+            <span>愤怒</span>
+          </button>
+          <button class="emotion-annotate-btn" data-emotion="surprise" onclick="selectEmotion('surprise')">
+            <span class="emoji">😮</span>
+            <span>惊讶</span>
+          </button>
+          <button class="emotion-annotate-btn" data-emotion="fear" onclick="selectEmotion('fear')">
+            <span class="emoji">😨</span>
+            <span>恐惧</span>
+          </button>
+          <button class="emotion-annotate-btn" data-emotion="disgust" onclick="selectEmotion('disgust')">
+            <span class="emoji">🤢</span>
+            <span>厌恶</span>
+          </button>
+          <button class="emotion-annotate-btn" data-emotion="neutral" onclick="selectEmotion('neutral')">
+            <span class="emoji">😐</span>
+            <span>平静</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 小组贡献统计 -->
+      <div class="content-card">
+        <div class="content-card-header"><i class="bi bi-pie-chart-fill"></i> 小组标注统计</div>
+        <div id="statsArea" class="mt-3">
+          <div class="text-center text-muted py-3">加载中...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const EMOTION_EMOJI = {
+  happy: '😊', sad: '😢', angry: '😠', surprise: '😮',
+  fear: '😨', disgust: '🤢', neutral: '😐'
+};
+const EMOTION_CN = {
+  happy: '高兴', sad: '难过', angry: '愤怒', surprise: '惊讶',
+  fear: '恐惧', disgust: '厌恶', neutral: '平静'
+};
+
+let allImages = [];
+let currentIndex = 0;
+let selectedEmotion = null;
+
+function getWorkGroupId() {
+  const h = document.getElementById('sessionGroupId');
+  if (h && h.value) return String(h.value).trim();
+  const sel = document.getElementById('groupSelect');
+  return sel ? sel.value : '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnnotationData();
+});
+
+async function loadAnnotationData() {
+  const groupId = getWorkGroupId();
+  if (!groupId) {
+    allImages = [];
+    currentIndex = 0;
+    renderThumbStrip();
+    showImage(currentIndex);
+    return;
+  }
+  try {
+    const resp = await fetch(`/data/annotation/queue/${groupId}`);
+    const data = await resp.json();
+    allImages = data.pending || [];
+    currentIndex = 0;
+    renderThumbStrip();
+    showImage(currentIndex);
+    updateStats(data);
+  } catch (err) {
+    console.error('加载标注队列失败:', err);
+  }
+}
+
+function renderThumbStrip() {
+  const strip = document.getElementById('thumbStrip');
+  if (allImages.length === 0) {
+    strip.innerHTML = '<div class="text-muted small py-2">暂无数据</div>';
+    return;
+  }
+  strip.innerHTML = allImages.map((img, i) => `
+    <img src="${img.file_path}" class="thumb-item ${i === currentIndex ? 'current' : ''} ${img.is_confirmed ? 'done' : ''}"
+         onclick="goToImage(${i})" alt="#${i+1}" title="${EMOTION_EMOJI[img.emotion] || '?'} ${img.emotion}">
+  `).join('');
+}
+
+function goToImage(index) {
+  if (index < 0 || index >= allImages.length) return;
+  currentIndex = index;
+  showImage(currentIndex);
+  renderThumbStrip();
+}
+
+function prevImage() { goToImage(currentIndex - 1); }
+function nextImage() { goToImage(currentIndex + 1); }
+
+function showImage(index) {
+  const img = allImages[index];
+  const mainImg = document.getElementById('mainImg');
+  const empty = document.getElementById('emptyPlaceholder');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  if (!img) {
+    mainImg.style.display = 'none';
+    empty.style.display = '';
+    empty.innerHTML = `
+      <div style="font-size:4rem">✅</div>
+      <p class="mt-2">本小组全部图片已标注完成！</p>
+      <button class="btn-fun btn-sm btn-purple mt-2" onclick="loadAnnotationData()">
+        <i class="bi bi-arrow-clockwise"></i> 重新加载
+      </button>`;
+    document.getElementById('imgIndexLabel').textContent = '-';
+    document.getElementById('preLabelText').textContent = '等待标注...';
+    document.getElementById('confirmBtn').disabled = true;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    return;
+  }
+
+  prevBtn.disabled = index === 0;
+  nextBtn.disabled = index === allImages.length - 1;
+
+  mainImg.src = img.file_path;
+  mainImg.style.display = '';
+  empty.style.display = 'none';
+
+  document.getElementById('imgIndexLabel').textContent = `${index + 1}/${allImages.length}`;
+  document.getElementById('preLabelText').textContent =
+    img.emotion && img.emotion !== 'pending'
+      ? (EMOTION_EMOJI[img.emotion] || '?') + ' ' + (EMOTION_CN[img.emotion] || img.emotion)
+      : '等待标注...';
+  document.getElementById('confirmBtn').disabled = !selectedEmotion;
+}
+
+function selectEmotion(emotion) {
+  selectedEmotion = emotion;
+  document.querySelectorAll('.emotion-annotate-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector(`.emotion-annotate-btn[data-emotion="${emotion}"]`).classList.add('selected');
+  document.getElementById('confirmBtn').disabled = false;
+}
+
+async function confirmAnnotation() {
+  if (selectedEmotion === null) { alert('请先选择情绪标签'); return; }
+  const img = allImages[currentIndex];
+  if (!img) return;
+
+  try {
+    const resp = await fetch('/data/annotation/save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        group_id: getWorkGroupId(),
+        file_name: img.file_name,
+        label: selectedEmotion
+      })
+    });
+    const result = await resp.json();
+    if (result.success) {
+      img.is_confirmed = true;
+      img.emotion = selectedEmotion;
+      showMsg(`✅ 已标注为 ${EMOTION_EMOJI[selectedEmotion]} ${EMOTION_CN[selectedEmotion]}`, 'success');
+      renderThumbStrip();
+      // 自动下一张
+      setTimeout(() => nextImage(), 300);
+    } else {
+      showMsg('❌ 保存失败: ' + (result.error || '未知错误'), 'danger');
+    }
+  } catch (err) {
+    showMsg('❌ 网络错误', 'danger');
+    console.error(err);
+  }
+}
+
+async function skipImage() {
+  showMsg('⏭ 已跳过当前图片', 'warning');
+  nextImage();
+}
+
+async function markReview() {
+  const img = allImages[currentIndex];
+  if (!img) return;
+  try {
+    const resp = await fetch('/data/annotation/mark_review', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        group_id: getWorkGroupId(),
+        file_name: img.file_name
+      })
+    });
+    const result = await resp.json();
+    if (result.success) {
+      img.is_confirmed = true;
+      img.emotion = 'review';
+      showMsg('⚠️ 已标记为待审核', 'warning');
+      renderThumbStrip();
+      setTimeout(() => nextImage(), 300);
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function updateStats(data) {
+  const groupId = getWorkGroupId();
+  document.getElementById('pendingCount').textContent = data.pending_count;
+  document.getElementById('doneCount').textContent = data.confirmed_count;
+
+  if (!groupId) {
+    document.getElementById('statsArea').innerHTML = '<div class="text-muted text-center small py-2">暂无统计数据</div>';
+    return;
+  }
+  try {
+    const resp = await fetch(`/data/annotation/stats/${groupId}`);
+    const stats = await resp.json();
+    const byLabel = stats.by_label || {};
+    const html = Object.keys(byLabel).filter(k => byLabel[k] > 0).map(k => `
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <span>${EMOTION_EMOJI[k] || '?'} ${EMOTION_CN[k] || k}</span>
+        <span class="badge bg-secondary">${byLabel[k]}</span>
+      </div>
+    `).join('');
+    document.getElementById('statsArea').innerHTML = html || '<div class="text-muted text-center small py-2">暂无统计数据</div>';
+  } catch (err) {
+    document.getElementById('statsArea').innerHTML = '<div class="text-muted text-center small py-2">加载失败</div>';
+  }
+}
+
+function showMsg(text, type) {
+  const existing = document.getElementById('annotMsg');
+  if (existing) existing.remove();
+  const div = document.createElement('div');
+  div.id = 'annotMsg';
+  div.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;padding:0.7rem 1.2rem;border-radius:10px;font-size:0.9rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:opacity 0.3s;background:' +
+    (type === 'success' ? '#10B981' : type === 'danger' ? '#EF4444' : '#F59E0B') + ';color:white';
+  div.textContent = text;
+  document.body.appendChild(div);
+  setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 300); }, 2000);
+}
+</script>
+{% endblock %}

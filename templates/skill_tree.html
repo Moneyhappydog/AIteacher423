@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}技能树 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<style>
+  .skill-category {
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  .skill-item {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+  }
+  .skill-item.unlocked {
+    background: linear-gradient(135deg,#F0FDF4,#DCFCE7);
+    border-color: #10B981;
+  }
+  .skill-item.available {
+    background: linear-gradient(135deg,#FEF3C7,#FDE68A);
+    border-color: #F59E0B;
+  }
+  .skill-item.locked {
+    background: #F3F4F6;
+    border-color: #E0E0E0;
+    opacity: 0.7;
+  }
+  .skill-icon {
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .skill-item.unlocked .skill-icon { background: #DCFCE7; }
+  .skill-item.available .skill-icon { background: #FEF3C7; }
+  .skill-item.locked .skill-icon { background: #E0E0E0; filter: grayscale(1); }
+  .skill-status-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 8px;
+    margin-left: auto;
+  }
+  .skill-item.unlocked .skill-status-badge { background: #10B981; color: white; }
+  .skill-item.available .skill-status-badge { background: #F59E0B; color: white; }
+  .skill-item.locked .skill-status-badge { background: #9CA3AF; color: white; }
+  .lesson-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: 3px solid #7C3AED;
+    background: white;
+    color: #7C3AED;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .lesson-btn.active {
+    background: #7C3AED;
+    color: white;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+  <div class="page-header-icon">🌳</div>
+  <h1 class="page-title">我的技能树</h1>
+  <p class="page-subtitle">完成课程任务，解锁更多AI技能！</p>
+</div>
+
+<div class="container pb-5">
+  <!-- 课程和课时选择 -->
+  <div class="content-card mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <strong class="me-3">选择课程：</strong>
+        <div class="btn-group" role="group">
+          <button class="btn btn-outline-primary active" onclick="switchCourse('emotion_computing')" id="course_emotion_computing">🧠 情感计算</button>
+          <button class="btn btn-outline-success" onclick="switchCourse('eco_bottle')" id="course_eco_bottle">🌱 生态瓶</button>
+        </div>
+      </div>
+      <div>
+        <strong class="me-3">当前课时：</strong>
+        <div class="btn-group" role="group">
+          <button class="lesson-btn" onclick="setLesson(1)" id="lesson_1">1</button>
+          <button class="lesson-btn" onclick="setLesson(2)" id="lesson_2">2</button>
+          <button class="lesson-btn" onclick="setLesson(3)" id="lesson_3">3</button>
+          <button class="lesson-btn" onclick="setLesson(4)" id="lesson_4">4</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 技能解锁进度 -->
+  <div class="content-card mb-4" style="background:linear-gradient(135deg,#EDE9FE,#DDD6FE);border:2px solid #7C3AED;">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <div class="fw-bold" style="font-size:1.1rem"><i class="bi bi-star-fill text-warning"></i> 技能解锁进度</div>
+        <div class="mt-1" id="skillProgressText">已解锁 0 / 10 项技能</div>
+        <div class="progress mt-2" style="height:12px;width:300px">
+          <div class="progress-bar bg-success" id="skillProgressBar" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="text-end">
+        <div class="fw-bold text-primary" id="currentLessonText">第1课</div>
+        <div class="small text-muted">已解锁技能可在本节课使用</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 技能树展示 -->
+  <div class="row g-4" id="skillTreeContainer">
+    <div class="col-md-4">
+      <div class="skill-category">
+        <h5 class="mb-3 text-center" style="color:#3B82F6"><i class="bi bi-database-fill"></i> 数据技能</h5>
+        <div id="skill_data_skills"></div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="skill-category">
+        <h5 class="mb-3 text-center" style="color:#7C3AED"><i class="bi bi-cpu"></i> 算法技能</h5>
+        <div id="skill_algorithm_skills"></div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="skill-category">
+        <h5 class="mb-3 text-center" style="color:#EC4899"><i class="bi bi-robot"></i> AI技能</h5>
+        <div id="skill_ai_skills"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 技能说明 -->
+  <div class="content-card mt-4">
+    <div class="content-card-header"><i class="bi bi-info-circle"></i> 技能说明</div>
+    <div id="skillDescription" class="p-3">
+      <p class="text-muted text-center">点击任意技能查看详细说明</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let currentCourse = 'emotion_computing';
+let skillsData = null;
+
+async function loadSkills(course) {
+  try {
+    const resp = await fetch(`/skill/${course}`);
+    skillsData = await resp.json();
+    renderSkillTree();
+    updateProgress();
+  } catch (err) {
+    console.error('加载失败:', err);
+  }
+}
+
+function renderSkillTree() {
+  if (!skillsData || !skillsData.skill_tree) return;
+
+  ['data_skills', 'algorithm_skills', 'ai_skills'].forEach(cat => {
+    const container = document.getElementById('skill_' + cat);
+    if (!container) return;
+    const skills = skillsData.skill_tree[cat]?.skills || [];
+    container.innerHTML = skills.map(skill => {
+      const status = skill.status || 'locked';
+      const statusText = {unlocked: '已解锁', available: '可解锁', locked: '未解锁'}[status] || '未解锁';
+      return `<div class="skill-item ${status}" onclick="showSkillDesc('${skill.id}', '${skill.description}', '${status}')">
+        <div class="skill-icon">${skill.icon || '❓'}</div>
+        <div>
+          <div class="fw-bold">${skill.name}</div>
+          <div class="small text-muted">第${skill.unlock_lesson}课解锁</div>
+        </div>
+        <span class="skill-status-badge">${statusText}</span>
+      </div>`;
+    }).join('');
+  });
+}
+
+function updateProgress() {
+  if (!skillsData) return;
+  const unlocked = skillsData.unlocked_skills || [];
+  const total = 10; // 每课程共10个技能
+  document.getElementById('skillProgressText').textContent = `已解锁 ${unlocked.length} / ${total} 项技能`;
+  document.getElementById('skillProgressBar').style.width = (unlocked.length / total * 100) + '%';
+  document.getElementById('currentLessonText').textContent = `第${skillsData.current_lesson || 1}课`;
+
+  // 更新课时按钮
+  for (let i = 1; i <= 4; i++) {
+    const btn = document.getElementById('lesson_' + i);
+    if (btn) btn.classList.toggle('active', i <= (skillsData.current_lesson || 1));
+  }
+}
+
+function showSkillDesc(id, description, status) {
+  const statusColor = {unlocked: '#10B981', available: '#F59E0B', locked: '#9CA3AF'}[status] || '#9CA3AF';
+  const statusText = {unlocked: '已解锁 ✓', available: '可解锁', locked: '未解锁 🔒'}[status] || '未解锁';
+  document.getElementById('skillDescription').innerHTML = `
+    <div class="d-flex align-items-center gap-2 mb-2">
+      <span class="badge" style="background:${statusColor};color:white">${statusText}</span>
+    </div>
+    <p class="mb-0">${description}</p>
+  `;
+}
+
+function switchCourse(course) {
+  currentCourse = course;
+  document.querySelectorAll('[id^="course_"]').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('course_' + course);
+  if (btn) btn.classList.add('active');
+  loadSkills(course);
+}
+
+async function setLesson(lesson) {
+  try {
+    const resp = await fetch('/skill/set_lesson', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        course: currentCourse,
+        lesson: lesson
+      })
+    });
+    const result = await resp.json();
+    skillsData = result.skills;
+    renderSkillTree();
+    updateProgress();
+  } catch (err) {
+    console.error('设置失败:', err);
+  }
+}
+
+// 初始化
+loadSkills(currentCourse);
+</script>
+{% endblock %}

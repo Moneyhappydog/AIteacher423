@@ -1,0 +1,962 @@
+{% extends "base.html" %}
+{% block title %}声音情绪数据标注 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<style>
+  .annotation-card {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 16px;
+    padding: 2rem;
+    border: 1px solid rgba(124,58,237,0.3);
+  }
+  .audio-display {
+    background: #0D0D1A;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .waveform-big {
+    width: 100%;
+    height: 120px;
+    background: #0D0D1A;
+    border-radius: 8px;
+    margin: 1rem 0;
+    position: relative;
+  }
+  .waveform-big canvas {
+    display: block;
+    width: 100%;
+    height: 120px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .waveform-hint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    font-size: 0.8rem;
+    pointer-events: none;
+  }
+  .waveform-time-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.35rem;
+    padding: 0 0.15rem;
+    font-size: 0.8rem;
+    color: #c4b5fd;
+    font-variant-numeric: tabular-nums;
+  }
+  .emotion-btn-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
+    margin: 1.5rem 0;
+  }
+  .emotion-btn {
+    padding: 1rem;
+    border-radius: 12px;
+    border: 2px solid #e0e0e0;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .emotion-btn:hover {
+    border-color: #7C3AED;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .emotion-btn.selected {
+    border-color: #7C3AED;
+    background: #EDE9FE;
+    box-shadow: 0 0 20px rgba(124,58,237,0.3);
+  }
+  .emotion-btn .emoji { font-size: 2rem; margin-bottom: 0.3rem; }
+  .emotion-btn .label { font-weight: 600; font-size: 0.9rem; }
+  .progress-ring {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: conic-gradient(#7C3AED var(--progress), #e0e0e0 var(--progress));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .progress-ring-inner {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #7C3AED;
+  }
+  .thumb-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    background: #f9fafb;
+    border-radius: 8px;
+  }
+  .stats-list-scroll {
+    max-height: 240px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .thumb-nav-item {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.2s;
+  }
+  .thumb-nav-item:hover { border-color: #7C3AED; }
+  .thumb-nav-item.current { border-color: #7C3AED; background: #EDE9FE; }
+  .thumb-nav-item.qualified { border-color: #10B981; background: #D1FAE5; }
+  .thumb-nav-item.pending { border-color: #F59E0B; background: #FEF3C7; }
+  .auto-label-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .auto-label-badge.ai { background: #EDE9FE; color: #7C3AED; }
+  .auto-label-badge.manual { background: #D1FAE5; color: #059669; }
+  .control-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f9fafb;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+  }
+  .nav-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+  }
+  .nav-btn:hover { transform: scale(1.05); }
+  .nav-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .audio-info-panel {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+  .emotion-standard {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 1rem;
+    font-size: 0.85rem;
+  }
+  .emotion-standard h6 { color: #7C3AED; margin-bottom: 0.5rem; }
+  .emotion-standard ul { margin: 0; padding-left: 1.2rem; }
+  .confidence-bar {
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 0.3rem;
+  }
+  .confidence-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7C3AED, #EC4899);
+    transition: width 0.3s;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+  <div class="page-header-icon">🎤</div>
+  <h1 class="page-title">声音情绪标注工作台</h1>
+  <p class="page-subtitle">对「待标注」队列中的录音逐条试听并手动选择情绪标签，完成数据整理。</p>
+</div>
+
+<!-- Tab 切换导航 -->
+<div class="container">
+  <ul class="nav nav-tabs mb-4" style="border-bottom:2px solid #e0e0e0">
+    <li class="nav-item">
+      <a class="nav-link" href="/audio_data/collect/" style="font-weight:700;color:#6b7280;border-radius:8px 8px 0 0">
+        <i class="bi bi-mic"></i> 数据采集
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link active" href="/audio_data/annotation/" style="font-weight:700;color:#7C3AED;border-bottom:3px solid #7C3AED;background:#EDE9FE;border-radius:8px 8px 0 0">
+        <i class="bi bi-pen"></i> 数据标注
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/audio_data/annotated/" style="font-weight:700;color:#6b7280;border-radius:8px 8px 0 0">
+        <i class="bi bi-check2-square"></i> 已标注数据
+      </a>
+    </li>
+  </ul>
+</div>
+
+<div class="container pb-5">
+  <!-- 顶部控制栏 -->
+  <div class="control-bar">
+    <div class="d-flex align-items-center gap-3">
+      <div>
+        {% if session.get('role') == 'group' %}
+        <label class="form-label small fw-bold mb-1">小组（当前账号）</label>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="fw-semibold">{{ session.get('username', '—') }}</span>
+          {% if session.get('group_id') %}
+          <span class="badge bg-secondary">{{ session.get('group_id') }}</span>
+          {% endif %}
+        </div>
+        <input type="hidden" id="sessionGroupId" value="{{ session.get('group_id', '')|e }}">
+        {% else %}
+        <label class="form-label small fw-bold mb-1">选择小组</label>
+        <select class="form-select form-select-sm" id="groupSelect" onchange="loadAnnotationQueue()">
+          <option value="G01">第1组 (G01)</option>
+          <option value="G02">第2组 (G02)</option>
+          <option value="G03">第3组 (G03)</option>
+          <option value="G04">第4组 (G04)</option>
+          <option value="G05">第5组 (G05)</option>
+          <option value="G06">第6组 (G06)</option>
+          <option value="G07">第7组 (G07)</option>
+          <option value="G08">第8组 (G08)</option>
+          <option value="G09">第9组 (G09)</option>
+          <option value="G10">第10组 (G10)</option>
+        </select>
+        {% endif %}
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <div>
+          <div class="fw-bold" id="pendingCount">0</div>
+          <div class="text-muted">待标注</div>
+        </div>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-primary" onclick="loadAnnotationQueue()">
+        <i class="bi bi-arrow-clockwise"></i> 刷新
+      </button>
+      <button class="btn btn-sm btn-success" onclick="batchConfirm()">
+        <i class="bi bi-check-all"></i> 批量确认
+      </button>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- 左侧：音频播放与标注 -->
+    <div class="col-lg-8">
+      <div class="annotation-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <span class="badge bg-primary me-2" id="currentIndex">0/0</span>
+            <span class="badge bg-secondary" id="fileName">暂无文件</span>
+          </div>
+          <div id="autoLabelBadge" class="auto-label-badge ai">
+            <i class="bi bi-pen"></i> 人工标注
+          </div>
+        </div>
+
+        <!-- 音频波形 / 播放进度 -->
+        <div class="waveform-big" id="waveformContainer">
+          <canvas id="waveCanvas" width="800" height="120"></canvas>
+          <div class="waveform-hint" id="waveformHint" style="display:none">正在解析波形…</div>
+        </div>
+        <div class="waveform-time-row">
+          <span id="annotPlayTime">0:00</span>
+          <span class="text-muted small" style="color:#7c6bb0!important">点击波形可跳转进度</span>
+          <span id="annotTotalTime">0:00</span>
+        </div>
+
+        <!-- 播放控制 -->
+        <div class="d-flex justify-content-center align-items-center gap-3 mb-3">
+          <button class="nav-btn btn-outline-secondary" onclick="prevAudio()" id="prevBtn" disabled>
+            ⬅️ 上一个
+          </button>
+          <button class="btn btn-purple btn-lg" onclick="togglePlay()" id="playBtn" style="border-radius:50%;width:60px;height:60px">
+            ▶️
+          </button>
+          <button class="nav-btn btn-outline-secondary" onclick="nextAudio()" id="nextBtn" disabled>
+            下一个 ➡️
+          </button>
+        </div>
+
+        <!-- 情绪选择按钮 -->
+        <div class="emotion-btn-grid" id="emotionBtns">
+          <div class="emotion-btn" data-emotion="happy" onclick="selectEmotion('happy')">
+            <div class="emoji">😊</div>
+            <div class="label">开心</div>
+          </div>
+          <div class="emotion-btn" data-emotion="sad" onclick="selectEmotion('sad')">
+            <div class="emoji">😢</div>
+            <div class="label">难过</div>
+          </div>
+          <div class="emotion-btn" data-emotion="angry" onclick="selectEmotion('angry')">
+            <div class="emoji">😠</div>
+            <div class="label">生气</div>
+          </div>
+          <div class="emotion-btn" data-emotion="neutral" onclick="selectEmotion('neutral')">
+            <div class="emoji">😐</div>
+            <div class="label">平静</div>
+          </div>
+          <div class="emotion-btn" data-emotion="fear" onclick="selectEmotion('fear')">
+            <div class="emoji">😨</div>
+            <div class="label">害怕</div>
+          </div>
+          <div class="emotion-btn" data-emotion="surprise" onclick="selectEmotion('surprise')">
+            <div class="emoji">😮</div>
+            <div class="label">惊讶</div>
+          </div>
+        </div>
+
+        <!-- 确认/跳过按钮 -->
+        <div class="d-flex justify-content-between mt-3">
+          <button class="btn btn-outline-danger" onclick="skipAudio()">
+            <i class="bi bi-skip-forward"></i> 跳过
+          </button>
+          <button class="btn btn-success btn-lg" onclick="confirmCurrentLabel()">
+            <i class="bi bi-check-circle"></i> 确认标注
+          </button>
+        </div>
+
+        <!-- 情绪标注标准参考 -->
+        <div class="emotion-standard mt-3">
+          <h6><i class="bi bi-info-circle"></i> 标注参考标准</h6>
+          <ul>
+            <li><strong>😊开心</strong>：音调较高、语速较快、声音明亮</li>
+            <li><strong>😢难过</strong>：语速慢、音量低、声音低沉</li>
+            <li><strong>😠生气</strong>：响度大、语气急促、声调尖锐</li>
+            <li><strong>😐平静</strong>：语速适中、音量稳定、声调平和</li>
+            <li><strong>😨害怕</strong>：声音颤抖、语速不稳定</li>
+            <li><strong>😮惊讶</strong>：音调突然变化、语气上扬</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：缩略图导航和统计 -->
+    <div class="col-lg-4">
+      <!-- 缩略图导航 -->
+      <div class="content-card mb-3">
+        <div class="content-card-header">
+          <i class="bi bi-collection"></i> 音频列表
+        </div>
+        <div class="thumb-nav" id="thumbNav">
+          <div class="text-muted small p-3">点击"刷新"加载数据</div>
+        </div>
+      </div>
+
+      <!-- 标注统计 -->
+      <div class="content-card">
+        <div class="content-card-header">
+          <i class="bi bi-bar-chart"></i> 标注统计
+        </div>
+        <div class="mt-3 stats-list-scroll" id="statsPanel">
+          <div class="text-muted text-center py-3">加载数据后显示统计</div>
+        </div>
+      </div>
+
+      <!-- 快捷操作 -->
+      <div class="content-card mt-3">
+        <div class="content-card-header">
+          <i class="bi bi-lightning"></i> 快捷操作
+        </div>
+        <div class="mt-3 d-grid gap-2">
+          <button class="btn btn-sm btn-outline-success" onclick="quickConfirm('happy')">
+            😊 全部标为开心
+          </button>
+          <button class="btn btn-sm btn-outline-success" onclick="quickConfirm('sad')">
+            😢 全部标为难过
+          </button>
+          <button class="btn btn-sm btn-outline-success" onclick="quickConfirm('angry')">
+            😠 全部标为生气
+          </button>
+          <button class="btn btn-sm btn-outline-success" onclick="quickConfirm('neutral')">
+            😐 全部标为平静
+          </button>
+          <button class="btn btn-sm btn-outline-success" onclick="quickConfirm('fear')">
+            😨 全部标为害怕
+          </button>
+          <button class="btn btn-sm btn-outline-success" onclick="quickConfirm('surprise')">
+            😮 全部标为惊讶
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const EMOTION_EMOJI = {
+  'happy': '😊', 'sad': '😢', 'angry': '😠', 'anger': '😠',
+  'neutral': '😐', 'fear': '😨', 'surprise': '😮'
+};
+
+function getWorkGroupId() {
+  const h = document.getElementById('sessionGroupId');
+  if (h && h.value) return String(h.value).trim();
+  const sel = document.getElementById('groupSelect');
+  return sel ? sel.value : '';
+}
+
+let audioQueue = [];
+let currentIndex = 0;
+let currentAudio = null;
+let playingAudio = null;
+let selectedLabel = null;
+
+/** 波形峰值 0..1，与当前 file_path 对应 */
+let annotationWavePeaks = null;
+let annotationWaveUrl = '';
+let annotationDuration = 0;
+let waveformLoadToken = 0;
+let playbackRafId = null;
+
+function _fmtAudioTime(sec) {
+  if (!isFinite(sec) || sec < 0) sec = 0;
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function _resizeWaveCanvas() {
+  const canvas = document.getElementById('waveCanvas');
+  const box = document.getElementById('waveformContainer');
+  if (!canvas || !box) return;
+  const w = Math.max(320, box.clientWidth || 600);
+  canvas.width = Math.floor(w * (window.devicePixelRatio || 1));
+  canvas.height = Math.floor(120 * (window.devicePixelRatio || 1));
+  canvas.style.height = '120px';
+}
+
+function computePeaksFromBuffer(audioBuffer, barCount) {
+  const channel = audioBuffer.getChannelData(0);
+  const n = channel.length;
+  const peaks = [];
+  const block = Math.max(1, Math.floor(n / barCount));
+  for (let i = 0; i < barCount; i++) {
+    const start = i * block;
+    const end = Math.min(start + block, n);
+    let max = 0;
+    for (let j = start; j < end; j++) {
+      const v = Math.abs(channel[j]);
+      if (v > max) max = v;
+    }
+    peaks.push(max);
+  }
+  const hi = Math.max(...peaks, 1e-6);
+  return peaks.map(p => p / hi);
+}
+
+function drawWaveformFrame(peaks, progress) {
+  _resizeWaveCanvas();
+  const canvas = document.getElementById('waveCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  const dpr = window.devicePixelRatio || 1;
+
+  ctx.fillStyle = '#0D0D1A';
+  ctx.fillRect(0, 0, w, h);
+
+  const mid = h / 2;
+  const prog = Math.max(0, Math.min(1, progress || 0));
+
+  if (peaks && peaks.length) {
+    const n = peaks.length;
+    const step = w / n;
+    const barW = Math.max(1, step * 0.72);
+    for (let i = 0; i < n; i++) {
+      const x = i * step;
+      const amp = peaks[i] * (h * 0.42);
+      const played = (i + 0.5) / n <= prog;
+      ctx.fillStyle = played ? '#A78BFA' : '#4C1D95';
+      ctx.fillRect(x, mid - amp, barW, amp * 2);
+    }
+  } else {
+    ctx.strokeStyle = '#4C1D95';
+    ctx.lineWidth = 3 * dpr;
+    ctx.beginPath();
+    ctx.moveTo(0, mid);
+    ctx.lineTo(w, mid);
+    ctx.stroke();
+    ctx.fillStyle = '#7C3AED';
+    ctx.fillRect(0, mid - 2 * dpr, w * prog, 4 * dpr);
+  }
+
+  const px = prog * w;
+  ctx.strokeStyle = '#FBBF24';
+  ctx.lineWidth = 2 * dpr;
+  ctx.beginPath();
+  ctx.moveTo(px, 0);
+  ctx.lineTo(px, h);
+  ctx.stroke();
+}
+
+function setAnnotTimes(cur, total) {
+  const a = document.getElementById('annotPlayTime');
+  const b = document.getElementById('annotTotalTime');
+  if (a) a.textContent = _fmtAudioTime(cur);
+  if (b) b.textContent = _fmtAudioTime(total);
+}
+
+function stopPlaybackAnim() {
+  if (playbackRafId) {
+    cancelAnimationFrame(playbackRafId);
+    playbackRafId = null;
+  }
+}
+
+function tickPlaybackDraw() {
+  if (!playingAudio || playingAudio.paused) return;
+  const d = (playingAudio.duration && isFinite(playingAudio.duration))
+    ? playingAudio.duration : annotationDuration;
+  const t = playingAudio.currentTime || 0;
+  const prog = d ? t / d : 0;
+  drawWaveformFrame(annotationWavePeaks, prog);
+  setAnnotTimes(t, d || 0);
+  playbackRafId = requestAnimationFrame(tickPlaybackDraw);
+}
+
+async function loadWaveformForUrl(url) {
+  const token = ++waveformLoadToken;
+  const hint = document.getElementById('waveformHint');
+  annotationWavePeaks = null;
+  annotationWaveUrl = url || '';
+  annotationDuration = 0;
+
+  if (!url) {
+    if (hint) hint.style.display = 'none';
+    drawWaveformFrame(null, 0);
+    setAnnotTimes(0, 0);
+    return;
+  }
+
+  if (hint) { hint.style.display = 'flex'; hint.textContent = '正在解析波形…'; }
+
+  try {
+    const resp = await fetch(url, { credentials: 'same-origin' });
+    if (!resp.ok) throw new Error('fetch ' + resp.status);
+    const ab = await resp.arrayBuffer();
+    if (token !== waveformLoadToken) return;
+
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const buffer = await ac.decodeAudioData(ab.slice(0));
+    if (typeof ac.close === 'function') {
+      await ac.close().catch(() => {});
+    }
+
+    if (token !== waveformLoadToken) return;
+
+    annotationDuration = buffer.duration || 0;
+    const bars = Math.min(500, Math.max(80, Math.floor(annotationDuration * 80)));
+    annotationWavePeaks = computePeaksFromBuffer(buffer, bars);
+
+    if (hint) hint.style.display = 'none';
+    drawWaveformFrame(annotationWavePeaks, 0);
+    setAnnotTimes(0, annotationDuration);
+  } catch (e) {
+    console.warn('波形解析失败', e);
+    if (token !== waveformLoadToken) return;
+    if (hint) hint.style.display = 'none';
+    drawWaveformFrame(null, 0);
+    setAnnotTimes(0, 0);
+  }
+}
+
+async function loadAnnotationQueue() {
+  const groupId = getWorkGroupId();
+  if (!groupId) {
+    audioQueue = [];
+    currentIndex = 0;
+    resetAudioDisplay();
+    updateThumbNav();
+    updateProgress();
+    updateStats();
+    return;
+  }
+  try {
+    const resp = await fetch(`/audio_data/annotation/queue/${groupId}?include_confirmed=true`);
+    const data = await resp.json();
+    
+    audioQueue = data.pending || [];
+    currentIndex = 0;
+    
+    updateThumbNav();
+    updateProgress();
+    updateStats();
+    
+    if (audioQueue.length > 0) {
+      loadAudio(0);
+    } else {
+      resetAudioDisplay();
+    }
+    
+  } catch (err) {
+    console.error('加载失败:', err);
+    alert('加载标注队列失败');
+  }
+}
+
+function loadAudio(index) {
+  if (index < 0 || index >= audioQueue.length) return;
+  
+  currentIndex = index;
+  currentAudio = audioQueue[index];
+  
+  document.getElementById('currentIndex').textContent = `${index + 1}/${audioQueue.length}`;
+  document.getElementById('fileName').textContent = currentAudio.file_name;
+  
+  document.getElementById('prevBtn').disabled = index === 0;
+  document.getElementById('nextBtn').disabled = index === audioQueue.length - 1;
+  
+  if (playingAudio) {
+    playingAudio.pause();
+    playingAudio = null;
+    stopPlaybackAnim();
+  }
+  document.getElementById('playBtn').innerHTML = '▶️';
+  
+  if (currentAudio.is_confirmed) {
+    document.getElementById('autoLabelBadge').className = 'auto-label-badge manual';
+    document.getElementById('autoLabelBadge').innerHTML = '<i class="bi bi-check-circle"></i> 已确认';
+  } else {
+    document.getElementById('autoLabelBadge').className = 'auto-label-badge ai';
+    document.getElementById('autoLabelBadge').innerHTML = '<i class="bi bi-hourglass-split"></i> 待标注';
+  }
+  
+  selectEmotion(currentAudio.emotion === 'pending' ? null : currentAudio.emotion);
+  
+  loadWaveformForUrl(currentAudio.file_path || '');
+  updateThumbNav();
+}
+
+function resetAudioDisplay() {
+  if (playingAudio) {
+    playingAudio.pause();
+    playingAudio = null;
+    stopPlaybackAnim();
+  }
+  document.getElementById('currentIndex').textContent = '0/0';
+  document.getElementById('fileName').textContent = '暂无文件';
+  document.getElementById('prevBtn').disabled = true;
+  document.getElementById('nextBtn').disabled = true;
+  document.getElementById('playBtn').innerHTML = '▶️';
+  selectEmotion(null);
+  loadWaveformForUrl('');
+}
+
+function seekFromWaveformClick(clientX) {
+  const canvas = document.getElementById('waveCanvas');
+  if (!canvas || !playingAudio) return;
+  const d = (playingAudio.duration && isFinite(playingAudio.duration))
+    ? playingAudio.duration : annotationDuration;
+  if (!d || !isFinite(d)) return;
+  const rect = canvas.getBoundingClientRect();
+  const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  playingAudio.currentTime = ratio * d;
+  drawWaveformFrame(annotationWavePeaks, ratio);
+  setAnnotTimes(ratio * d, d);
+}
+
+async function togglePlay() {
+  if (!currentAudio || !currentAudio.file_path) return;
+
+  if (playingAudio) {
+    if (!playingAudio.paused) {
+      playingAudio.pause();
+      stopPlaybackAnim();
+      document.getElementById('playBtn').innerHTML = '▶️';
+      const t = playingAudio.currentTime;
+      const d = (playingAudio.duration && isFinite(playingAudio.duration))
+        ? playingAudio.duration : annotationDuration;
+      const prog = d ? t / d : 0;
+      drawWaveformFrame(annotationWavePeaks, prog);
+      setAnnotTimes(t, d || 0);
+    } else {
+      try {
+        await playingAudio.play();
+        document.getElementById('playBtn').innerHTML = '⏸️';
+        playbackRafId = requestAnimationFrame(tickPlaybackDraw);
+      } catch (err) {
+        console.error('播放失败:', err);
+      }
+    }
+    return;
+  }
+
+  try {
+    const audioUrl = currentAudio.file_path;
+    playingAudio = new Audio(audioUrl);
+
+    playingAudio.onended = () => {
+      stopPlaybackAnim();
+      document.getElementById('playBtn').innerHTML = '▶️';
+      playingAudio = null;
+      const d = annotationDuration || 0;
+      drawWaveformFrame(annotationWavePeaks, 0);
+      setAnnotTimes(0, d);
+    };
+
+    playingAudio.onerror = () => {
+      stopPlaybackAnim();
+      alert('音频加载失败');
+      document.getElementById('playBtn').innerHTML = '▶️';
+      playingAudio = null;
+    };
+
+    playingAudio.addEventListener('loadedmetadata', () => {
+      if (playingAudio && playingAudio.duration && isFinite(playingAudio.duration)) {
+        annotationDuration = playingAudio.duration;
+        setAnnotTimes(playingAudio.currentTime, annotationDuration);
+      }
+    });
+
+    await playingAudio.play();
+    document.getElementById('playBtn').innerHTML = '⏸️';
+    playbackRafId = requestAnimationFrame(tickPlaybackDraw);
+  } catch (err) {
+    console.error('播放失败:', err);
+    stopPlaybackAnim();
+    playingAudio = null;
+  }
+}
+
+function prevAudio() {
+  if (currentIndex > 0) {
+    loadAudio(currentIndex - 1);
+  }
+}
+
+function nextAudio() {
+  if (currentIndex < audioQueue.length - 1) {
+    loadAudio(currentIndex + 1);
+  }
+}
+
+function selectEmotion(emotion) {
+  selectedLabel = emotion;
+  document.querySelectorAll('.emotion-btn').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.emotion === emotion);
+  });
+}
+
+async function confirmCurrentLabel() {
+  if (!currentAudio || !selectedLabel) {
+    alert('请先选择情绪标签');
+    return;
+  }
+  
+  try {
+    const resp = await fetch('/audio_data/annotation/save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        group_id: getWorkGroupId(),
+        file_name: currentAudio.file_name,
+        label: selectedLabel
+      })
+    });
+    
+    const result = await resp.json();
+    if (result.success) {
+      audioQueue[currentIndex].is_confirmed = true;
+      audioQueue[currentIndex].emotion = selectedLabel;
+      loadAudio(currentIndex);
+      updateProgress();
+      updateStats();
+      showMsg('✅ 标注已确认', 'success');
+      
+      if (currentIndex < audioQueue.length - 1) {
+        nextAudio();
+      }
+    } else {
+      alert('保存失败: ' + (result.error || '未知错误'));
+    }
+  } catch (err) {
+    alert('保存失败');
+  }
+}
+
+function skipAudio() {
+  if (currentIndex < audioQueue.length - 1) {
+    nextAudio();
+  }
+}
+
+async function quickConfirm(emotion) {
+  if (audioQueue.length === 0) return;
+  
+  const unlabeled = audioQueue.filter(a => !a.is_confirmed);
+  if (unlabeled.length === 0) {
+    alert('所有音频都已标注');
+    return;
+  }
+  
+  if (!confirm(`将 ${unlabeled.length} 个未标注的音频全部标记为"${EMOTION_EMOJI[emotion]}${emotion}"？`)) {
+    return;
+  }
+  
+  let success = 0;
+  for (const audio of unlabeled) {
+    try {
+      const resp = await fetch('/audio_data/annotation/save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          group_id: getWorkGroupId(),
+          file_name: audio.file_name,
+          label: emotion
+        })
+      });
+      const result = await resp.json();
+      if (result.success) {
+        audio.is_confirmed = true;
+        audio.emotion = emotion;
+        success++;
+      }
+    } catch (err) {}
+  }
+  
+  loadAudio(currentIndex);
+  updateProgress();
+  updateStats();
+  showMsg(`✅ 成功标注 ${success} 个音频`, 'success');
+}
+
+async function batchConfirm() {
+  const unlabeled = audioQueue.filter(a => !a.is_confirmed);
+  if (unlabeled.length === 0) {
+    alert('所有音频都已标注');
+    return;
+  }
+  
+  alert(`请先为当前音频选择情绪标签，然后点击"确认标注"按钮进行批量操作`);
+}
+
+function updateThumbNav() {
+  const container = document.getElementById('thumbNav');
+  
+  if (audioQueue.length === 0) {
+    container.innerHTML = '<div class="text-muted small p-3">暂无待标注音频</div>';
+    return;
+  }
+  
+  container.innerHTML = audioQueue.map((audio, i) => {
+    const emoji = audio.is_confirmed ? EMOTION_EMOJI[audio.emotion] || '✅' : '⏳';
+    const statusClass = audio.is_confirmed ? 'qualified' : 'pending';
+    const currentClass = i === currentIndex ? 'current' : '';
+    return `
+      <div class="thumb-nav-item ${statusClass} ${currentClass}" onclick="loadAudio(${i})">
+        ${emoji}
+      </div>`;
+  }).join('');
+}
+
+function updateProgress() {
+  const total = audioQueue.length;
+  const confirmed = audioQueue.filter(a => a.is_confirmed).length;
+  const pending = total - confirmed;
+  document.getElementById('pendingCount').textContent = pending;
+}
+
+function updateStats() {
+  const container = document.getElementById('statsPanel');
+  const stats = {};
+  
+  audioQueue.forEach(audio => {
+    if (audio.is_confirmed && audio.emotion !== 'pending') {
+      stats[audio.emotion] = (stats[audio.emotion] || 0) + 1;
+    }
+  });
+  
+  const total = Object.values(stats).reduce((a, b) => a + b, 0);
+  
+  if (total === 0) {
+    container.innerHTML = '<div class="text-muted text-center py-3">暂无标注数据</div>';
+    return;
+  }
+  
+  const emotionLabels = {
+    'happy': '😊开心', 'sad': '😢难过', 'angry': '😠生气', 'anger': '😠生气',
+    'neutral': '😐平静', 'fear': '😨害怕', 'surprise': '😮惊讶'
+  };
+  
+  let html = '';
+  for (const [emotion, count] of Object.entries(stats)) {
+    const pct = Math.round(count / total * 100);
+    const labelText = emotionLabels[emotion] || `${EMOTION_EMOJI[emotion] || ''} ${emotion}`.trim();
+    html += `
+      <div class="mb-2">
+        <div class="d-flex justify-content-between small">
+          <span>${labelText}</span>
+          <span class="fw-bold">${count} (${pct}%)</span>
+        </div>
+        <div class="confidence-bar">
+          <div class="confidence-fill" style="width:${pct}%"></div>
+        </div>
+      </div>`;
+  }
+  
+  html += `<div class="text-center text-muted small mt-2">总计: ${total} 个已标注</div>`;
+  container.innerHTML = html;
+}
+
+function showMsg(text, type) {
+  const existing = document.getElementById('annotMsg');
+  if (existing) existing.remove();
+  const div = document.createElement('div');
+  div.id = 'annotMsg';
+  const colors = { success: '#10B981', danger: '#EF4444', warning: '#F59E0B' };
+  div.style.cssText = `position:fixed;top:80px;right:20px;z-index:9999;padding:0.7rem 1.2rem;border-radius:10px;font-size:0.9rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);background:${colors[type] || colors.success};color:white`;
+  div.textContent = text;
+  document.body.appendChild(div);
+  setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 300); }, 2000);
+}
+
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+  const cv = document.getElementById('waveCanvas');
+  if (cv) {
+    cv.addEventListener('click', (e) => {
+      if (playingAudio) seekFromWaveformClick(e.clientX);
+    });
+  }
+  let resizeT;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(() => {
+      let prog = 0;
+      if (playingAudio) {
+        const d = (playingAudio.duration && isFinite(playingAudio.duration))
+          ? playingAudio.duration : annotationDuration;
+        if (d) prog = playingAudio.currentTime / d;
+      }
+      drawWaveformFrame(annotationWavePeaks, prog);
+    }, 100);
+  });
+  loadAnnotationQueue();
+});
+</script>
+{% endblock %}

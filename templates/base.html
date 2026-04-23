@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+  <title>{% block title %}AI 情感计算学习平台{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-icons.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- 全局共享样式 -->
+<style>
+  /* ── 用户状态栏样式 ── */
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    font-size: 0.85rem;
+  }
+  .user-role-badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .user-role-badge.role-super_admin {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #333;
+  }
+  .user-role-badge.role-teacher {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+  }
+  .user-role-badge.role-group {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: white;
+  }
+  .user-name {
+    color: white;
+    font-weight: 500;
+  }
+
+  /* ── 模型选择器样式（统一，所有角色一致） ── */
+  .model-selector {
+    background: linear-gradient(135deg, #1e1e3f 0%, #2d2d5a 100%);
+    border: 1px solid rgba(124,58,237,0.4);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+  }
+  .model-selector-label {
+    font-size: 0.8rem;
+    color: #a78bfa;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .model-selector select {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    width: 100%;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23a78bfa' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+  .model-selector select option {
+    background: #1e1e3f;
+    color: #e2e8f0;
+  }
+  .model-selector select:focus {
+    outline: none;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 2px rgba(124,58,237,0.3);
+  }
+  .model-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: #64748b;
+  }
+  .model-info .badge {
+    background: rgba(124,58,237,0.3);
+    color: #a78bfa;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .model-info .accuracy {
+    color: #10b981;
+    font-weight: 600;
+  }
+</style>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-custom">
+  <div class="container-fluid px-4">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('main.index') }}">
+      <span class="nav-logo">🤖</span>
+      <img src="{{ url_for('static', filename='images/hkustgz.png') }}" alt="港科大" style="height:32px; margin: 0 4px;">
+      <img src="{{ url_for('static', filename='images/bcmao.png') }}" alt="编程猫" style="height:32px; margin: 0 4px;">
+      <span class="nav-title d-none d-lg-inline">青少年AI教育联合实验室教学平台</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto gap-1">
+
+        <!-- 首页 -->
+        <li class="nav-item">
+          <a class="nav-link nav-pill {% if request.endpoint and request.endpoint == 'main.index' %}active{% endif %}"
+             href="{{ url_for('main.index') }}">
+            <i class="bi bi-house-heart-fill"></i> 首页
+          </a>
+        </li>
+
+        <!-- 情感计算（课程模块 - 下拉菜单） -->
+        <li class="nav-item dropdown">
+          <a class="nav-link nav-pill dropdown-toggle {% if request.endpoint and request.endpoint in ['face.index', 'audio.index', 'emotion.index', 'emotion_data.collect_page', 'audio_data.collect_page'] or request.endpoint.startswith('face_preprocess.') or request.endpoint.startswith('audio_preprocess.') %}active{% endif %}"
+             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-heart-pulse-fill"></i> 情感计算
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item {% if request.endpoint and request.endpoint == 'face.index' %}active{% endif %}"
+                 href="{{ url_for('face.index') }}">
+                <i class="bi bi-emoji-smile"></i> 表情识别
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint and request.endpoint == 'audio.index' %}active{% endif %}"
+                 href="{{ url_for('audio.index') }}">
+                <i class="bi bi-mic-fill"></i> 声音情绪判断
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint and request.endpoint == 'emotion.index' %}active{% endif %}"
+                 href="{{ url_for('emotion.index') }}">
+                <i class="bi bi-heart-fill"></i> 情感计算
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint and request.endpoint == 'emotion_data.collect_page' %}active{% endif %}"
+                 href="{{ url_for('emotion_data.collect_page') }}">
+                <i class="bi bi-camera-video-fill"></i> 表情采集
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint and request.endpoint == 'audio_data.collect_page' %}active{% endif %}"
+                 href="{{ url_for('audio_data.collect_page') }}">
+                <i class="bi bi-mic"></i> 声音情绪采集
+              </a>
+            </li>
+            <li class="dropdown-submenu">
+              <a class="dropdown-item dropdown-toggle" href="#">
+                <i class="bi bi-funnel-fill"></i> 数据预处理
+              </a>
+              <ul class="dropdown-menu">
+                <li>
+                  <a class="dropdown-item {% if request.endpoint and request.endpoint.startswith('face_preprocess.') %}active{% endif %}"
+                     href="{{ url_for('face_preprocess.index') }}">
+                    <i class="bi bi-person-badge"></i> 表情预处理
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item {% if request.endpoint and request.endpoint.startswith('audio_preprocess.') %}active{% endif %}"
+                     href="{{ url_for('audio_preprocess.index') }}">
+                    <i class="bi bi-music-note"></i> 声音情绪预处理
+                  </a>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 生态预测（课程模块） -->
+        <li class="nav-item">
+          <a class="nav-link nav-pill {% if request.endpoint and request.endpoint.startswith('eco.') %}active{% endif %}"
+             href="{{ url_for('eco.index') }}">
+            <i class="bi bi-tree-fill"></i> 生态预测
+          </a>
+        </li>
+
+        <!-- 更多课程（待实现 - 下拉菜单） -->
+        <li class="nav-item dropdown">
+          <a class="nav-link nav-pill dropdown-toggle"
+             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-plus-circle-fill"></i> 更多课程
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item" href="#" onclick="alert('具身智能模块即将上线！'); return false;">
+                <i class="bi bi-robot"></i> 具身智能
+                <span class="badge bg-warning text-dark ms-2">即将上线</span>
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="#" onclick="alert('自动驾驶模块即将上线！'); return false;">
+                <i class="bi bi-car-front-fill"></i> 自动驾驶
+                <span class="badge bg-warning text-dark ms-2">即将上线</span>
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="#" onclick="alert('鹰眼系统模块即将上线！'); return false;">
+                <i class="bi bi-eye-fill"></i> 鹰眼系统
+                <span class="badge bg-warning text-dark ms-2">即将上线</span>
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="#" onclick="alert('3D打印模块即将上线！'); return false;">
+                <i class="bi bi-box"></i> 3D打印
+                <span class="badge bg-warning text-dark ms-2">即将上线</span>
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 工具与评估（右侧） -->
+        <li class="nav-item dropdown">
+          <a class="nav-link nav-pill dropdown-toggle {% if request.endpoint and (request.endpoint.startswith('model_import.') or request.endpoint.startswith('model_eval.') or request.endpoint.startswith('testset.') or request.endpoint == 'leaderboard.index' or request.endpoint.startswith('editor.') or request.endpoint.startswith('skill_tree.')) %}active{% endif %}"
+             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-tools"></i> 工具
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li class="dropdown-header fw-bold"><i class="bi bi-graph-up me-2"></i>模型评估</li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint and request.endpoint == 'model_import.index' %}active{% endif %}"
+                 href="{{ url_for('model_import.index') }}">
+                <i class="bi bi-upload"></i> 模型导入
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint and request.endpoint == 'model_eval.index' %}active{% endif %}"
+                 href="{{ url_for('model_eval.index') }}">
+                <i class="bi bi-speedometer2"></i> 模型评估
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint and request.endpoint == 'leaderboard.index' %}active{% endif %}"
+                 href="{{ url_for('leaderboard.index') }}">
+                <i class="bi bi-trophy-fill"></i> 排行榜
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint and request.endpoint.startswith('editor.') %}active{% endif %}"
+                 href="{{ url_for('editor.index') }}">
+                <i class="bi bi-code-square"></i> 代码编辑器
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint and request.endpoint.startswith('skill_tree.') %}active{% endif %}"
+                 href="{{ url_for('skill_tree.index') }}">
+                <i class="bi bi-diagram-3-fill"></i> 技能树
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item {% if request.endpoint and request.endpoint == 'export.index' %}active{% endif %}"
+                 href="{{ url_for('export.index') }}">
+                <i class="bi bi-download"></i> 数据导出
+              </a>
+            </li>
+          </ul>
+        </li>
+
+        <!-- 系统管理（管理员 - 右侧下拉） -->
+        {% if session.get('user_id') and session.get('role') in ('super_admin', 'teacher') %}
+        <li class="nav-item dropdown">
+          <a class="nav-link nav-pill dropdown-toggle {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}"
+             href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-gear-fill"></i> 管理
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <a class="dropdown-item {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}"
+                 href="{{ url_for('admin.dashboard') }}">
+                <i class="bi bi-shield-check"></i> 管理后台
+              </a>
+            </li>
+          </ul>
+        </li>
+        {% endif %}
+
+      </ul>
+
+      <!-- 用户状态栏 -->
+      <div class="navbar-text ms-3 d-flex align-items-center gap-2">
+        {% if session.get('user_id') %}
+        <span class="user-info">
+          <span class="user-role-badge role-{{ session.get('role', 'group') }}">
+            {% if session.get('role') == 'super_admin' %}👑 管理员{% elif session.get('role') == 'teacher' %}👨‍🏫 教师{% else %}🧑‍🤝‍🧑 小组{% endif %}
+          </span>
+          <span class="user-name">{{ session.get('username', '') }}</span>
+        </span>
+        <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline-light">
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
+        {% else %}
+        <a href="{{ url_for('auth.login_page') }}" class="btn btn-sm btn-primary">
+          <i class="bi bi-box-arrow-in-right"></i> 登录
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</nav>
+
+<style>
+/* 子菜单支持 */
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu > .dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover > .dropdown-menu {
+  display: block;
+}
+.dropdown-submenu > a::after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #ccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+</style>
+
+<!-- Main Content -->
+<main class="main-content">
+  {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer class="site-footer text-center py-3">
+  <span>🌟 香港科技大学（广州）& 编程猫青少年AI教育联合实验室教学平台 · 让每个小朋友都能理解人工智能 🌟</span>
+</footer>
+
+<!-- AI Chat Assistant - Programming Cat -->
+<div id="maoAssistant" class="mao-assistant">
+  <div class="mao-toggle" onclick="toggleMaoChat()">
+    <img src="{{ url_for('static', filename='images/mao.png') }}" alt="编程猫" class="mao-avatar" id="maoAvatar">
+    <span class="mao-bubble" id="maoBubble">你好呀！有问题可以问我哦~</span>
+  </div>
+  <div class="mao-chat-panel" id="maoChatPanel">
+    <div class="mao-chat-header">
+      <img src="{{ url_for('static', filename='images/mao.png') }}" alt="编程猫">
+      <span>港科大（广州）& 编程猫小助手</span>
+      <button class="mao-chat-close" onclick="toggleMaoChat()">×</button>
+    </div>
+    <div class="mao-chat-messages" id="maoMessages">
+      <div class="mao-msg mao-msg-ai">
+        <img src="{{ url_for('static', filename='images/mao.png') }}" alt="编程猫">
+        <div class="mao-msg-content">你好呀！我是香港科技大学（广州）& 编程猫小助手 🤖<br>有什么关于AI的问题想问我的吗？</div>
+      </div>
+    </div>
+    <div class="mao-chat-input">
+      <input type="text" id="maoInput" placeholder="输入你的问题..." onkeypress="handleMaoInput(event)">
+      <button onclick="sendToMao()">发送</button>
+    </div>
+    <div class="mao-quick-questions">
+      <button onclick="askQuickQuestion('什么是人工智能？')">什么是人工智能？</button>
+      <button onclick="askQuickQuestion('表情识别是怎么工作的呢？')">表情识别是怎么工作的呢？</button>
+      <button onclick="askQuickQuestion('声音情绪是怎么判断的呀？')">声音情绪是怎么判断的呀？</button>
+      <button onclick="askQuickQuestion('时序预测是什么？')">时序预测是什么？</button>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+
+<!-- AI Chat Assistant Script -->
+<script>
+// 编程猫对话助手 — 已接入 /ai/ask API
+
+function toggleMaoChat() {
+  const panel = document.getElementById('maoChatPanel');
+  const bubble = document.getElementById('maoBubble');
+  panel.classList.toggle('active');
+  if (panel.classList.contains('active')) {
+    bubble.style.display = 'none';
+    loadMaoTopics();
+  } else {
+    bubble.style.display = 'block';
+  }
+}
+
+async function loadMaoTopics() {
+  const path = window.location.pathname;
+  let page = 'default';
+  if (path.includes('face')) page = 'face';
+  else if (path.includes('audio')) page = 'audio';
+  else if (path.includes('emotion')) page = 'emotion';
+  else if (path.includes('eco')) page = 'ecobottle';
+  else if (path.includes('leaderboard')) page = 'leaderboard';
+  else if (path.includes('skill')) page = 'skill';
+  try {
+    const resp = await fetch('/ai/suggest_topics?page=' + page);
+    const data = await resp.json();
+    if (data.success && data.topics) {
+      const btns = document.querySelectorAll('.mao-quick-questions button');
+      data.topics.slice(0, 4).forEach((topic, i) => {
+        if (btns[i]) btns[i].textContent = topic;
+      });
+    }
+  } catch(e) {}
+}
+
+function handleMaoInput(event) {
+  if (event.key === 'Enter') { sendToMao(); }
+}
+
+async function sendToMao() {
+  const input = document.getElementById('maoInput');
+  const message = input.value.trim();
+  if (!message) return;
+  addMaoMsg(message, 'user');
+  input.value = '';
+  const tid = 'thk-' + Date.now();
+  addMaoThinking(tid);
+  try {
+    const resp = await fetch('/ai/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: message })
+    });
+    const data = await resp.json();
+    removeMaoThinking(tid);
+    addMaoMsg(data.success ? data.answer : ('出错啦：' + (data.error || '')), 'ai');
+  } catch(e) {
+    removeMaoThinking(tid);
+    addMaoMsg('网络连接失败 🐱', 'ai');
+  }
+}
+
+function askQuickQuestion(question) {
+  const panel = document.getElementById('maoChatPanel');
+  const bubble = document.getElementById('maoBubble');
+  if (!panel.classList.contains('active')) {
+    panel.classList.add('active');
+    bubble.style.display = 'none';
+  }
+  addMaoMsg(question, 'user');
+  const tid = 'thk-' + Date.now();
+  addMaoThinking(tid);
+  fetch('/ai/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question })
+  })
+  .then(r => r.json())
+  .then(data => {
+    removeMaoThinking(tid);
+    addMaoMsg(data.success ? data.answer : '抱歉出了点小问题 🐱', 'ai');
+  })
+  .catch(() => { removeMaoThinking(tid); addMaoMsg('网络连接失败 🐱', 'ai'); });
+}
+
+function addMaoMsg(text, type) {
+  const container = document.getElementById('maoMessages');
+  const h = text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g,'<em>$1</em>')
+    .replace(/`([^`]+)`/g,'<code style="background:rgba(124,58,237,0.15);padding:1px 4px;border-radius:3px;font-size:0.85em">$1</code>')
+    .replace(/\n/g,'<br>');
+  const div = document.createElement('div');
+  div.className = 'mao-msg mao-msg-' + type;
+  div.innerHTML = '<img src="{{ url_for("static", filename="images/mao.png") }}" alt="编程猫"><div class="mao-msg-content">' + h + '</div>';
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function addMaoThinking(id) {
+  const container = document.getElementById('maoMessages');
+  const div = document.createElement('div');
+  div.className = 'mao-msg mao-msg-ai';
+  div.id = id;
+  div.innerHTML = '<img src="{{ url_for("static", filename="images/mao.png") }}" alt="编程猫"><div class="mao-msg-content"><div style="display:flex;gap:3px;align-items:center"><span style="width:6px;height:6px;background:#7C3AED;border-radius:50%;animation:mao-pulse 1s infinite"></span><span style="width:6px;height:6px;background:#7C3AED;border-radius:50%;animation:mao-pulse 1s 0.15s infinite"></span><span style="width:6px;height:6px;background:#7C3AED;border-radius:50%;animation:mao-pulse 1s 0.3s infinite"></span></div></div>';
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeMaoThinking(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+if (!document.getElementById('mao-pulse-style')) {
+  const s = document.createElement('style');
+  s.id = 'mao-pulse-style';
+  s.textContent = '@keyframes mao-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.8)}}';
+  document.head.appendChild(s);
+}
+</script>
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

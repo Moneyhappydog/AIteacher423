@@ -1,0 +1,16 @@
+{
+  "group_id": "G03",
+  "group_name": "G03",
+  "device_id": "ESP32_G03",
+  "records": [
+    {
+      "timestamp": "2026-04-22 11:09:25",
+      "temperature": 23,
+      "humidity": 11,
+      "light": 999999999,
+      "oxygen": 9999,
+      "solar_power": 9999,
+      "status": "abnormal"
+    }
+  ]
+}

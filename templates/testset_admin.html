@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试集管理 - 管理后台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f6fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .sidebar {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding-top: 20px;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 4px 12px;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+        }
+        .sidebar .nav-link i {
+            width: 24px;
+        }
+        .content-area {
+            padding: 30px;
+        }
+        .stat-card {
+            border-radius: 12px;
+            padding: 24px;
+            background: #fff;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .stat-card h6 {
+            color: #6c757d;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+        .stat-card h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 8px 0 0;
+        }
+        .card-header-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border-radius: 12px 12px 0 0;
+            padding: 16px 24px;
+        }
+        .card-custom {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .card-body-custom {
+            padding: 24px;
+            background: #fff;
+        }
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 24px;
+        }
+        .btn-primary-custom:hover {
+            background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+        }
+        .btn-success-custom {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 24px;
+        }
+        .btn-danger-custom {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 24px;
+        }
+        .data-type-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .data-type-tab {
+            padding: 12px 32px;
+            border-radius: 24px;
+            cursor: pointer;
+            border: 2px solid #e0e0e0;
+            background: #fff;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        .data-type-tab.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: #fff;
+        }
+        .group-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .group-item:hover {
+            background: #e9ecef;
+        }
+        .group-item.selected {
+            background: #e7f5ff;
+            border: 1px solid #339af0;
+        }
+        .group-item .form-check-input {
+            width: 18px;
+            height: 18px;
+        }
+        .table-custom {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .table-custom thead th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            padding: 12px 16px;
+            font-weight: 600;
+            color: #495057;
+        }
+        .table-custom tbody td {
+            padding: 12px 16px;
+            vertical-align: middle;
+        }
+        .badge-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        .badge-published {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+        .badge-draft {
+            background: #fff3cd;
+            color: #664d03;
+        }
+        .badge-group {
+            background: #e7f5ff;
+            color: #1971c2;
+        }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+        .preview-item {
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f8f9fa;
+            text-align: center;
+        }
+        .preview-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+        .preview-item audio {
+            width: 100%;
+            height: 40px;
+        }
+        .preview-item .emotion-tag {
+            padding: 6px;
+            font-size: 0.85rem;
+            background: #fff;
+            font-weight: 500;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+        .modal-preview {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .file-upload-zone {
+            border: 2px dashed #ced4da;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+        .file-upload-zone:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        .file-upload-zone.dragover {
+            border-color: #667eea;
+            background: #e7f5ff;
+        }
+        .upload-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .upload-file-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #e9ecef;
+            border-radius: 8px;
+        }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        /* 图片预览项增强样式 */
+        .preview-item-wrapper {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+        .preview-item-wrapper .preview-item {
+            cursor: pointer;
+        }
+        .preview-item-wrapper:hover .preview-overlay {
+            opacity: 1;
+        }
+        .preview-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 10;
+        }
+        .preview-overlay .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .preview-overlay .btn-icon:hover {
+            transform: scale(1.1);
+        }
+        .preview-overlay .btn-view {
+            background: rgba(255,255,255,0.9);
+            color: #333;
+        }
+        .preview-overlay .btn-delete {
+            background: rgba(220,53,69,0.9);
+            color: #fff;
+        }
+        .preview-overlay .btn-view:hover {
+            background: #fff;
+        }
+        .preview-overlay .btn-delete:hover {
+            background: #dc3545;
+        }
+        /* 大图预览模态框样式 */
+        .image-preview-modal .modal-body {
+            text-align: center;
+            background: #1a1a2e;
+            padding: 20px;
+        }
+        .image-preview-modal .preview-image {
+            max-width: 100%;
+            max-height: 75vh;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .image-preview-modal .preview-info {
+            color: #fff;
+            text-align: center;
+            margin-top: 15px;
+        }
+        .image-preview-modal .preview-info .badge {
+            font-size: 0.9rem;
+            padding: 6px 12px;
+        }
+        .image-preview-modal .preview-filename {
+            font-size: 1.1rem;
+            margin-top: 10px;
+        }
+        /* 文件选择样式 */
+        .group-expand-item {
+            background: #fff;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+        .group-expand-header {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .group-expand-header:hover {
+            background: #f8f9fa;
+        }
+        .group-expand-header .form-check-input {
+            width: 18px;
+            height: 18px;
+            margin-right: 12px;
+        }
+        .group-expand-header .group-info {
+            flex: 1;
+        }
+        .group-expand-header .group-name {
+            font-weight: 600;
+            color: #333;
+        }
+        .group-expand-header .group-count {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+        .group-expand-header .expand-icon {
+            transition: transform 0.3s;
+            color: #6c757d;
+        }
+        .group-expand-header.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+        .group-expand-content {
+            display: none;
+            padding: 0 16px 16px 46px;
+            background: #fafbfc;
+        }
+        .group-expand-content.show {
+            display: block;
+        }
+        .file-select-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .file-select-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: visible;
+            background: #fff;
+            border: 2px solid #e9ecef;
+            transition: all 0.2s;
+        }
+        .file-select-item:hover {
+            border-color: #667eea;
+        }
+        .file-select-item.selected {
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102,126,234,0.3);
+        }
+        .file-select-item .form-check-input {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            z-index: 10;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+        .file-select-item img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+        .file-select-item .file-info {
+            padding: 6px 8px;
+            font-size: 0.75rem;
+            text-align: center;
+            color: #6c757d;
+        }
+        .file-select-item .file-emotion {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            background: #e7f5ff;
+            color: #1971c2;
+        }
+        .audio-item {
+            padding: 12px;
+            text-align: center;
+            background: #f8f9fa;
+        }
+        .audio-item i {
+            font-size: 1.5rem;
+            color: #6c757d;
+            margin-bottom: 4px;
+        }
+        /* 选中文件预览样式增强 */
+        .preview-item-wrapper .form-check-input.file-checkbox {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            z-index: 10;
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+        }
+        /* 批量操作栏 */
+        .batch-action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #e7f5ff;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        .batch-action-bar .selected-info {
+            font-weight: 500;
+            color: #1971c2;
+        }
+        /* 小组内全选样式 */
+        .group-select-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .group-select-actions .btn {
+            font-size: 0.8rem;
+            padding: 4px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 侧边栏 -->
+            <div class="col-md-2 sidebar">
+                <h5 class="text-center mb-4">
+                    <i class="fas fa-robot me-2"></i>测试集管理后台
+                </h5>
+                <nav class="nav flex-column">
+                    <a class="nav-link" href="/admin/dashboard">
+                        <i class="fas fa-home me-2"></i>管理后台主页
+                    </a>
+                    <a class="nav-link" href="/export/">
+                        <i class="fas fa-download me-2"></i>数据导出
+                    </a>
+                    <a class="nav-link active" href="/testset/admin/">
+                        <i class="fas fa-database me-2"></i>测试集管理
+                    </a>
+                    <a class="nav-link" href="/">
+                        <i class="fas fa-arrow-left me-2"></i>返回首页
+                    </a>
+                </nav>
+            </div>
+
+            <!-- 主内容区 -->
+            <div class="col-md-10 content-area">
+                <h4 class="mb-4">
+                    <i class="fas fa-database me-2"></i>测试集管理
+                </h4>
+
+                <!-- 数据类型切换 -->
+                <div class="data-type-tabs">
+                    <div class="data-type-tab active" data-type="face" onclick="switchDataType('face')">
+                        <i class="fas fa-smile me-2"></i>人脸表情
+                    </div>
+                    <div class="data-type-tab" data-type="audio" onclick="switchDataType('audio')">
+                        <i class="fas fa-microphone me-2"></i>音频情绪
+                    </div>
+                </div>
+
+                <!-- 统计卡片 -->
+                <div class="row mb-4" id="statsContainer">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h6>已发布测试集</h6>
+                            <h2 id="statPublished">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h6>已发布样本</h6>
+                            <h2 id="statSamples">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h6>草稿数量</h6>
+                            <h2 id="statDrafts">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <h6>可用源数据</h6>
+                            <h2 id="statSource">0</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 切换 -->
+                <ul class="nav nav-tabs mb-4" id="mainTabs">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="tabCollectLink" data-bs-toggle="tab" href="#tabCollect">
+                            <i class="fas fa-folder-plus me-2"></i>收集数据
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="tabDraftsLink" data-bs-toggle="tab" href="#tabDrafts">
+                            <i class="fas fa-edit me-2"></i>草稿管理
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="tabPublishedLink" data-bs-toggle="tab" href="#tabPublished">
+                            <i class="fas fa-check-circle me-2"></i>已发布测试集
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="tabImportLink" data-bs-toggle="tab" href="#tabImport">
+                            <i class="fas fa-upload me-2"></i>外部导入
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Tab 1: 收集数据 -->
+                    <div class="tab-pane fade show active" id="tabCollect">
+                        <div class="card-custom">
+                            <div class="card-header-custom">
+                                <i class="fas fa-folder-plus me-2"></i>收集小组已标注数据
+                            </div>
+                            <div class="card-body-custom">
+                                <p class="text-muted mb-3">
+                                    从所有小组的已标注数据中选择数据创建测试集。
+                                    发布后，小组可以看到测试数据但无法查看标签文件。
+                                </p>
+
+                                <div class="row">
+                                    <div class="col-md-5">
+                                        <h6 class="mb-3"><i class="fas fa-users me-2"></i>选择小组数据</h6>
+                                        <div class="batch-action-bar">
+                                            <span class="selected-info">
+                                                <i class="fas fa-check-circle me-1"></i>
+                                                已选 <span id="selectedCount">0</span> 个文件
+                                            </span>
+                                        </div>
+                                        <div id="groupDataList" class="mb-3">
+                                            <div class="empty-state">
+                                                <i class="fas fa-spinner fa-spin"></i>
+                                                <p>加载中...</p>
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-outline-primary w-100 mb-2" onclick="selectAllGroups()">
+                                            <i class="fas fa-check-square me-2"></i>全选全部小组
+                                        </button>
+                                        <button class="btn btn-outline-secondary w-100" onclick="deselectAllGroups()">
+                                            <i class="fas fa-square me-2"></i>取消全选
+                                        </button>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <h6 class="mb-3"><i class="fas fa-list me-2"></i>预览选中数据</h6>
+                                        <div id="selectedPreview" class="preview-grid">
+                                            <div class="empty-state">
+                                                <p>请从左侧选择小组数据</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr class="my-4">
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-tag me-2"></i>测试集名称</label>
+                                        <input type="text" class="form-control" id="testsetName"
+                                               placeholder="例如：期末测试集v1">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-globe me-2"></i>发布选项</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="publishToGroups" checked>
+                                            <label class="form-check-label" for="publishToGroups">
+                                                发布给所有小组（小组可见数据，不可查看标签）
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 text-end">
+                                    <button class="btn btn-primary-custom" onclick="createDraft()">
+                                        <i class="fas fa-save me-2"></i>保存为草稿
+                                    </button>
+                                    <button class="btn btn-success-custom" onclick="collectAndPublish()">
+                                        <i class="fas fa-rocket me-2"></i>收集并直接发布
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: 草稿管理 -->
+                    <div class="tab-pane fade" id="tabDrafts">
+                        <div class="card-custom">
+                            <div class="card-header-custom">
+                                <i class="fas fa-edit me-2"></i>测试集草稿
+                            </div>
+                            <div class="card-body-custom">
+                                <div id="draftsList">
+                                    <div class="empty-state">
+                                        <i class="fas fa-inbox"></i>
+                                        <p>暂无草稿</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: 已发布测试集 -->
+                    <div class="tab-pane fade" id="tabPublished">
+                        <div class="card-custom">
+                            <div class="card-header-custom">
+                                <i class="fas fa-check-circle me-2"></i>已发布的测试集
+                            </div>
+                            <div class="card-body-custom">
+                                <div id="publishedList">
+                                    <div class="empty-state">
+                                        <i class="fas fa-inbox"></i>
+                                        <p>暂无已发布的测试集</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 4: 外部导入 -->
+                    <div class="tab-pane fade" id="tabImport">
+                        <div class="card-custom">
+                            <div class="card-header-custom">
+                                <i class="fas fa-upload me-2"></i>外部导入测试集
+                            </div>
+                            <div class="card-body-custom">
+                                <p class="text-muted mb-3">
+                                    从外部导入数据集作为测试集。上传的文件需要包含标签信息（从文件名解析情绪标签）。
+                                    例如：<code>G01_happy_001.jpg</code>
+                                </p>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-tag me-2"></i>测试集名称</label>
+                                        <input type="text" class="form-control" id="importName"
+                                               placeholder="例如：竞赛测试集">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label"><i class="fas fa-globe me-2"></i>发布选项</label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="importPublish" checked>
+                                            <label class="form-check-label" for="importPublish">
+                                                发布给所有小组
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="file-upload-zone mt-4" id="uploadZone"
+                                     onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-muted"></i>
+                                    <p class="mb-0">
+                                        <strong>点击或拖拽文件到此处上传</strong>
+                                    </p>
+                                    <p class="text-muted small">支持 jpg/png/wav 格式</p>
+                                    <input type="file" id="fileInput" multiple accept=".jpg,.jpeg,.png,.wav"
+                                           style="display: none" onchange="handleFileSelect(this.files)">
+                                </div>
+
+                                <div id="uploadPreview" class="upload-preview"></div>
+
+                                <div class="mt-4 text-end">
+                                    <button class="btn btn-success-custom" onclick="importExternal()">
+                                        <i class="fas fa-upload me-2"></i>导入并发布
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 预览模态框 -->
+    <div class="modal fade" id="previewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-eye me-2"></i>预览测试集
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body modal-preview" id="previewContent">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- 大图预览模态框 -->
+    <div class="modal fade image-preview-modal" id="imagePreviewModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-image me-2"></i>图片预览
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <img id="previewLargeImage" class="preview-image" src="" alt="">
+                    <div class="preview-info">
+                        <span class="badge badge-group me-2" id="previewGroupBadge"></span>
+                        <span class="badge badge-published me-2" id="previewEmotionBadge"></span>
+                        <div class="preview-filename" id="previewFilename"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-warning" id="deselectImageBtn" onclick="deselectCurrentImage()">
+                        <i class="fas fa-minus-circle me-2"></i>取消选择
+                    </button>
+                    <button type="button" class="btn btn-danger" id="deleteImageBtn" onclick="deleteCurrentImage()">
+                        <i class="fas fa-trash me-2"></i>删除此数据
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 当前数据类型
+        let currentDataType = 'face';
+        // 小组数据
+        let groupData = {};
+        // 选中的文件
+        let selectedFiles = [];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOverview();
+            loadGroupData();
+
+            // 文件拖拽
+            const uploadZone = document.getElementById('uploadZone');
+            uploadZone.addEventListener('dragover', e => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('dragover');
+            });
+            uploadZone.addEventListener('drop', e => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                handleFileSelect(e.dataTransfer.files);
+            });
+
+            // Tab 切换时刷新
+            document.querySelectorAll('a[data-bs-toggle="tab"]').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', e => {
+                    const target = e.target.getAttribute('href');
+                    if (target === '#tabDrafts') loadDrafts();
+                    if (target === '#tabPublished') loadPublished();
+                });
+            });
+        });
+
+        // 切换数据类型
+        function switchDataType(type) {
+            currentDataType = type;
+            document.querySelectorAll('.data-type-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.type === type);
+            });
+            loadOverview();
+            loadGroupData();
+        }
+
+        // 加载统计概览
+        async function loadOverview() {
+            try {
+                const resp = await fetch(`/testset/admin/overview`);
+                const data = await resp.json();
+                if (data.success) {
+                    const stats = data.data[currentDataType];
+                    document.getElementById('statPublished').textContent = stats.published_count;
+                    document.getElementById('statSamples').textContent = stats.published_samples;
+                    document.getElementById('statDrafts').textContent = stats.draft_count;
+                    document.getElementById('statSource').textContent = stats.source_total;
+                }
+            } catch (e) {
+                console.error('加载统计失败', e);
+            }
+        }
+
+        // 加载小组数据
+        async function loadGroupData() {
+            const container = document.getElementById('groupDataList');
+            container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+
+            try {
+                const resp = await fetch(`/testset/admin/group_data?type=${currentDataType}`);
+                const data = await resp.json();
+                if (data.success && Object.keys(data.groups).length > 0) {
+                    groupData = data.groups;
+                    renderGroupList();
+                } else {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>暂无小组数据</p></div>';
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="alert alert-danger">加载失败</div>';
+            }
+        }
+
+        // 渲染小组列表（展开式）
+        function renderGroupList() {
+            const container = document.getElementById('groupDataList');
+            let html = '';
+
+            for (const [groupId, info] of Object.entries(groupData)) {
+                const selectedCount = selectedFiles.filter(f => f.group_id === groupId).length;
+                const allSelected = selectedCount === info.files.length && info.files.length > 0;
+                const isExpanded = expandedGroups.includes(groupId);
+
+                html += `
+                    <div class="group-expand-item">
+                        <div class="group-expand-header ${isExpanded ? 'expanded' : ''}"
+                             onclick="toggleGroupExpand('${groupId}')">
+                            <input type="checkbox" class="form-check-input group-check"
+                                   data-group="${groupId}"
+                                   ${allSelected ? 'checked' : ''}
+                                   onclick="event.stopPropagation(); toggleGroupFilesSelection('${groupId}')">
+                            <div class="group-info">
+                                <div class="group-name">
+                                    <i class="fas fa-folder me-2"></i>${groupId}
+                                    <span class="badge bg-primary ms-2">${info.count} 个文件</span>
+                                    ${selectedCount > 0 ? `<span class="badge bg-success ms-1">已选 ${selectedCount}</span>` : ''}
+                                </div>
+                                <div class="group-count">点击展开选择具体文件</div>
+                            </div>
+                            <i class="fas fa-chevron-down expand-icon"></i>
+                        </div>
+                        <div class="group-expand-content ${isExpanded ? 'show' : ''}" id="group-content-${groupId}">
+                            <div class="group-select-actions">
+                                <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); selectAllInGroup('${groupId}')">
+                                    <i class="fas fa-check-square me-1"></i>全选
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="event.stopPropagation(); deselectAllInGroup('${groupId}')">
+                                    <i class="fas fa-square me-1"></i>取消
+                                </button>
+                            </div>
+                            <div class="file-select-grid">
+                `;
+
+                // 渲染小组内的文件
+                info.files.forEach(f => {
+                    const isSelected = selectedFiles.some(sf => sf.group_id === groupId && sf.filename === f.filename);
+                    if (currentDataType === 'face') {
+                        html += `
+                            <div class="file-select-item ${isSelected ? 'selected' : ''}" onclick="event.stopPropagation();">
+                                <input type="checkbox" class="form-check-input"
+                                       ${isSelected ? 'checked' : ''}
+                                       onchange="toggleFileSelection('${groupId}', '${f.filename}', '${f.emotion}')">
+                                <img src="/data/emotion_data/${groupId}/${f.filename}"
+                                     alt="${f.filename}"
+                                     onclick="showImagePreview('${groupId}', '${f.filename}', '${f.emotion}')">
+                                <div class="file-info">
+                                    <span class="file-emotion">${f.emotion}</span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div class="file-select-item ${isSelected ? 'selected' : ''}" onclick="event.stopPropagation();">
+                                <input type="checkbox" class="form-check-input"
+                                       ${isSelected ? 'checked' : ''}
+                                       onchange="toggleFileSelection('${groupId}', '${f.filename}', '${f.emotion}')">
+                                <div class="audio-item">
+                                    <i class="fas fa-music"></i>
+                                    <div class="file-info">
+                                        <span class="file-emotion">${f.emotion}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                html += `
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html || '<div class="empty-state"><p>暂无数据</p></div>';
+            updateSelectedCount();
+        }
+
+        // 展开的小组列表
+        let expandedGroups = [];
+
+        // 切换小组展开/折叠
+        function toggleGroupExpand(groupId) {
+            const index = expandedGroups.indexOf(groupId);
+            if (index > -1) {
+                expandedGroups.splice(index, 1);
+            } else {
+                expandedGroups.push(groupId);
+            }
+            renderGroupList();
+        }
+
+        // 切换单个文件选择
+        function toggleFileSelection(groupId, filename, emotion) {
+            const index = selectedFiles.findIndex(f => f.group_id === groupId && f.filename === filename);
+            if (index > -1) {
+                selectedFiles.splice(index, 1);
+            } else {
+                selectedFiles.push({
+                    group_id: groupId,
+                    filename: filename,
+                    emotion: emotion
+                });
+            }
+            renderGroupList();
+            updateSelectedPreview();
+        }
+
+        // 切换小组内所有文件选择
+        function toggleGroupFilesSelection(groupId) {
+            const info = groupData[groupId];
+            const existingCount = selectedFiles.filter(f => f.group_id === groupId).length;
+
+            if (existingCount > 0) {
+                // 取消选择该小组的所有文件
+                selectedFiles = selectedFiles.filter(f => f.group_id !== groupId);
+            } else {
+                // 添加该小组的所有文件
+                info.files.forEach(f => {
+                    selectedFiles.push({
+                        group_id: groupId,
+                        filename: f.filename,
+                        emotion: f.emotion
+                    });
+                });
+            }
+
+            renderGroupList();
+            updateSelectedPreview();
+        }
+
+        // 全选小组内文件
+        function selectAllInGroup(groupId) {
+            const info = groupData[groupId];
+            // 先移除该小组已选的文件
+            selectedFiles = selectedFiles.filter(f => f.group_id !== groupId);
+            // 添加所有文件
+            info.files.forEach(f => {
+                selectedFiles.push({
+                    group_id: groupId,
+                    filename: f.filename,
+                    emotion: f.emotion
+                });
+            });
+            renderGroupList();
+            updateSelectedPreview();
+        }
+
+        // 取消小组内文件选择
+        function deselectAllInGroup(groupId) {
+            selectedFiles = selectedFiles.filter(f => f.group_id !== groupId);
+            renderGroupList();
+            updateSelectedPreview();
+        }
+
+        // 更新选中数量显示
+        function updateSelectedCount() {
+            const countEl = document.getElementById('selectedCount');
+            if (countEl) {
+                countEl.textContent = selectedFiles.length;
+            }
+        }
+
+        // 全选所有小组
+        function selectAllGroups() {
+            selectedFiles = [];
+            for (const [groupId, info] of Object.entries(groupData)) {
+                info.files.forEach(f => {
+                    selectedFiles.push({
+                        group_id: groupId,
+                        filename: f.filename,
+                        emotion: f.emotion
+                    });
+                });
+            }
+            renderGroupList();
+            updateSelectedPreview();
+        }
+
+        // 取消全选
+        function deselectAllGroups() {
+            selectedFiles = [];
+            renderGroupList();
+            updateSelectedPreview();
+        }
+
+        // 更新选中预览
+        function updateSelectedPreview() {
+            const container = document.getElementById('selectedPreview');
+            let html = '';
+
+            if (selectedFiles.length > 0) {
+                // 使用 grid 布局显示选中文件
+                selectedFiles.forEach((item, index) => {
+                    const info = groupData[item.group_id]?.files.find(f => f.filename === item.filename);
+                    if (info) {
+                        const isImage = currentDataType === 'face';
+                        const uniqueId = `sel-${item.group_id.replace(/[^a-zA-Z0-9]/g, '')}-${index}`;
+                        html += `
+                            <div class="preview-item-wrapper">
+                                <input type="checkbox" class="form-check-input file-checkbox" id="${uniqueId}" checked
+                                       onchange="removeFromSelectedByIndex(${index})">
+                                <div class="preview-item" onclick="showImagePreview('${item.group_id}', '${item.filename}', '${info.emotion}')">
+                                    ${isImage
+                                        ? `<img src="/data/emotion_data/${item.group_id}/${item.filename}" alt="${item.filename}">`
+                                        : `<div class="p-3 text-center"><i class="fas fa-music fa-2x"></i></div>`
+                                    }
+                                    <div class="emotion-tag">
+                                        <span class="badge badge-group">${item.group_id}</span>
+                                        <span class="badge badge-published">${info.emotion}</span>
+                                    </div>
+                                </div>
+                                <div class="preview-overlay">
+                                    <button class="btn-icon btn-view" onclick="showImagePreview('${item.group_id}', '${item.filename}', '${info.emotion}')" title="查看大图">
+                                        <i class="fas fa-search-plus"></i>
+                                    </button>
+                                    <button class="btn-icon btn-delete" onclick="removeFromSelectedByIndex(${index})" title="移除选择">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            } else {
+                html = '<div class="empty-state"><p><i class="fas fa-hand-pointer me-2"></i>请从左侧小组中选择具体文件</p></div>';
+            }
+
+            container.innerHTML = html;
+            updateSelectedCount();
+        }
+
+        // 通过索引从已选列表中移除
+        function removeFromSelectedByIndex(index) {
+            if (index >= 0 && index < selectedFiles.length) {
+                selectedFiles.splice(index, 1);
+                renderGroupList();
+                updateSelectedPreview();
+            }
+        }
+
+        // 当前预览图片信息
+        let currentPreviewImage = null;
+
+        // 显示大图预览
+        function showImagePreview(groupId, filename, emotion) {
+            currentPreviewImage = { groupId, filename, emotion };
+            const isImage = currentDataType === 'face';
+
+            document.getElementById('previewLargeImage').src = isImage
+                ? `/data/emotion_data/${groupId}/${filename}`
+                : '';
+            document.getElementById('previewGroupBadge').textContent = groupId;
+            document.getElementById('previewEmotionBadge').textContent = emotion;
+            document.getElementById('previewFilename').textContent = filename;
+
+            new bootstrap.Modal(document.getElementById('imagePreviewModal')).show();
+        }
+
+        // 删除选中的文件（从已选列表中移除并删除真实文件）
+        async function deleteSelectedFile(index, groupId, filename) {
+            event.stopPropagation();
+            if (!confirm(`确定要删除数据 "${filename}" 吗？\n\n这将同时删除图片文件和标签记录，且不可恢复！`)) {
+                return;
+            }
+
+            try {
+                const resp = await fetch('/testset/admin/delete-sample', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        type: currentDataType,
+                        group_id: groupId,
+                        filename: filename
+                    })
+                });
+                const data = await resp.json();
+
+                if (data.success) {
+                    selectedFiles.splice(index, 1);
+                    renderGroupList();
+                    updateSelectedPreview();
+                    showToast(data.message || '数据已删除', 'success');
+                } else {
+                    showToast(data.message || '删除失败', 'danger');
+                }
+            } catch (e) {
+                showToast('删除请求失败', 'danger');
+            }
+        }
+
+        // 取消选择当前预览的图片（仅从已选列表移除，不删除文件）
+        function deselectCurrentImage() {
+            if (!currentPreviewImage) return;
+
+            const { groupId, filename } = currentPreviewImage;
+            const idx = selectedFiles.findIndex(f => f.group_id === groupId && f.filename === filename);
+            if (idx !== -1) {
+                selectedFiles.splice(idx, 1);
+                renderGroupList();
+                updateSelectedPreview();
+                showToast('已取消选择', 'info');
+            }
+            bootstrap.Modal.getInstance(document.getElementById('imagePreviewModal')).hide();
+        }
+
+        // 删除当前预览的图片数据（同时删除源文件和CSV记录）
+        async function deleteCurrentImage() {
+            if (!currentPreviewImage) return;
+
+            const { groupId, filename } = currentPreviewImage;
+
+            if (!confirm(`确定要删除数据 "${filename}" 吗？\n\n这将同时删除图片文件和标签记录，且不可恢复！`)) {
+                return;
+            }
+
+            try {
+                const resp = await fetch('/testset/admin/delete-sample', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        type: currentDataType,
+                        group_id: groupId,  // 保持字符串类型
+                        filename: filename
+                    })
+                });
+                const data = await resp.json();
+
+                if (data.success) {
+                    showToast(data.message || '数据已删除', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('imagePreviewModal')).hide();
+                    // 重新加载数据
+                    loadGroupData();
+                    // 如果是从已选列表中选择的，也需要更新
+                    const idx = selectedFiles.findIndex(f => f.group_id === groupId && f.filename === filename);
+                    if (idx !== -1) {
+                        selectedFiles.splice(idx, 1);
+                        updateSelectedPreview();
+                    }
+                } else {
+                    showToast(data.message || '删除失败', 'danger');
+                }
+            } catch (e) {
+                showToast('删除请求失败', 'danger');
+            }
+        }
+
+        // 创建草稿
+        async function createDraft() {
+            const name = document.getElementById('testsetName').value || `测试集_${currentDataType}`;
+            const publishToGroups = document.getElementById('publishToGroups').checked;
+
+            if (selectedFiles.length === 0) {
+                showToast('请先选择要包含的数据', 'warning');
+                return;
+            }
+
+            try {
+                const resp = await fetch('/testset/admin/draft/create', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        type: currentDataType,
+                        name: name,
+                        select_all: false,
+                        selected_files: selectedFiles
+                    })
+                });
+
+                let data;
+                const contentType = resp.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    data = await resp.json();
+                } else {
+                    data = { success: false, message: '服务器返回格式错误' };
+                }
+
+                console.log('创建草稿响应:', data, '状态码:', resp.status);
+                if (data.success) {
+                    showToast(data.message || '草稿创建成功！', 'success');
+                    // 切换到草稿标签
+                    const draftTabLink = document.getElementById('tabDraftsLink');
+                    if (draftTabLink) {
+                        const tabTrigger = new bootstrap.Tab(draftTabLink);
+                        tabTrigger.show();
+                    }
+                    loadDrafts();
+                } else {
+                    showToast(data.message || '创建失败', 'danger');
+                }
+            } catch (e) {
+                console.error('创建草稿出错:', e);
+                showToast('创建失败: ' + e.message, 'danger');
+            }
+        }
+
+        // 收集并直接发布
+        async function collectAndPublish() {
+            const name = document.getElementById('testsetName').value || `测试集_${currentDataType}`;
+            const publishToGroups = document.getElementById('publishToGroups').checked;
+
+            if (selectedFiles.length === 0) {
+                showToast('请先选择要包含的数据', 'warning');
+                return;
+            }
+
+            // 先创建草稿
+            try {
+                const createResp = await fetch('/testset/admin/draft/create', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        type: currentDataType,
+                        name: name,
+                        select_all: false,
+                        selected_files: selectedFiles
+                    })
+                });
+
+                let createData;
+                const createContentType = createResp.headers.get('content-type');
+                if (createContentType && createContentType.includes('application/json')) {
+                    createData = await createResp.json();
+                } else {
+                    createData = { success: false, message: '服务器返回格式错误' };
+                }
+
+                console.log('创建草稿响应:', createData, '状态码:', createResp.status);
+                if (!createData.success) {
+                    showToast(createData.message || '创建失败', 'danger');
+                    return;
+                }
+
+                // 发布草稿
+                const publishResp = await fetch('/testset/admin/publish', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        type: currentDataType,
+                        draft_id: createData.draft_id,
+                        name: name,
+                        publish_to_groups: publishToGroups
+                    })
+                });
+
+                let publishData;
+                const publishContentType = publishResp.headers.get('content-type');
+                if (publishContentType && publishContentType.includes('application/json')) {
+                    publishData = await publishResp.json();
+                } else {
+                    publishData = { success: false, message: '服务器返回格式错误' };
+                }
+
+                console.log('发布响应:', publishData, '状态码:', publishResp.status);
+                if (publishData.success) {
+                    showToast('发布成功！小组现在可以使用此测试集', 'success');
+                    selectedFiles = [];
+                    loadGroupData();
+                    loadOverview();
+                    // 切换到已发布标签
+                    const publishedTabLink = document.getElementById('tabPublishedLink');
+                    if (publishedTabLink) {
+                        const tabTrigger = new bootstrap.Tab(publishedTabLink);
+                        tabTrigger.show();
+                    }
+                    loadPublished();
+                } else {
+                    showToast(publishData.message || '发布失败', 'danger');
+                }
+            } catch (e) {
+                console.error('发布出错:', e);
+                showToast('操作失败', 'danger');
+            }
+        }
+
+        // 加载草稿列表
+        async function loadDrafts() {
+            const container = document.getElementById('draftsList');
+            container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+
+            try {
+                const resp = await fetch(`/testset/admin/drafts?type=${currentDataType}`);
+                const data = await resp.json();
+                if (data.success && data.drafts.length > 0) {
+                    let html = '<div class="table-responsive"><table class="table table-custom">';
+                    html += `
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>文件数</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                    `;
+                    data.drafts.forEach(draft => {
+                        html += `
+                            <tr>
+                                <td>${draft.name}</td>
+                                <td>${draft.total_files}</td>
+                                <td>${new Date(draft.created_at).toLocaleString()}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="previewDraft('${draft.draft_id}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-success me-1" onclick="publishDraft('${draft.draft_id}', '${draft.name}')">
+                                        <i class="fas fa-rocket"></i> 发布
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info me-1" onclick="exportDraft('${draft.draft_id}')">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDraft('${draft.draft_id}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    html += '</tbody></table></div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>暂无草稿</p></div>';
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="alert alert-danger">加载失败</div>';
+            }
+        }
+
+        // 预览草稿
+        async function previewDraft(draftId) {
+            try {
+                const resp = await fetch(`/testset/admin/draft/${draftId}?type=${currentDataType}`);
+                const data = await resp.json();
+                if (data.success) {
+                    let html = '<div class="preview-grid">';
+                    data.files.slice(0, 12).forEach(file => {
+                        const isImage = currentDataType === 'face';
+                        const emotion = file.original_name ? extractEmotion(file.original_name) : 'unknown';
+                        html += `
+                            <div class="preview-item">
+                                ${isImage
+                                    ? `<img src="/testset/admin/file/${currentDataType}/${draftId}/${file.filename}" alt="${file.filename}">`
+                                    : `<div class="p-3"><i class="fas fa-music fa-2x"></i></div>`
+                                }
+                                <div class="emotion-tag">
+                                    <span class="badge badge-group">${file.group_id}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    document.getElementById('previewContent').innerHTML = html;
+                    new bootstrap.Modal(document.getElementById('previewModal')).show();
+                }
+            } catch (e) {
+                showToast('预览失败', 'danger');
+            }
+        }
+
+        // 发布草稿
+        async function publishDraft(draftId, name) {
+            const publishToGroups = confirm('是否将此测试集发布给所有小组？\n\n点击"确定"发布给小组，小组可以看到数据但无法查看标签。\n点击"取消"则仅管理员可见。');
+            const testsetName = prompt('请输入测试集名称：', name || `测试集_${currentDataType}`);
+
+            if (!testsetName) return;
+
+            try {
+                const resp = await fetch('/testset/admin/publish', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        type: currentDataType,
+                        draft_id: draftId,
+                        name: testsetName,
+                        publish_to_groups: publishToGroups
+                    })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    showToast('发布成功！', 'success');
+                    loadDrafts();
+                    loadPublished();
+                    loadOverview();
+                } else {
+                    showToast(data.message || '发布失败', 'danger');
+                }
+            } catch (e) {
+                showToast('发布失败', 'danger');
+            }
+        }
+
+        // 导出草稿
+        function exportDraft(draftId) {
+            window.location.href = `/testset/admin/draft/${draftId}/export?type=${currentDataType}`;
+        }
+
+        // 删除草稿
+        async function deleteDraft(draftId) {
+            if (!confirm('确定要删除这个草稿吗？')) return;
+
+            try {
+                const resp = await fetch(`/testset/admin/draft/${draftId}?type=${currentDataType}`, {
+                    method: 'DELETE'
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    showToast('草稿已删除', 'success');
+                    loadDrafts();
+                    loadOverview();
+                } else {
+                    showToast(data.message || '删除失败', 'danger');
+                }
+            } catch (e) {
+                showToast('删除失败', 'danger');
+            }
+        }
+
+        // 加载已发布测试集
+        async function loadPublished() {
+            const container = document.getElementById('publishedList');
+            container.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+
+            try {
+                const resp = await fetch(`/testset/admin/published?type=${currentDataType}`);
+                const data = await resp.json();
+                if (data.success && data.testsets.length > 0) {
+                    let html = '<div class="table-responsive"><table class="table table-custom">';
+                    html += `
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>样本数</th>
+                                <th>发布状态</th>
+                                <th>发布时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                    `;
+                    data.testsets.forEach(testset => {
+                        html += `
+                            <tr>
+                                <td>${testset.name}</td>
+                                <td>${testset.total_samples}</td>
+                                <td>
+                                    <span class="badge ${testset.publish_to_groups ? 'badge-published' : 'badge-draft'}">
+                                        ${testset.publish_to_groups ? '已发布给小组' : '仅管理员'}
+                                    </span>
+                                </td>
+                                <td>${new Date(testset.published_at).toLocaleString()}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary me-1" onclick="previewTestset('${testset.testset_id}')">
+                                        <i class="fas fa-eye"></i> 预览
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info me-1" onclick="exportTestset('${testset.testset_id}')">
+                                        <i class="fas fa-download"></i> 导出
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTestset('${testset.testset_id}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    html += '</tbody></table></div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>暂无已发布的测试集</p></div>';
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="alert alert-danger">加载失败</div>';
+            }
+        }
+
+        // 预览测试集
+        async function previewTestset(testsetId) {
+            try {
+                const resp = await fetch(`/testset/admin/testset/${testsetId}/preview?type=${currentDataType}&count=12`);
+                const data = await resp.json();
+                if (data.success) {
+                    let html = '<div class="preview-grid">';
+                    data.samples.forEach(sample => {
+                        const isImage = currentDataType === 'face';
+                        html += `
+                            <div class="preview-item">
+                                ${isImage
+                                    ? `<img src="/testset/admin/file/${currentDataType}/${testsetId}/${sample.filename}" alt="${sample.filename}">`
+                                    : `<div class="p-3"><i class="fas fa-music fa-2x"></i></div>`
+                                }
+                                <div class="emotion-tag">
+                                    <span class="badge badge-published">${sample.emotion || 'unknown'}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    html += '<div class="mt-3 text-center text-muted">';
+                    html += '<small>标签文件(test_labels.csv)仅管理员可见，小组无法查看</small>';
+                    html += '</div>';
+                    document.getElementById('previewContent').innerHTML = html;
+                    new bootstrap.Modal(document.getElementById('previewModal')).show();
+                }
+            } catch (e) {
+                showToast('预览失败', 'danger');
+            }
+        }
+
+        // 导出测试集
+        function exportTestset(testsetId) {
+            window.location.href = `/testset/admin/testset/${testsetId}/export?type=${currentDataType}`;
+        }
+
+        // 删除测试集
+        async function deleteTestset(testsetId) {
+            if (!confirm('确定要删除这个测试集吗？此操作不可恢复！')) return;
+
+            try {
+                const resp = await fetch(`/testset/admin/testset/${testsetId}?type=${currentDataType}`, {
+                    method: 'DELETE'
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    showToast('测试集已删除', 'success');
+                    loadPublished();
+                    loadOverview();
+                } else {
+                    showToast(data.message || '删除失败', 'danger');
+                }
+            } catch (e) {
+                showToast('删除失败', 'danger');
+            }
+        }
+
+        // 处理文件选择
+        let uploadedFiles = [];
+        function handleFileSelect(files) {
+            uploadedFiles = Array.from(files);
+            const container = document.getElementById('uploadPreview');
+            let html = '';
+            uploadedFiles.forEach((file, i) => {
+                html += `
+                    <div class="upload-file-item">
+                        <i class="fas fa-file"></i>
+                        <span>${file.name}</span>
+                        <button type="button" class="btn-close btn-sm" onclick="removeUploadFile(${i})"></button>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function removeUploadFile(index) {
+            uploadedFiles.splice(index, 1);
+            handleFileSelect(uploadedFiles);
+        }
+
+        // 导入外部数据
+        async function importExternal() {
+            const name = document.getElementById('importName').value || `外部测试集_${currentDataType}`;
+            const publishToGroups = document.getElementById('importPublish').checked;
+
+            if (uploadedFiles.length === 0) {
+                showToast('请先上传文件', 'warning');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('type', currentDataType);
+            formData.append('name', name);
+            formData.append('publish_to_groups', publishToGroups);
+            uploadedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+
+            try {
+                const resp = await fetch('/testset/admin/import', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    showToast('导入成功！', 'success');
+                    uploadedFiles = [];
+                    document.getElementById('uploadPreview').innerHTML = '';
+                    document.getElementById('importName').value = '';
+                    loadPublished();
+                    loadOverview();
+                } else {
+                    showToast(data.message || '导入失败', 'danger');
+                }
+            } catch (e) {
+                showToast('导入失败', 'danger');
+            }
+        }
+
+        // 从文件名提取情绪标签
+        function extractEmotion(filename) {
+            const emotions = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral',
+                             'anger', 'fear', 'happy', 'neutral', 'sad', 'surprise'];
+            for (const e of emotions) {
+                if (filename.toLowerCase().includes(e)) {
+                    return e;
+                }
+            }
+            return 'unknown';
+        }
+
+        // 显示 Toast
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const id = 'toast-' + Date.now();
+            const colors = {
+                success: 'bg-success',
+                danger: 'bg-danger',
+                warning: 'bg-warning text-dark',
+                info: 'bg-info'
+            };
+            container.innerHTML += `
+                <div id="${id}" class="toast align-items-center text-white ${colors[type] || 'bg-info'}" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            const toastEl = document.getElementById(id);
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+            toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+        }
+    </script>
+</body>
+</html>

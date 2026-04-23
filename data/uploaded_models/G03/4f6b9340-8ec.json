@@ -1,0 +1,19 @@
+{
+  "model_id": "4f6b9340-8ec",
+  "group_id": "G03",
+  "course": "audio",
+  "model_name": "audio_cnn_model",
+  "description": "",
+  "filename": "4f6b9340-8ec.h5",
+  "original_filename": "audio_cnn_model.h5",
+  "file_path": "G03/4f6b9340-8ec.h5",
+  "file_size": 2864152,
+  "file_hash": "83513bda88cf3c969c52ce22581c807f",
+  "framework": "tensorflow",
+  "file_ext": ".h5",
+  "uploaded_at": "2026-04-22T13:55:44.380079",
+  "is_active": true,
+  "accuracy": 0.11587982832618025,
+  "eval_count": 1,
+  "last_eval_at": "2026-04-22T13:56:11.138333"
+}

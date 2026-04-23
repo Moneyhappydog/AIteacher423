@@ -1,0 +1,673 @@
+{% extends "base.html" %}
+{% block title %}生态瓶预测 - 模型训练{% endblock %}
+
+{% block extra_head %}
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+<style>
+  .sensor-card { border-radius: 20px; padding: 1.2rem; color: white; }
+  .sensor-value { font-size: 2.4rem; font-weight: 800; }
+  .sensor-unit { font-size: 0.9rem; opacity: 0.85; }
+  input[type=range] { accent-color: var(--primary); width: 100%; }
+  .data-table th { background: var(--primary); color: white; }
+  .chart-container { position: relative; height: 320px; }
+  .add-btn { width: 100%; }
+  .trend-analysis { border-radius: 16px; padding: 1rem 1.5rem; margin-top: 0.8rem; }
+  .trend-light { background: linear-gradient(135deg, #fff9c4, #fffde7); border-left: 4px solid #FFD166; }
+  .trend-temp   { background: linear-gradient(135deg, #fce4ec, #fff5f5); border-left: 4px solid #FF6B6B; }
+  .trend-bat    { background: linear-gradient(135deg, #e8f5e9, #f1f8e9); border-left: 4px solid #6BCB77; }
+
+  /* 训练相关样式 */
+  .train-panel { background: linear-gradient(135deg, #f5f3ff, #eef2ff); border-radius: 16px; padding: 1.5rem; }
+  .train-option { background: white; border: 2px solid #e0e0e0; border-radius: 12px; padding: 1rem; cursor: pointer; transition: all 0.2s; margin-bottom: 0.5rem; }
+  .train-option:hover { border-color: #7C3AED; }
+  .train-option.active { border-color: #7C3AED; background: #f5f3ff; }
+  .train-metric { display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0; }
+  .metric-label { font-size: 0.85rem; color: #666; min-width: 60px; }
+  .metric-bar { flex: 1; height: 8px; background: #e0e0e0; border-radius: 4px; overflow: hidden; }
+  .metric-value { height: 100%; background: linear-gradient(90deg, #7C3AED, #EC4899); transition: width 0.5s; }
+  .metric-text { font-size: 0.8rem; color: #7C3AED; font-weight: 600; min-width: 50px; text-align: right; }
+  .loss-chart-container { height: 200px; }
+  .analysis-card { background: white; border-radius: 12px; padding: 1rem; margin: 0.5rem 0; }
+  .analysis-title { font-weight: 700; color: #7C3AED; margin-bottom: 0.5rem; }
+  .analysis-content { font-size: 0.9rem; color: #333; line-height: 1.6; }
+  .warning-line-control { position: absolute; width: 100%; height: 2px; background: red; cursor: ns-resize; }
+  .sensor-checkbox { display: flex; align-items: center; gap: 0.5rem; margin: 0.3rem 0; }
+  .sensor-checkbox input { width: 18px; height: 18px; }
+
+  /* 标签页样式 */
+  .nav-pills .nav-link {
+    border-radius: 50px;
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
+    color: #666;
+  }
+  .nav-pills .nav-link.active {
+    background: linear-gradient(135deg, #7C3AED, #EC4899);
+    color: white;
+  }
+
+  /* 采集Tab样式 */
+  .quick-btn-eco { border-radius: 12px; padding: 0.5rem 1rem; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .quick-btn-eco:hover { transform: scale(1.05); }
+  .mini-chart-container { height: 60px; }
+
+  /* 探索Tab样式 */
+  .correlation-badge { display: inline-block; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+  .corr-strong-pos { background: #FEE2E2; color: #DC2626; }
+  .corr-strong-neg { background: #DBEAFE; color: #2563EB; }
+  .corr-medium { background: #FEF3C7; color: #D97706; }
+  .corr-weak { background: #E0E0E0; color: #666; }
+
+  /* 控制Tab样式 */
+  .control-score-card { border-radius: 20px; padding: 1.5rem; color: white; text-align: center; }
+  .control-btn-big { width: 70px; height: 70px; border-radius: 50%; border: none; font-size: 1.5rem; cursor: pointer; transition: all 0.2s; }
+  .control-btn-big:hover { transform: scale(1.1); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+  <div class="page-header-icon">🌿</div>
+  <h1 class="page-title">生态瓶智能预测站</h1>
+  <p class="page-subtitle">从数据采集到AI预测，再到智能闭环控制，探索完整的学习之旅！</p>
+</div>
+
+<div class="container pb-5">
+  <!-- 自定义模型选择器 -->
+  <div class="model-selector" id="modelSelector">
+    <div class="model-selector-label">
+      <i class="bi bi-cpu"></i> 选择 AI 预测模型
+      <span style="margin-left: auto; font-weight: 400; color: #64748b; font-size: 0.7rem;">切换模型实时生效</span>
+    </div>
+    <select id="modelSelect" onchange="switchModel()">
+      <option value="">加载中...</option>
+    </select>
+    <div class="model-info" id="modelInfo">
+      <span class="badge">加载中</span>
+    </div>
+  </div>
+
+  <!-- 5标签页 -->
+  <ul class="nav nav-pills mb-4" id="mainTabs">
+    <li class="nav-item">
+      <button class="nav-link active" onclick="showTab('collect')">📊 数据采集</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" onclick="showTab('explore')">🔍 数据探索</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" onclick="showTab('train')">🧠 模型训练</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" onclick="showTab('control')">🎮 智能控制</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link" onclick="showTab('report')">📋 实验报告</button>
+    </li>
+  </ul>
+
+  <div id="ecoMsg" class="alert mb-3 d-none" role="alert" style="border-radius:12px;border:none;"></div>
+
+  <!-- ====== Tab1: 数据采集 ====== -->
+  <div id="tab-collect">
+    <!-- 5通道仪表 -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-2">
+        <div class="sensor-card" style="background:linear-gradient(135deg,#FF6B6B,#e03e3e)">
+          <div style="font-size:1.5rem">🌡️</div>
+          <div class="sensor-value" id="dispTemp">25.0</div>
+          <div class="sensor-unit">°C</div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="sensor-card" style="background:linear-gradient(135deg,#60A5FA,#3B82F6)">
+          <div style="font-size:1.5rem">💧</div>
+          <div class="sensor-value" id="dispHumid">65</div>
+          <div class="sensor-unit">%</div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="sensor-card" style="background:linear-gradient(135deg,#FFD166,#f4a823)">
+          <div style="font-size:1.5rem">☀️</div>
+          <div class="sensor-value" id="dispLight">120</div>
+          <div class="sensor-unit">lux</div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="sensor-card" style="background:linear-gradient(135deg,#6BCB77,#4aa054)">
+          <div style="font-size:1.5rem">🌬️</div>
+          <div class="sensor-value" id="dispOxygen">20.5</div>
+          <div class="sensor-unit">%</div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="sensor-card" style="background:linear-gradient(135deg,#A78BFA,#7C3AED)">
+          <div style="font-size:1.5rem">🔋</div>
+          <div class="sensor-value" id="dispPower">0.0</div>
+          <div class="sensor-unit">mW</div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="sensor-card" style="background:linear-gradient(135deg,#F472B6,#EC4899)">
+          <div style="font-size:1.5rem">📊</div>
+          <div class="sensor-value" id="dispStatus" style="font-size:1.8rem">正常</div>
+          <div class="sensor-unit">状态</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 快捷操作 + 手动输入 -->
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="content-card">
+          <div class="content-card-header"><i class="bi bi-lightning-fill"></i> 快捷模拟操作</div>
+          <div class="row g-2 mt-2">
+            <div class="col-4"><button class="quick-btn-eco btn-warning w-100" onclick="ecoQuickAction('light_on')">💡 开灯</button></div>
+            <div class="col-4"><button class="quick-btn-eco btn-dark w-100" onclick="ecoQuickAction('light_off')">🌑 遮光</button></div>
+            <div class="col-4"><button class="quick-btn-eco btn-info w-100" onclick="ecoQuickAction('fan')">💨 风扇</button></div>
+            <div class="col-4"><button class="quick-btn-eco btn-primary w-100" onclick="ecoQuickAction('heat')">🔥 加热</button></div>
+            <div class="col-4"><button class="quick-btn-eco btn-success w-100" onclick="ecoQuickAction('humid')">💧 加湿</button></div>
+            <div class="col-4"><button class="quick-btn-eco btn-secondary w-100" onclick="ecoQuickAction('solar')">☀️ 晒太阳</button></div>
+          </div>
+          <hr>
+          <div class="d-flex gap-2">
+            <button class="btn-fun btn-green flex-grow-1" onclick="ecoAddData()">
+              <i class="bi bi-plus-circle-fill"></i> 添加数据点
+            </button>
+            <button class="btn-fun btn-outline" onclick="ecoClear()">🗑️</button>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="content-card">
+          <div class="content-card-header"><i class="bi bi-sliders"></i> 手动精确输入</div>
+          <div class="row g-2 mt-2">
+            <div class="col-6">
+              <label class="form-label small">🌡️ 温度 (°C)</label>
+              <input type="number" class="form-control form-control-sm" id="ecoInputTemp" value="25" min="-10" max="60" step="0.5">
+            </div>
+            <div class="col-6">
+              <label class="form-label small">💧 湿度 (%)</label>
+              <input type="number" class="form-control form-control-sm" id="ecoInputHumid" value="65" min="0" max="100">
+            </div>
+            <div class="col-6">
+              <label class="form-label small">☀️ 光照 (lux)</label>
+              <input type="number" class="form-control form-control-sm" id="ecoInputLight" value="120" min="0" max="2000">
+            </div>
+            <div class="col-6">
+              <label class="form-label small">🌬️ 氧气 (%)</label>
+              <input type="number" class="form-control form-control-sm" id="ecoInputOxygen" value="21" min="0" max="100" step="0.1">
+            </div>
+            <div class="col-6">
+              <label class="form-label small">🔋 发电 (mW)</label>
+              <input type="number" class="form-control form-control-sm" id="ecoInputPower" value="0" min="0" max="500" step="0.1">
+            </div>
+            <div class="col-12">
+              <button class="btn-fun btn-purple w-100" onclick="ecoApplyManual()">
+                <i class="bi bi-check-circle"></i> 应用数值
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="content-card">
+          <div class="content-card-header"><i class="bi bi-upload"></i> CSV导入</div>
+          <div class="mt-2">
+            <div class="alert-cute mb-2 py-2" style="background:#F5F3FF;border-left:4px solid #7C3AED">
+              <div class="small fw-bold mb-1"><i class="bi bi-file-earmark-spreadsheet"></i> 模版文件下载</div>
+              <p class="small text-muted mb-2 mb-md-1">先下载模版，按表头与示例行格式填写；时间建议 <code>YYYY-MM-DD HH:MM:SS</code>，数值均为数字，不要带单位。</p>
+              <a href="{{ url_for('static', filename='csv/eco_sensor_template.csv') }}"
+                 class="btn-fun btn-sm btn-purple w-100"
+                 download="生态瓶传感器数据导入模板.csv">
+                <i class="bi bi-download"></i> 下载 CSV 模版（含示例）
+              </a>
+            </div>
+            <input type="file" class="form-control mb-2" id="ecoCsvFile" accept=".csv">
+            <button class="btn-fun btn-outline w-100 mb-2" onclick="ecoImportCsv()">
+              <i class="bi bi-file-arrow-up"></i> 导入CSV
+            </button>
+            <div class="small text-muted">必填表头（顺序一致）: <code>timestamp,temperature,humidity,light,oxygen,solar_power</code></div>
+            <hr>
+            <div class="d-flex justify-content-between">
+              <button class="btn-fun btn-sm btn-outline" onclick="ecoExportCsv()">
+                <i class="bi bi-download"></i> 导出
+              </button>
+              <span class="badge bg-primary" id="ecoRecordCount">0条</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="content-card mt-4">
+      <div class="content-card-header">
+        <i class="bi bi-table"></i> 数据记录板
+        <button class="btn-fun btn-small btn-outline ms-2" onclick="ecoClearTable()">🗑️ 清空</button>
+      </div>
+      <div style="max-height:200px;overflow-y:auto">
+        <table class="table table-sm data-table mb-0">
+          <thead>
+            <tr>
+              <th>时间</th><th>🌡️ 温度</th><th>💧 湿度</th><th>☀️ 光照</th><th>🌬️ 氧气</th><th>🔋 发电</th><th>状态</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="ecoTableBody">
+            <tr><td colspan="8" class="text-center text-muted py-3">还没有数据，快添加吧！🌱</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Tab2: 数据探索 ====== -->
+  <div id="tab-explore" style="display:none">
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="content-card">
+          <div class="content-card-header"><i class="bi bi-graph-up"></i> 多通道趋势图</div>
+          <canvas id="exploreChart" style="max-height:300px"></canvas>
+          <div class="mt-3 text-center">
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-primary" onclick="showExploreChannel('temperature')">🌡️ 温度</button>
+              <button class="btn btn-sm btn-outline-primary" onclick="showExploreChannel('light')">☀️ 光照</button>
+              <button class="btn btn-sm btn-outline-primary" onclick="showExploreChannel('humidity')">💧 湿度</button>
+              <button class="btn btn-sm btn-outline-primary" onclick="showExploreChannel('oxygen')">🌬️ 氧气</button>
+              <button class="btn btn-sm btn-outline-primary" onclick="showExploreChannel('solar_power')">🔋 发电</button>
+              <button class="btn btn-sm btn-outline-primary" onclick="showExploreChannel('all')">📊 全部</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="content-card">
+          <div class="content-card-header"><i class="bi bi-lightbulb"></i> AI规律发现</div>
+          <div id="exploreInsights" class="mt-3">
+            <p class="text-muted text-center small">采集至少5条数据后，点击下方按钮获取分析</p>
+          </div>
+          <button class="btn-fun btn-purple w-100 mt-2" onclick="runExploreAnalysis()">
+            <i class="bi bi-stars"></i> AI探索分析
+          </button>
+          <button class="btn-fun btn-outline w-100 mt-2" onclick="runCorrelationAnalysis()">
+            <i class="bi bi-diagram-3"></i> 相关性分析
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- 相关性分析结果 -->
+    <div class="content-card mt-4" id="correlationResults" style="display:none">
+      <div class="content-card-header"><i class="bi bi-diagram-3"></i> 相关性分析结果</div>
+      <div class="row g-3 mt-2" id="corrCards"></div>
+    </div>
+
+    <!-- AI 预测分析 -->
+    <div class="content-card mt-4">
+      <div class="content-card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-graph-up-arrow"></i> AI 时序预测</span>
+        <button class="btn-fun btn-purple" id="runPredictBtn" onclick="runPrediction()">
+          <i class="bi bi-lightning-charge"></i> 开始预测
+        </button>
+      </div>
+      <!-- 加载指示器 -->
+      <div id="loadingSpinner" class="text-center py-3 d-none">
+        <div class="spinner-border text-primary" role="status"></div>
+        <span class="ms-2 text-muted">正在预测，请稍候...</span>
+      </div>
+      <!-- 预测结果 -->
+      <div id="chartsSection" style="display:none">
+        <!-- 通道切换标签 -->
+        <ul class="nav nav-tabs mt-3" id="chartTabs">
+          <li class="nav-item"><button class="nav-link active" onclick="showChart('temperature')">🌡️ 温度</button></li>
+          <li class="nav-item"><button class="nav-link" onclick="showChart('humidity')">💧 湿度</button></li>
+          <li class="nav-item"><button class="nav-link" onclick="showChart('light')">☀️ 光照</button></li>
+          <li class="nav-item"><button class="nav-link" onclick="showChart('oxygen')">🌬️ 氧气</button></li>
+          <li class="nav-item"><button class="nav-link" onclick="showChart('solar_power')">🔋 发电</button></li>
+        </ul>
+        <!-- 趋势分析提示 -->
+        <div id="trendAnalysis" class="mt-3"></div>
+        <!-- 预测图表 -->
+        <div class="chart-container mt-3" style="position:relative;height:320px">
+          <canvas id="predChart"></canvas>
+        </div>
+      </div>
+      <!-- 无数据时提示 -->
+      <div id="predictEmptyHint" class="text-center text-muted py-4">
+        <i class="bi bi-bar-chart" style="font-size:2rem"></i>
+        <p class="mb-1 mt-2">还没有预测数据</p>
+        <p class="small">先在「数据采集」添加数据，再点击「开始预测」</p>
+      </div>
+    </div>
+
+    <!-- 预测练习：用历史光照序列做「下一刻」估测，与模型训练无关的课堂小测 -->
+    <div class="content-card mt-4">
+      <div class="content-card-header"><i class="bi bi-question-circle"></i> 预测练习</div>
+      <p class="small text-muted px-1 mb-2">根据左侧曲线前 10 个时刻的光照，猜第 11 个时刻的光照（lux）。数据来自你已采集的表格；点「下一题」会换一段连续窗口，最多可练多组。</p>
+      <div id="practiceHint" class="alert-cute text-center py-3" style="background:#FFF7ED;border-left:4px solid #F59E0B">
+        <div class="mb-1" style="font-size:1.5rem">📊</div>
+        <strong>数据不够！先回「数据采集」收集至少 11 条记录再来挑战吧～</strong>
+        <div class="small text-muted mt-1">每一条记录就是一个小时间点的数据，积累越多，练习窗口也越多哦！🌱</div>
+      </div>
+      <div class="row g-3 mt-2">
+        <div class="col-md-6">
+          <div class="alert-cute" style="background:#EFF6FF">
+            <strong id="practiceLeftTitle">📈 前 10 点 → 猜第 11 点</strong>
+            <div class="mt-2" style="height:160px">
+              <canvas id="practiceChart" style="width:100%;height:100%;display:block"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="alert-cute" style="background:#F0FDF4">
+            <strong>你的预测</strong>
+            <div class="input-group mt-2">
+              <input type="number" class="form-control" id="practiceGuess" placeholder="输入预测值(lux)">
+              <button class="btn-fun btn-green" onclick="checkPrediction()">提交预测</button>
+            </div>
+            <div id="practiceResult" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Tab3: 模型训练（保持原有内容） ====== -->
+  <div id="tab-train" style="display:none">
+    <div class="train-panel">
+      <h4 class="mb-4"><i class="bi bi-cpu"></i> 模型训练配置</h4>
+      <div class="row g-4">
+        <div class="col-md-6">
+          <h5 class="mb-3">🔧 选择模型</h5>
+          <div class="train-option active" data-value="polynomial" onclick="selectModel('polynomial')">
+            <strong>📈 多项式回归</strong>
+            <p class="mb-0 text-muted small">简单快速，适合初学者理解预测原理</p>
+          </div>
+          <div class="train-option" data-value="arima" onclick="selectModel('arima')">
+            <strong>📊 ARIMA</strong>
+            <p class="mb-0 text-muted small">经典时序分析，考虑数据自相关性</p>
+          </div>
+          <div class="train-option" data-value="lightgbm" onclick="selectModel('lightgbm')">
+            <strong>🌲 LightGBM</strong>
+            <p class="mb-0 text-muted small">梯度提升树，预测效果更好</p>
+          </div>
+          <div class="train-option" data-value="prophet" onclick="selectModel('prophet')">
+            <strong>📅 Prophet</strong>
+            <p class="mb-0 text-muted small">时序趋势拟合，适合带时间戳的数据</p>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <h5 class="mb-3">🧹 数据预处理</h5>
+          <select id="preprocessMethod" class="form-select mb-3">
+            <option value="none">不处理</option>
+            <option value="mean">均值填充</option>
+            <option value="median">中位数填充</option>
+            <option value="interpolate">插值填充</option>
+            <option value="outlier_clip">异常值裁剪 (3σ)</option>
+          </select>
+
+          <h5 class="mb-3">⚙️ 超参数</h5>
+          <div class="mb-3">
+            <label class="form-label">预测步长: <span id="predStepVal">12</span> 步</label>
+            <input type="range" id="predStepSlider" min="1" max="24" value="12" oninput="updatePredStep(this.value)">
+          </div>
+          <div class="mb-3" id="degreeOption">
+            <label class="form-label">多项式阶数: <span id="polyDegreeVal">2</span></label>
+            <input type="range" id="polyDegree" min="1" max="3" value="2" oninput="updatePolyDegree(this.value)">
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <button id="trainBtn" class="btn-fun btn-purple btn-lg" onclick="try { runTraining().catch(e => { alert('训练出错: ' + e.message); }); } catch(e) { alert('按钮出错: ' + e.message); }">
+          <i class="bi bi-play-fill"></i> 开始训练
+        </button>
+      </div>
+    </div>
+
+    <!-- 训练结果 -->
+    <div id="trainResult" class="mt-4" style="display:none">
+      <div class="content-card">
+        <div class="content-card-header"><i class="bi bi-graph-up-arrow"></i> 训练结果</div>
+        <div class="row g-4">
+          <div class="col-md-6">
+            <h5 class="mb-3">📉 Loss 曲线</h5>
+            <div class="loss-chart-container">
+              <canvas id="lossChart"></canvas>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <h5 class="mb-3">📊 模型评估指标</h5>
+            <div id="metricsDisplay"></div>
+          </div>
+        </div>
+        <div class="mt-4">
+          <h5 class="mb-3">🎯 预测结果对比</h5>
+          <ul class="nav nav-tabs" id="trainChartTabs">
+            <li class="nav-item"><button class="nav-link active" onclick="showTrainChart('temperature')">🌡️ 温度</button></li>
+            <li class="nav-item"><button class="nav-link" onclick="showTrainChart('humidity')">💧 湿度</button></li>
+            <li class="nav-item"><button class="nav-link" onclick="showTrainChart('light')">☀️ 光照</button></li>
+            <li class="nav-item"><button class="nav-link" onclick="showTrainChart('oxygen')">🌬️ 氧气</button></li>
+            <li class="nav-item"><button class="nav-link" onclick="showTrainChart('solar_power')">🔋 发电</button></li>
+          </ul>
+          <div class="chart-container mt-3">
+            <canvas id="trainPredChart"></canvas>
+          </div>
+        </div>
+        <div class="text-center mt-4">
+          <button class="btn-fun btn-green" onclick="ecoSaveCurrentAnalysis()">
+            <i class="bi bi-save"></i> 保存分析报告
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Tab4: 智能控制 ====== -->
+  <div id="tab-control" style="display:none">
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="content-card">
+          <div class="content-card-header"><i class="bi bi-graph-up"></i> 实时控制曲线</div>
+          <canvas id="ctrlChart" style="max-height:300px"></canvas>
+        </div>
+        <div class="content-card mt-4">
+          <div class="content-card-header"><i class="bi bi-gear"></i> 控制策略</div>
+          <div class="row g-3 mt-2">
+            <div class="col-md-4">
+              <div class="text-center">
+                <input type="radio" name="ctrlStrategy" id="csPassive" value="passive">
+                <label for="csPassive"><strong>被动控制</strong></label>
+                <p class="small text-muted">定时开关，简单</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-center">
+                <input type="radio" name="ctrlStrategy" id="csThreshold" value="threshold" checked>
+                <label for="csThreshold"><strong>阈值控制</strong></label>
+                <p class="small text-muted">超阈值动作，直观</p>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-center">
+                <input type="radio" name="ctrlStrategy" id="csPredictive" value="predictive">
+                <label for="csPredictive"><strong>预测控制</strong></label>
+                <p class="small text-muted">AI预测，提前调节</p>
+              </div>
+            </div>
+          </div>
+          <div class="row g-2 mt-2">
+            <div class="col-6">
+              <label class="form-label">温度阈值: <span id="ctrlTempMinLbl">22</span>~<span id="ctrlTempMaxLbl">28</span>°C</label>
+              <input type="range" class="form-range" id="ctrlTempMin" min="15" max="30" value="22">
+              <input type="range" class="form-range" id="ctrlTempMax" min="25" max="40" value="28">
+            </div>
+            <div class="col-6">
+              <label class="form-label">光照阈值: <span id="ctrlLightMinLbl">100</span>~<span id="ctrlLightMaxLbl">500</span>lux</label>
+              <input type="range" class="form-range" id="ctrlLightMin" min="50" max="300" value="100">
+              <input type="range" class="form-range" id="ctrlLightMax" min="300" max="1000" value="500">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="row g-3">
+          <div class="col-4">
+            <div class="control-score-card" style="background:linear-gradient(135deg,#FF6B6B,#e03e3e)">
+              <div class="small">🌡️</div>
+              <div style="font-size:2rem;font-weight:800" id="ctrlTempScore">0</div>
+              <div class="small opacity-75">得分</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="control-score-card" style="background:linear-gradient(135deg,#FFD166,#f4a823)">
+              <div class="small">☀️</div>
+              <div style="font-size:2rem;font-weight:800" id="ctrlLightScore">0</div>
+              <div class="small opacity-75">得分</div>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="control-score-card" style="background:linear-gradient(135deg,#6BCB77,#4aa054)">
+              <div class="small">🔋</div>
+              <div style="font-size:2rem;font-weight:800" id="ctrlEnergyScore">0</div>
+              <div class="small opacity-75">得分</div>
+            </div>
+          </div>
+        </div>
+        <div class="content-card mt-3" style="background:linear-gradient(135deg,#7C3AED,#EC4899);color:white;text-align:center">
+          <div class="small">🎯 综合得分</div>
+          <div style="font-size:3.5rem;font-weight:800" id="ctrlComposite">0.0</div>
+          <div class="small opacity-75">温度40%+光照30%+节能30%</div>
+        </div>
+        <div class="content-card mt-3">
+          <div class="content-card-header">🎛️ 手动控制</div>
+          <div class="row g-2 mt-2 text-center">
+            <div class="col-4">
+              <button class="control-btn-big btn-warning" id="btnEcoLight" onclick="ecoManualControl('light')">💡</button>
+              <div class="small mt-1">开灯</div>
+            </div>
+            <div class="col-4">
+              <button class="control-btn-big btn-info" id="btnEcoFan" onclick="ecoManualControl('fan')">💨</button>
+              <div class="small mt-1">风扇</div>
+            </div>
+            <div class="col-4">
+              <button class="control-btn-big btn-danger" id="btnEcoHeat" onclick="ecoManualControl('heater')">🔥</button>
+              <div class="small mt-1">加热</div>
+            </div>
+          </div>
+          <div class="alert-cute mt-2" id="ctrlActionLog">等待控制...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Tab5: 实验报告 ====== -->
+  <div id="tab-report" style="display:none">
+    <div class="content-card">
+      <div class="content-card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-journal-text"></i> 实验报告汇总</span>
+        <button class="btn-fun btn-small btn-outline" onclick="ecoExportReportJson()">📥 导出为JSON</button>
+        <button class="btn-fun btn-small btn-outline" onclick="ecoExportReportPdf()">📄 导出为PDF</button>
+      </div>
+      <div id="ecoReportsList" class="mt-3"></div>
+    </div>
+  </div>
+
+  <!-- 知识卡片 -->
+  <div class="knowledge-card mt-4">
+    <div class="knowledge-icon">📈</div>
+    <div>
+      <strong>生态瓶课程学习路线</strong><br>
+      <span>
+        <strong>第1课 数据采集</strong> → 用界面模拟传感器采集数据 →
+        <strong>第2课 数据探索</strong> → 发现数据规律（相关性/趋势/滞后） →
+        <strong>第3课 模型训练</strong> → 选择算法训练预测模型 →
+        <strong>第4课 智能控制</strong> → 用预测结果驱动闭环控制！
+      </span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/ecobottle.js') }}"></script>
+<script>
+// ── 自定义模型选择器 ─────────────────────────────────────────────────────────
+let customModels = [];
+let currentModelId = null;
+
+function loadCustomModels() {
+  fetch('/api/models/list?course=eco')
+    .then(r => r.json())
+    .then(data => {
+      customModels = data.models || [];
+      renderModelSelector();
+    })
+    .catch(err => {
+      console.log('加载自定义模型失败:', err);
+    });
+}
+
+function renderModelSelector() {
+  const select = document.getElementById('modelSelect');
+  const modelInfo = document.getElementById('modelInfo');
+  if (!select) return;
+
+  select.innerHTML = '';
+
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = '';
+  defaultOpt.textContent = '🤖 系统默认模型（LSTM时序预测）';
+  select.appendChild(defaultOpt);
+
+  if (customModels.length > 0) {
+    customModels.forEach(model => {
+      const opt = document.createElement('option');
+      opt.value = model.id;
+      opt.textContent = `📦 ${model.model_name} (准确率: ${(model.accuracy * 100).toFixed(1)}%)`;
+      if (model.is_default) opt.textContent += ' ⭐';
+      select.appendChild(opt);
+    });
+  }
+
+  if (currentModelId) select.value = currentModelId;
+  updateModelInfo();
+}
+
+function updateModelInfo() {
+  const select = document.getElementById('modelSelect');
+  const modelInfo = document.getElementById('modelInfo');
+  if (!select || !modelInfo) return;
+
+  const selectedId = select.value;
+  if (!selectedId) {
+    modelInfo.innerHTML = '<span class="badge">系统默认</span><span>使用平台LSTM时序预测模型</span>';
+    currentModelId = null;
+  } else {
+    const model = customModels.find(m => m.id === selectedId);
+    if (model) {
+      modelInfo.innerHTML = `
+        <span class="badge">${model.framework || 'tensorflow'}</span>
+        <span class="accuracy">准确率: ${(model.accuracy * 100).toFixed(1)}%</span>
+        <span style="color: ${model.is_active ? '#10b981' : '#ef4444'}">
+          ${model.is_active ? '● 启用' : '○ 停用'}
+        </span>
+      `;
+      currentModelId = selectedId;
+    }
+  }
+}
+
+function switchModel() {
+  updateModelInfo();
+  showMsg('已切换预测模型，请重新点击「开始预测」', 'info');
+}
+
+function getCurrentModelId() {
+  return currentModelId;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadCustomModels();
+});
+</script>
+{% endblock %}

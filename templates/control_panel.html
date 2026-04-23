@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+{% block title %}智能控制面板 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+<style>
+  .score-card {
+    border-radius: 20px;
+    padding: 1.5rem;
+    color: white;
+    text-align: center;
+  }
+  .score-value { font-size: 3rem; font-weight: 800; }
+  .control-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+  .control-btn:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+  .control-btn.active { background: #10B981 !important; }
+  .control-btn.off { background: #EF4444 !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+  <div class="page-header-icon">🎮</div>
+  <h1 class="page-title">智能控制挑战赛</h1>
+  <p class="page-subtitle">基于预测的智能生态瓶闭环控制！</p>
+</div>
+
+<div class="container pb-5">
+  <!-- 比赛时间 -->
+  <div class="content-card mb-4" style="background:linear-gradient(135deg,#FEE2E2,#FEF3C7);border:2px solid #EF4444;">
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-3">
+        <span style="font-size:2rem">⏱️</span>
+        <div>
+          <div class="fw-bold" style="font-size:1.2rem">比赛时间</div>
+          <div class="text-muted">60分钟</div>
+        </div>
+      </div>
+      <div class="text-end">
+        <div class="fw-bold" style="font-size:2rem;color:#EF4444" id="countdownTimer">60:00</div>
+        <div class="text-muted">剩余时间</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3维度得分仪表 -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="score-card" style="background:linear-gradient(135deg,#FF6B6B,#e03e3e)">
+        <div>🌡️ 温度控制</div>
+        <div class="score-value" id="tempScore">0</div>
+        <div>目标: 22-28°C</div>
+        <div class="progress mt-2" style="height:10px;background:rgba(255,255,255,0.3)">
+          <div class="progress-bar bg-white" id="tempScoreBar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="score-card" style="background:linear-gradient(135deg,#FFD166,#f4a823)">
+        <div>☀️ 光照控制</div>
+        <div class="score-value" id="lightScore">0</div>
+        <div>目标: 100-500 lux</div>
+        <div class="progress mt-2" style="height:10px;background:rgba(255,255,255,0.3)">
+          <div class="progress-bar bg-white" id="lightScoreBar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="score-card" style="background:linear-gradient(135deg,#6BCB77,#4aa054)">
+        <div>🔋 节能得分</div>
+        <div class="score-value" id="energyScore">0</div>
+        <div>使用太阳能供电</div>
+        <div class="progress mt-2" style="height:10px;background:rgba(255,255,255,0.3)">
+          <div class="progress-bar bg-white" id="energyScoreBar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 综合得分 -->
+  <div class="content-card mb-4 text-center" style="background:linear-gradient(135deg,#7C3AED,#EC4899);color:white">
+    <div style="font-size:1.2rem">🎯 综合得分</div>
+    <div style="font-size:4rem;font-weight:800" id="compositeScore">0.0</div>
+    <div>温度40% + 光照30% + 节能30%</div>
+  </div>
+
+  <!-- 控制策略 + 排行榜 -->
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="content-card">
+        <div class="content-card-header"><i class="bi bi-gear-fill"></i> 控制策略选择</div>
+        <div class="mt-3">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="radio" name="strategy" id="strPassive" value="passive">
+            <label class="form-check-label" for="strPassive">
+              <strong>○ 被动控制</strong> - 定时开关，简单可靠
+            </label>
+          </div>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="radio" name="strategy" id="strThreshold" value="threshold" checked>
+            <label class="form-check-label" for="strThreshold">
+              <strong>● 阈值控制</strong> - 超过阈值才动作，直观易懂
+            </label>
+          </div>
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="radio" name="strategy" id="strPredict" value="predictive">
+            <label class="form-check-label" for="strPredict">
+              <strong>○ 预测控制</strong> - AI预测未来，提前调节（推荐）
+            </label>
+          </div>
+        </div>
+        <hr>
+        <div class="row g-2">
+          <div class="col-6">
+            <label class="form-label small">温度阈值: <span id="tempMinLabel">22</span>~<span id="tempMaxLabel">28</span>°C</label>
+            <input type="range" class="form-range" id="tempMin" min="15" max="30" value="22" oninput="updateThresholds()">
+            <input type="range" class="form-range" id="tempMax" min="25" max="40" value="28" oninput="updateThresholds()">
+          </div>
+          <div class="col-6">
+            <label class="form-label small">光照阈值: <span id="lightMinLabel">100</span>~<span id="lightMaxLabel">500</span>lux</label>
+            <input type="range" class="form-range" id="lightMin" min="50" max="300" value="100" oninput="updateThresholds()">
+            <input type="range" class="form-range" id="lightMax" min="300" max="1000" value="500" oninput="updateThresholds()">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="content-card">
+        <div class="content-card-header"><i class="bi bi-robot"></i> 实时控制动作</div>
+        <div class="text-center mt-3">
+          <div class="row g-3">
+            <div class="col-4">
+              <button class="control-btn btn-warning" id="btnLight" onclick="manualControl('light')">💡</button>
+              <div class="small mt-1">开灯</div>
+            </div>
+            <div class="col-4">
+              <button class="control-btn btn-info" id="btnFan" onclick="manualControl('fan')">💨</button>
+              <div class="small mt-1">风扇</div>
+            </div>
+            <div class="col-4">
+              <button class="control-btn btn-danger" id="btnHeater" onclick="manualControl('heater')">🔥</button>
+              <div class="small mt-1">加热</div>
+            </div>
+          </div>
+          <div class="alert-cute mt-3" id="actionLog">
+            等待控制指令...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 实时控制曲线 -->
+  <div class="content-card mb-4">
+    <div class="content-card-header"><i class="bi bi-graph-up"></i> 实时控制曲线</div>
+    <canvas id="controlChart" style="max-height:300px"></canvas>
+  </div>
+
+  <!-- 排行榜 -->
+  <div class="content-card">
+    <div class="content-card-header d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-trophy"></i> 实时排行榜</span>
+      <span class="badge bg-primary" id="refreshCountdown">10s</span>
+    </div>
+    <div id="controlLeaderboard">
+      <div class="text-center py-3 text-muted">加载中...</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let currentValues = { temperature: 25.0, light: 120.0, solar_power: 0.0, using_solar: false };
+let controlChart = null;
+let countdown = 3600;
+let leaderboardInterval = null;
+
+async function calculateScore() {
+  try {
+    const resp = await fetch('/control/score', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ values: currentValues })
+    });
+    const result = await resp.json();
+    document.getElementById('tempScore').textContent = result.temp_score.toFixed(0);
+    document.getElementById('tempScoreBar').style.width = result.temp_score + '%';
+    document.getElementById('lightScore').textContent = result.light_score.toFixed(0);
+    document.getElementById('lightScoreBar').style.width = result.light_score + '%';
+    document.getElementById('energyScore').textContent = result.energy_score.toFixed(0);
+    document.getElementById('energyScoreBar').style.width = result.energy_score + '%';
+    document.getElementById('compositeScore').textContent = result.composite_score.toFixed(1);
+    updateChart();
+  } catch (err) { console.error('计算失败:', err); }
+}
+
+async function getControlAction() {
+  const strategy = document.querySelector('input[name="strategy"]:checked').value;
+  try {
+    const resp = await fetch('/control/action', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ strategy, values: currentValues })
+    });
+    const result = await resp.json();
+    displayAction(result);
+  } catch (err) { console.error('获取控制动作失败:', err); }
+}
+
+function displayAction(result) {
+  const actions = result.actions || [];
+  const logEl = document.getElementById('actionLog');
+  if (actions.length === 0) {
+    logEl.innerHTML = '<span class="text-success">✓ 所有参数正常，无需动作</span>';
+    return;
+  }
+  logEl.innerHTML = actions.map(a => {
+    const color = a.action.includes('on') ? 'warning' : 'secondary';
+    return `<span class="badge bg-${color} me-1">${a.target}: ${a.action}</span> ${a.reason}`;
+  }).join('<br>');
+}
+
+function updateThresholds() {
+  document.getElementById('tempMinLabel').textContent = document.getElementById('tempMin').value;
+  document.getElementById('tempMaxLabel').textContent = document.getElementById('tempMax').value;
+  document.getElementById('lightMinLabel').textContent = document.getElementById('lightMin').value;
+  document.getElementById('lightMaxLabel').textContent = document.getElementById('lightMax').value;
+}
+
+function manualControl(action) {
+  const btnMap = { light: 'btnLight', fan: 'btnFan', heater: 'btnHeater' };
+  const btn = document.getElementById(btnMap[action]);
+  const isActive = btn.classList.contains('active');
+
+  if (isActive) {
+    btn.classList.remove('active');
+    btn.classList.add('off');
+  } else {
+    btn.classList.add('active');
+    btn.classList.remove('off');
+  }
+
+  const valMap = {
+    light: { active: { light: 400, using_solar: true }, off: { light: 120, using_solar: false } },
+    fan: { active: { temperature: currentValues.temperature - 3 }, off: {} },
+    heater: { active: { temperature: currentValues.temperature + 3 }, off: {} }
+  };
+  const changes = isActive ? valMap[action].off : valMap[action].active;
+  Object.assign(currentValues, changes);
+
+  getControlAction();
+  calculateScore();
+}
+
+function initChart() {
+  const ctx = document.getElementById('controlChart').getContext('2d');
+  controlChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [
+        { label: '温度', data: [], borderColor: '#FF6B6B', backgroundColor: '#FF6B6B33', tension: 0.3 },
+        { label: '光照/50', data: [], borderColor: '#FFD166', backgroundColor: '#FFD16633', tension: 0.3 },
+        { label: '阈值上', data: [], borderColor: '#10B981', borderDash: [5, 5], pointRadius: 0 },
+        { label: '阈值下', data: [], borderColor: '#10B981', borderDash: [5, 5], pointRadius: 0 }
+      ]
+    },
+    options: { responsive: true, scales: { y: { min: 0 } } }
+  });
+}
+
+function updateChart() {
+  if (!controlChart) return;
+  const now = new Date().toLocaleTimeString();
+  controlChart.data.labels.push(now);
+  controlChart.data.datasets[0].data.push(currentValues.temperature);
+  controlChart.data.datasets[1].data.push(currentValues.light / 50);
+  controlChart.data.datasets[2].data.push(28);
+  controlChart.data.datasets[3].data.push(22);
+  if (controlChart.data.labels.length > 30) {
+    controlChart.data.labels.shift();
+    controlChart.data.datasets.forEach(ds => ds.data.shift());
+  }
+  controlChart.update('none');
+}
+
+async function loadLeaderboard() {
+  try {
+    const resp = await fetch('/leaderboard/eco_control');
+    const data = await resp.json();
+    const records = data.records || [];
+    if (records.length === 0) {
+      document.getElementById('controlLeaderboard').innerHTML = '<div class="text-center py-3 text-muted">暂无排行记录</div>';
+      return;
+    }
+    document.getElementById('controlLeaderboard').innerHTML = records.slice(0, 5).map(r => `
+      <div class="d-flex align-items-center gap-3 p-2 rounded mb-1 ${r.rank <= 3 ? 'bg-warning bg-opacity-10' : ''}">
+        <div style="width:30px;text-align:center;font-weight:800;color:${r.rank === 1 ? '#FFD700' : r.rank === 2 ? '#C0C0C0' : r.rank === 3 ? '#CD7F32' : '#666'}">${r.rank <= 3 ? ['🥇','🥈','🥉'][r.rank-1] : r.rank}</div>
+        <div class="flex-grow-1 fw-bold">${r.group_name || r.group_id}</div>
+        <div class="text-primary fw-bold">${(r.composite_score || 0).toFixed(1)}分</div>
+      </div>
+    `).join('');
+  } catch (err) { console.error('加载排行榜失败:', err); }
+}
+
+let refreshSec = 10;
+function startLeaderboardRefresh() {
+  setInterval(() => {
+    refreshSec--;
+    document.getElementById('refreshCountdown').textContent = refreshSec + 's';
+    if (refreshSec <= 0) {
+      refreshSec = 10;
+      loadLeaderboard();
+    }
+  }, 1000);
+}
+
+function startCountdown() {
+  setInterval(() => {
+    countdown--;
+    const m = Math.floor(countdown / 60);
+    const s = countdown % 60;
+    document.getElementById('countdownTimer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+    if (countdown <= 0) { countdown = 0; }
+  }, 1000);
+}
+
+// 初始化
+initChart();
+calculateScore();
+getControlAction();
+loadLeaderboard();
+startLeaderboardRefresh();
+startCountdown();
+
+// 每5秒重新计算得分
+setInterval(calculateScore, 5000);
+</script>
+{% endblock %}

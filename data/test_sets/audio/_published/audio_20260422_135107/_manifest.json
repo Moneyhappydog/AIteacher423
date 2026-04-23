@@ -1,0 +1,8 @@
+{
+  "testset_id": "audio_20260422_135107",
+  "name": "期末声音测试",
+  "data_type": "audio",
+  "total_samples": 233,
+  "published_at": "2026-04-22T13:51:07.606013",
+  "note": "此测试集已发布给您使用，请使用您的模型进行预测评估"
+}

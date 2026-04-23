@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+{% block title %}排行榜 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<style>
+  .leaderboard-card {
+    background: white;
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  .rank-badge {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 800;
+  }
+  .rank-1 { background: linear-gradient(135deg,#FFD700,#FFA500); color: white; box-shadow: 0 4px 15px rgba(255,165,0,0.4); }
+  .rank-2 { background: linear-gradient(135deg,#C0C0C0,#A0A0A0); color: white; }
+  .rank-3 { background: linear-gradient(135deg,#CD7F32,#B87333); color: white; }
+  .rank-other { background: linear-gradient(135deg,#E0E0E0,#C0C0C0); color: #666; }
+  .leaderboard-row {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+  }
+  .leaderboard-row:hover { background: #F8F9FA; border-color: #E0E0E0; }
+  .leaderboard-row.my-team { background: #F0FDF4; border-color: #10B981; }
+  .accuracy-bar { height: 8px; background: #E0E0E0; border-radius: 4px; overflow: hidden; }
+  .accuracy-fill { height: 100%; background: linear-gradient(90deg,#7C3AED,#EC4899); transition: width 0.5s; }
+  .tab-btn {
+    padding: 0.6rem 1.5rem;
+    border-radius: 50px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+    color: #666;
+  }
+  .tab-btn.active { background: linear-gradient(135deg,#7C3AED,#EC4899); color: white; }
+  .tab-btn:hover:not(.active) { background: #F3F4F6; }
+  .award-tag {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 8px;
+    background: #FEF3C7;
+    color: #D97706;
+    margin-left: 0.3rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+  <div class="page-header-icon">🏆</div>
+  <h1 class="page-title">模型评估排行榜</h1>
+  <p class="page-subtitle">各小组角逐模型，看看谁是算法之王！</p>
+</div>
+
+<div class="container pb-5">
+  <!-- 排行榜类型切换 -->
+  <div class="text-center mb-4">
+    <div class="btn-group" role="group">
+      <button class="tab-btn active" onclick="switchTab('face_eval')" id="tab_face_eval">🧠 人脸模型评估</button>
+      <button class="tab-btn" onclick="switchTab('audio_eval')" id="tab_audio_eval">🎤 声音模型评估</button>
+    </div>
+  </div>
+
+  <!-- 我的小组信息 -->
+  <div class="content-card mb-4" style="background:linear-gradient(135deg,#F0FDF4,#DCFCE7);border:2px solid #10B981;">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <div class="d-flex align-items-center gap-2">
+          <span style="font-size:1.5rem">🎯</span>
+          <span class="fw-bold" style="font-size:1.1rem">我的小组</span>
+          <span id="groupNameDisplay" class="badge bg-success ms-2"></span>
+        </div>
+        <div class="mt-2">
+          当前排名: <strong id="myRank">--</strong> &nbsp;|&nbsp;
+          准确率: <strong id="myAccuracy">--</strong> &nbsp;|&nbsp;
+          F1分数: <strong id="myScore">--</strong>
+        </div>
+      </div>
+      <div class="text-end">
+        <a href="/model_eval/" class="btn-fun btn-purple">
+          <i class="bi bi-bar-chart-fill"></i> 去评估
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 排行榜主体 -->
+  <div class="leaderboard-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="mb-0" id="boardTitle">🏆 人脸模型评估排行榜</h4>
+      <span class="text-muted small" id="updateTime">更新于: --</span>
+    </div>
+
+    <div id="leaderboardContent">
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">加载中...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 评估规则说明 -->
+  <div class="content-card mt-4" style="background:linear-gradient(135deg,#EFF6FF,#DBEAFE);border:2px solid #3B82F6;">
+    <h5 class="mb-3"><i class="bi bi-info-circle"></i> 评估指标说明</h5>
+    <div class="row g-3">
+      <div class="col-md-3">
+        <div class="fw-bold text-primary mb-1">📊 准确率（Accuracy）</div>
+        <p class="small mb-0">正确预测数 / 总样本数，是最终排名依据</p>
+      </div>
+      <div class="col-md-3">
+        <div class="fw-bold text-success mb-1">🎯 精确率（Precision）</div>
+        <p class="small mb-0">宏平均，各类别精确率的均值</p>
+      </div>
+      <div class="col-md-3">
+        <div class="fw-bold text-warning mb-1">🔄 召回率（Recall）</div>
+        <p class="small mb-0">宏平均，各类别召回率的均值</p>
+      </div>
+      <div class="col-md-3">
+        <div class="fw-bold text-danger mb-1">⚖️ F1分数（F1-Score）</div>
+        <p class="small mb-0">宏平均，精确率与召回率的调和均值</p>
+      </div>
+    </div>
+      <div class="mt-3 p-2 bg-white rounded">
+      <strong class="text-primary">排名规则：</strong>
+      <span class="text-muted small">按准确率从高到低排名。人脸表情模型评估 7 分类（生气/厌恶/恐惧/开心/难过/惊讶/平静），声音情绪模型评估 6 分类（愤怒/恐惧/开心/平静/难过/惊讶）。<strong>每个小组只保留准确率最高的模型记录</strong>，后续提交只有在准确率更高时才会更新。</span>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Socket.IO Client Library (v4.x - 与 flask-socketio/python-socketio 5.x 兼容) -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+let currentCourse = 'face_eval';
+let leaderboardData = [];
+let socket = null;
+let currentGroupId = null;
+let currentGroupName = null;
+
+// ── 获取当前用户小组信息 ────────────────────────────────────────────────────
+async function loadUserInfo() {
+  try {
+    const resp = await fetch('/auth/me');
+    if (resp.ok) {
+      const data = await resp.json();
+      currentGroupId = data.group?.group_code || data.group_id || 'G01';
+      currentGroupName = data.group?.group_name || data.display_name || data.username || '我的小组';
+
+      // 更新页面上的小组显示
+      document.getElementById('groupNameDisplay').textContent = currentGroupName;
+    } else {
+      // 未登录时使用默认值（会被后端重定向）
+      currentGroupId = 'G01';
+      currentGroupName = '我的小组';
+    }
+  } catch (err) {
+    console.error('获取用户信息失败:', err);
+    currentGroupId = 'G01';
+    currentGroupName = '我的小组';
+  }
+}
+
+async function loadLeaderboard(course) {
+  try {
+    const resp = await fetch(`/model_eval/leaderboard/${course.replace('_eval', '')}`);
+    const data = await resp.json();
+    const records = data.leaderboard || [];
+    leaderboardData = records;
+    renderLeaderboard(course, records);
+    document.getElementById('updateTime').textContent = '更新于: ' + (data.updated_at || '--');
+  } catch (err) {
+    document.getElementById('leaderboardContent').innerHTML = '<div class="text-center py-5 text-danger">加载失败: ' + err.message + '</div>';
+  }
+}
+
+function renderLeaderboard(course, records) {
+  const isModelEval = course.endsWith('_eval');
+
+  if (records.length === 0) {
+    const msg = isModelEval
+      ? '还没有模型评估记录，先去完成一次模型评估吧！'
+      : '还没有提交记录';
+    document.getElementById('leaderboardContent').innerHTML = `
+      <div class="text-center py-5">
+        <div style="font-size:4rem">🏆</div>
+        <p class="text-muted mt-2">${msg}</p>
+      </div>`;
+    document.getElementById('myRank').textContent = '--';
+    document.getElementById('myAccuracy').textContent = '--';
+    document.getElementById('myScore').textContent = '--';
+    return;
+  }
+
+  // 表头
+  let html = `<div class="leaderboard-row fw-bold text-muted small">
+    <div style="width:70px;text-align:center">排名</div>
+    <div style="flex:1;min-width:0;padding-right:8px">小组</div>
+    <div style="flex:2;min-width:0;padding-right:8px">模型</div>
+    <div style="width:80px;text-align:center">准确率</div>
+    <div style="width:80px;text-align:center">精确率</div>
+    <div style="width:80px;text-align:center">召回率</div>
+    <div style="width:80px;text-align:center">F1分数</div>
+  </div>`;
+
+  records.forEach((rec, i) => {
+    const rank = rec.rank || (i + 1);
+    const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other';
+    const isMine = rec.group_id === currentGroupId;
+    const accuracy = (rec.accuracy * 100).toFixed(1);
+    const precision = rec.precision != null ? (rec.precision * 100).toFixed(1) : '--';
+    const recall = rec.recall != null ? (rec.recall * 100).toFixed(1) : '--';
+    const f1 = rec.f1_score != null ? (rec.f1_score * 100).toFixed(1) : '--';
+
+    html += `<div class="leaderboard-row ${isMine ? 'my-team' : ''}">
+      <div style="width:70px;text-align:center">
+        <div class="rank-badge ${rankClass}">${rank <= 3 ? ['🥇','🥈','🥉'][rank-1] : rank}</div>
+      </div>
+      <div class="fw-bold" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px">${rec.group_name || rec.group_id}${isMine ? ' ★' : ''}</div>
+      <div class="text-muted" style="flex:2;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px">${rec.model_name || '模型'}</div>
+      <div style="width:80px;text-align:center" class="fw-bold text-success">${accuracy}%</div>
+      <div style="width:80px;text-align:center" class="text-muted">${precision}%</div>
+      <div style="width:80px;text-align:center" class="text-muted">${recall}%</div>
+      <div style="width:80px;text-align:center" class="fw-bold text-primary">${f1}%</div>
+    </div>`;
+  });
+
+  document.getElementById('leaderboardContent').innerHTML = html;
+
+  // 更新我的排名
+  const mine = records.find(r => r.group_id === currentGroupId);
+  if (mine) {
+    document.getElementById('myRank').textContent = mine.rank || '-';
+    document.getElementById('myAccuracy').textContent = (mine.accuracy * 100).toFixed(1) + '%';
+    document.getElementById('myScore').textContent =
+      mine.f1_score != null ? (mine.f1_score * 100).toFixed(1) + ' (F1)' : '--';
+  } else {
+    document.getElementById('myRank').textContent = '--';
+    document.getElementById('myAccuracy').textContent = '--';
+    document.getElementById('myScore').textContent = '--';
+  }
+}
+
+// ── WebSocket 实时推送 ──────────────────────────────────────────────────────
+let pollingInterval = null;
+
+function initSocket() {
+  socket = io({
+    path: '/socket.io',
+    reconnection: true,
+    reconnectionAttempts: 3,
+    reconnectionDelay: 2000
+  });
+
+  socket.on('connect', () => {
+    console.log('[WS] 已连接，订阅排行榜:', currentCourse);
+    socket.emit('subscribe_leaderboard', { course: currentCourse });
+    socket.emit('subscribe_all_boards');
+    showWsStatus(true);
+    // 连接成功，停止轮询
+    stopPolling();
+  });
+
+  socket.on('disconnect', () => {
+    console.log('[WS] 连接已断开，启用HTTP轮询');
+    showWsStatus(false);
+    // WebSocket 断开时启用 HTTP 轮询
+    startPolling();
+  });
+
+  socket.on('leaderboard_update', (data) => {
+    if (data.course === currentCourse) {
+      console.log('[WS] 收到排行榜更新:', data.course);
+      const records = data.top5 || data.records || [];
+      renderLeaderboard(currentCourse, records);
+      document.getElementById('updateTime').textContent =
+        '🟢 实时更新: ' + (data.updated_at ? new Date(data.updated_at).toLocaleTimeString() : '');
+    }
+  });
+
+  socket.on('subscribed', (data) => {
+    console.log('[WS] 已订阅:', data.room);
+  });
+
+  socket.on('connect_error', (err) => {
+    console.log('[WS] 连接错误:', err.message);
+    showWsStatus(false);
+    startPolling();
+  });
+}
+
+// 启动 HTTP 轮询（WebSocket 断开时使用）
+function startPolling() {
+  if (pollingInterval) return;
+  console.log('[Polling] 启动HTTP轮询');
+  pollingInterval = setInterval(() => {
+    loadLeaderboard(currentCourse);
+  }, 5000); // 每5秒轮询一次
+}
+
+// 停止 HTTP 轮询（WebSocket 恢复时使用）
+function stopPolling() {
+  if (pollingInterval) {
+    console.log('[Polling] 停止HTTP轮询');
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  }
+}
+
+function showWsStatus(connected) {
+  const el = document.getElementById('updateTime');
+  if (el) {
+    el.textContent = connected ? '🟢 WebSocket 已连接，实时推送中' : '🔴 WebSocket 已断开';
+  }
+}
+
+function switchTab(course) {
+  currentCourse = course;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const tabEl = document.getElementById('tab_' + course);
+  if (tabEl) tabEl.classList.add('active');
+  const titles = {
+    'face_eval': '🏆 人脸模型评估排行榜',
+    'audio_eval': '🏆 声音模型评估排行榜'
+  };
+  document.getElementById('boardTitle').textContent = titles[course] || '🏆 排行榜';
+  if (socket && socket.connected) {
+    socket.emit('subscribe_leaderboard', { course: course });
+  }
+  loadLeaderboard(course);
+}
+
+// ── 初始化 ──────────────────────────────────────────────────────────────────
+async function init() {
+  await loadUserInfo();
+  loadLeaderboard(currentCourse);
+  initSocket();
+}
+
+init();
+</script>
+{% endblock %}

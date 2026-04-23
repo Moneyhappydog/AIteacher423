@@ -1,0 +1,13 @@
+{
+  "testset_id": "face_20260421_135441",
+  "name": "4.21人脸测试",
+  "data_type": "face",
+  "draft_id": "a5c48fe5",
+  "total_samples": 933,
+  "published_at": "2026-04-21T13:54:41.901145",
+  "published_by": "admin",
+  "publish_to_groups": true,
+  "groups_published": [
+    "all"
+  ]
+}

@@ -1,0 +1,813 @@
+{% extends "base.html" %}
+{% block title %}模型导入 - AI教育平台{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+        body {
+            background-color: #f5f6fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        .page-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 30px;
+        }
+        .page-header h2 {
+            margin: 0 0 10px;
+        }
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        .card-header {
+            background: #fff;
+            border-bottom: 2px solid #f0f0f0;
+            padding: 20px 24px;
+            font-weight: 600;
+        }
+        .card-body {
+            padding: 24px;
+            background: #fff;
+        }
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        .upload-zone.has-file {
+            border-color: #22c55e;
+            background: #f0fdf4;
+        }
+        .upload-icon {
+            font-size: 4rem;
+            color: #94a3b8;
+            margin-bottom: 16px;
+        }
+        .upload-zone.dragover .upload-icon,
+        .upload-zone:hover .upload-icon {
+            color: #667eea;
+        }
+        .upload-zone.has-file .upload-icon {
+            color: #22c55e;
+        }
+        .file-preview {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        .file-preview .file-icon {
+            font-size: 2.5rem;
+            color: #667eea;
+        }
+        .file-preview .file-info {
+            text-align: left;
+        }
+        .file-preview .file-name {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+        .file-preview .file-meta {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        .btn-upload {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 14px 32px;
+            font-size: 1rem;
+            border-radius: 10px;
+            color: #fff;
+            font-weight: 600;
+        }
+        .btn-upload:hover {
+            background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .btn-upload:disabled {
+            opacity: 0.6;
+            transform: none;
+        }
+        .course-selector {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .course-chip {
+            padding: 10px 20px;
+            border-radius: 24px;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .course-chip:hover {
+            border-color: #667eea;
+        }
+        .course-chip.active {
+            background: #667eea;
+            border-color: #667eea;
+            color: #fff;
+        }
+        .course-chip .icon {
+            margin-right: 6px;
+        }
+        .model-list {
+            display: grid;
+            gap: 16px;
+        }
+        .model-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: #f8fafc;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+        .model-card:hover {
+            background: #f1f5f9;
+            transform: translateX(4px);
+        }
+        .model-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .model-icon {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e0e7ff;
+            border-radius: 12px;
+            font-size: 1.5rem;
+        }
+        .model-details h5 {
+            margin: 0 0 4px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .model-details .meta {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        .model-details .meta span {
+            margin-right: 12px;
+        }
+        .model-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 0.875rem;
+            border-radius: 8px;
+        }
+        .btn-outline-primary {
+            color: #667eea;
+            border-color: #667eea;
+        }
+        .btn-outline-primary:hover {
+            background: #667eea;
+            border-color: #667eea;
+        }
+        .btn-outline-danger {
+            color: #ef4444;
+            border-color: #ef4444;
+        }
+        .btn-outline-danger:hover {
+            background: #ef4444;
+            border-color: #ef4444;
+        }
+        .accuracy-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .accuracy-badge.none {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #94a3b8;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+        .form-control {
+            border-radius: 10px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        .framework-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            background: #f1f5f9;
+            color: #475569;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .nav-tabs-custom {
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 24px;
+        }
+        .nav-tabs-custom .nav-link {
+            border: none;
+            color: #64748b;
+            padding: 12px 24px;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+        .nav-tabs-custom .nav-link:hover {
+            color: #667eea;
+            border-color: transparent;
+        }
+        .nav-tabs-custom .nav-link.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        .supported-formats {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+        .format-tag {
+            padding: 4px 10px;
+            background: #f1f5f9;
+            color: #64748b;
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+    </style>
+    {% endblock %}
+</head>
+<body>
+{% block content %}
+
+    <div class="container">
+        <!-- 页面头部 -->
+        <div class="page-header">
+            <h2><i class="fas fa-upload me-2"></i>模型导入</h2>
+            <p class="mb-0 opacity-75">上传您在本地训练的模型，系统将自动识别框架类型</p>
+        </div>
+
+        <!-- 上传区域 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-cloud-upload-alt me-2"></i>上传模型
+            </div>
+            <div class="card-body">
+                <!-- 课程选择 -->
+                <div class="mb-4">
+                    <label class="form-label">选择模型类型</label>
+                    <div class="course-selector" id="courseSelector">
+                        <div class="course-chip active" data-course="face">
+                            <span class="icon">😀</span>人脸表情
+                        </div>
+                        <div class="course-chip" data-course="audio">
+                            <span class="icon">🎤</span>声音情绪
+                        </div>
+                        <div class="course-chip" data-course="eco">
+                            <span class="icon">🌱</span>生态瓶
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 上传区域 -->
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <h4>拖拽模型文件到此处</h4>
+                    <p class="text-muted mb-2">或点击选择文件</p>
+                    <p class="small text-muted mb-0">
+                        支持格式：
+                    </p>
+                    <div class="supported-formats">
+                        <span class="format-tag">.h5 (TensorFlow)</span>
+                        <span class="format-tag">.pt (PyTorch)</span>
+                        <span class="format-tag">.pkl (sklearn)</span>
+                        <span class="format-tag">.keras</span>
+                        <span class="format-tag">.joblib</span>
+                        <span class="format-tag">.onnx</span>
+                    </div>
+                    <input type="file" id="fileInput" accept=".h5,.keras,.pt,.pth,.pkl,.joblib,.onnx" style="display: none;">
+                </div>
+
+                <!-- 文件预览 -->
+                <div id="filePreview" style="display: none;">
+                    <div class="file-preview">
+                        <div class="file-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="file-info">
+                            <div class="file-name" id="fileName"></div>
+                            <div class="file-meta">
+                                <span id="fileSize"></span>
+                                <span class="framework-badge" id="fileFramework"></span>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm ms-3" onclick="clearFile()">
+                            <i class="fas fa-times"></i> 清除
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 模型信息 -->
+                <div class="row mt-4" id="modelInfo" style="display: none;">
+                    <div class="col-md-6">
+                        <label class="form-label">模型名称</label>
+                        <input type="text" class="form-control" id="modelName"
+                               placeholder="给模型起个名字，例如：我的表情模型_v1">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">模型描述（可选）</label>
+                        <input type="text" class="form-control" id="modelDesc"
+                               placeholder="简单描述这个模型">
+                    </div>
+                </div>
+
+                <!-- 上传按钮 -->
+                <div class="text-center mt-4" id="uploadBtnContainer" style="display: none;">
+                    <button class="btn btn-upload" onclick="uploadModel()">
+                        <i class="fas fa-upload me-2"></i>上传模型
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 模型列表 -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-list me-2"></i>我的模型</span>
+                <button class="btn btn-outline-primary btn-sm" onclick="loadModels()">
+                    <i class="fas fa-sync-alt me-1"></i>刷新
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- 课程筛选 -->
+                <div class="course-selector mb-4" id="filterSelector">
+                    <div class="course-chip active" data-course="all">
+                        <span class="icon">📁</span>全部
+                    </div>
+                    <div class="course-chip" data-course="face">
+                        <span class="icon">😀</span>人脸表情
+                    </div>
+                    <div class="course-chip" data-course="audio">
+                        <span class="icon">🎤</span>声音情绪
+                    </div>
+                    <div class="course-chip" data-course="eco">
+                        <span class="icon">🌱</span>生态瓶
+                    </div>
+                </div>
+
+                <!-- 模型列表 -->
+                <div class="model-list" id="modelList">
+                    <div class="empty-state">
+                        <i class="fas fa-boxes"></i>
+                        <p>暂无模型，请先上传</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- 重命名模态框 -->
+    <div class="modal fade" id="renameModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">重命名模型</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="renameModelId">
+                    <div class="mb-3">
+                        <label class="form-label">新名称</label>
+                        <input type="text" class="form-control" id="renameModelName">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmRename()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 当前选中的课程
+        let selectedCourse = 'face';
+        let selectedFile = null;
+        let fileInfo = null;
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initUploadZone();
+            initCourseSelector();
+            loadModels();
+        });
+
+        // 初始化上传区域
+        function initUploadZone() {
+            const zone = document.getElementById('uploadZone');
+            const input = document.getElementById('fileInput');
+
+            // 点击上传
+            zone.addEventListener('click', () => input.click());
+
+            // 文件选择
+            input.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+
+            // 拖拽
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('dragover');
+            });
+
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('dragover');
+            });
+
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('dragover');
+                if (e.dataTransfer.files.length > 0) {
+                    handleFileSelect(e.dataTransfer.files[0]);
+                }
+            });
+        }
+
+        // 初始化课程选择器
+        function initCourseSelector() {
+            // 上传区域的选择器
+            document.querySelectorAll('#courseSelector .course-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    document.querySelectorAll('#courseSelector .course-chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    selectedCourse = chip.dataset.course;
+                });
+            });
+
+            // 筛选区域的选择器
+            document.querySelectorAll('#filterSelector .course-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    document.querySelectorAll('#filterSelector .course-chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    loadModels(chip.dataset.course === 'all' ? null : chip.dataset.course);
+                });
+            });
+        }
+
+        // 处理文件选择
+        async function handleFileSelect(file) {
+            selectedFile = file;
+
+            // 验证文件
+            const validExts = ['.h5', '.keras', '.pt', '.pth', '.pkl', '.joblib', '.onnx'];
+            const ext = '.' + file.name.split('.').pop().toLowerCase();
+
+            if (!validExts.includes(ext)) {
+                showToast(`不支持的文件格式：${ext}`, 'danger');
+                return;
+            }
+
+            // 获取框架信息
+            const frameworkMap = {
+                '.h5': '🧠 TensorFlow',
+                '.keras': '🧠 TensorFlow',
+                '.pt': '🔥 PyTorch',
+                '.pth': '🔥 PyTorch',
+                '.pkl': '📊 sklearn',
+                '.joblib': '📊 sklearn',
+                '.onnx': '🔷 ONNX'
+            };
+
+            fileInfo = {
+                name: file.name,
+                size: file.size,
+                sizeFormatted: formatSize(file.size),
+                framework: frameworkMap[ext] || '📦 未知框架',
+                ext: ext
+            };
+
+            // 更新UI
+            const zone = document.getElementById('uploadZone');
+            zone.classList.add('has-file');
+
+            document.getElementById('filePreview').style.display = 'block';
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = fileInfo.sizeFormatted;
+            document.getElementById('fileFramework').textContent = fileInfo.framework;
+
+            document.getElementById('modelInfo').style.display = 'block';
+            document.getElementById('uploadBtnContainer').style.display = 'block';
+
+            // 自动填充模型名
+            const baseName = file.name.replace(/\.[^/.]+$/, '');
+            document.getElementById('modelName').value = baseName;
+        }
+
+        // 清除文件
+        function clearFile() {
+            selectedFile = null;
+            fileInfo = null;
+
+            const zone = document.getElementById('uploadZone');
+            zone.classList.remove('has-file');
+
+            document.getElementById('filePreview').style.display = 'none';
+            document.getElementById('modelInfo').style.display = 'none';
+            document.getElementById('uploadBtnContainer').style.display = 'none';
+            document.getElementById('fileInput').value = '';
+            document.getElementById('modelName').value = '';
+            document.getElementById('modelDesc').value = '';
+        }
+
+        // 上传模型
+        async function uploadModel() {
+            if (!selectedFile) {
+                showToast('请先选择模型文件', 'warning');
+                return;
+            }
+
+            const modelName = document.getElementById('modelName').value.trim();
+            const modelDesc = document.getElementById('modelDesc').value.trim();
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('course', selectedCourse);
+            formData.append('model_name', modelName);
+            formData.append('description', modelDesc);
+
+            const btn = document.querySelector('.btn-upload');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>上传中...';
+
+            try {
+                const resp = await fetch('/model_import/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await resp.json();
+
+                if (data.success) {
+                    showToast('模型上传成功！', 'success');
+                    clearFile();
+                    loadModels();
+                } else {
+                    showToast(data.message || '上传失败', 'danger');
+                }
+            } catch (e) {
+                showToast('上传失败，请重试', 'danger');
+            }
+
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-upload me-2"></i>上传模型';
+        }
+
+        // 加载模型列表
+        async function loadModels(course) {
+            const container = document.getElementById('modelList');
+            container.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+
+            try {
+                const url = course
+                    ? `/model_import/list?course=${course}`
+                    : '/model_import/list';
+                const resp = await fetch(url);
+                const data = await resp.json();
+
+                if (data.success && data.models.length > 0) {
+                    renderModels(data.models);
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-boxes"></i>
+                            <p>暂无模型，请先上传</p>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="alert alert-danger">加载失败</div>';
+            }
+        }
+
+        // 渲染模型列表
+        function renderModels(models) {
+            const container = document.getElementById('modelList');
+            let html = '';
+
+            const courseIcons = {
+                'face': '😀',
+                'audio': '🎤',
+                'eco': '🌱'
+            };
+
+            const courseNames = {
+                'face': '人脸表情',
+                'audio': '声音情绪',
+                'eco': '生态瓶'
+            };
+
+            models.forEach(model => {
+                const accuracy = model.accuracy ? `${(model.accuracy * 100).toFixed(1)}%` : '未评估';
+                const accuracyClass = model.accuracy ? '' : 'none';
+
+                html += `
+                    <div class="model-card">
+                        <div class="model-info">
+                            <div class="model-icon">${courseIcons[model.course] || '📦'}</div>
+                            <div class="model-details">
+                                <h5>${model.model_name}</h5>
+                                <div class="meta">
+                                    <span><i class="far fa-clock me-1"></i>${new Date(model.uploaded_at).toLocaleDateString()}</span>
+                                    <span><i class="fas fa-database me-1"></i>${courseNames[model.course] || model.course}</span>
+                                    <span><i class="fas fa-weight me-1"></i>${model.file_size_formatted}</span>
+                                    <span class="framework-badge">${model.framework_icon} ${model.framework}</span>
+                                </div>
+                                ${model.description ? `<div class="text-muted small mt-1">${model.description}</div>` : ''}
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="accuracy-badge ${accuracyClass}">
+                                <i class="fas fa-chart-line me-1"></i>${accuracy}
+                            </span>
+                            <div class="model-actions">
+                                <button class="btn btn-outline-primary btn-sm" onclick="openEvalPage('${model.model_id}', '${model.course}')" title="评估">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button class="btn btn-outline-primary btn-sm" onclick="showRenameModal('${model.model_id}', '${model.model_name}')" title="重命名">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="confirmDelete('${model.model_id}')" title="删除">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // 打开发布评估页面
+        function openEvalPage(modelId, course) {
+            // 跳转到评估页面
+            window.location.href = `/model_eval/?model_id=${modelId}&course=${course}`;
+        }
+
+        // 显示重命名模态框
+        function showRenameModal(modelId, currentName) {
+            document.getElementById('renameModelId').value = modelId;
+            document.getElementById('renameModelName').value = currentName;
+            new bootstrap.Modal(document.getElementById('renameModal')).show();
+        }
+
+        // 确认重命名
+        async function confirmRename() {
+            const modelId = document.getElementById('renameModelId').value;
+            const newName = document.getElementById('renameModelName').value.trim();
+
+            if (!newName) {
+                showToast('名称不能为空', 'warning');
+                return;
+            }
+
+            try {
+                const resp = await fetch(`/model_import/${modelId}/rename`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: newName})
+                });
+                const data = await resp.json();
+
+                if (data.success) {
+                    showToast('重命名成功', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('renameModal')).hide();
+                    loadModels();
+                } else {
+                    showToast(data.message || '重命名失败', 'danger');
+                }
+            } catch (e) {
+                showToast('重命名失败', 'danger');
+            }
+        }
+
+        // 确认删除
+        function confirmDelete(modelId) {
+            if (!confirm('确定要删除这个模型吗？此操作不可恢复！')) return;
+
+            fetch(`/model_import/${modelId}`, {method: 'DELETE'})
+                .then(resp => resp.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('模型已删除', 'success');
+                        loadModels();
+                    } else {
+                        showToast(data.message || '删除失败', 'danger');
+                    }
+                })
+                .catch(() => showToast('删除失败', 'danger'));
+        }
+
+        // 格式化文件大小
+        function formatSize(bytes) {
+            for (const unit of ['B', 'KB', 'MB', 'GB']) {
+                if (bytes < 1024) return `${bytes.toFixed(1)} ${unit}`;
+                bytes /= 1024;
+            }
+            return `${bytes.toFixed(1)} TB`;
+        }
+
+        // 显示 Toast
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const id = 'toast-' + Date.now();
+            const colors = {
+                success: 'bg-success',
+                danger: 'bg-danger',
+                warning: 'bg-warning text-dark',
+                info: 'bg-info'
+            };
+            container.innerHTML += `
+                <div id="${id}" class="toast align-items-center text-white ${colors[type]}" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            const toastEl = document.getElementById(id);
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+            toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+        }
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+{% endblock %}

@@ -1,0 +1,18 @@
+{
+  "model_id": "b52d0788-186",
+  "group_id": "G06",
+  "course": "face",
+  "model_name": "audio_cnn_model",
+  "description": "",
+  "filename": "b52d0788-186.h5",
+  "original_filename": "audio_cnn_model.h5",
+  "file_path": "G06/b52d0788-186.h5",
+  "file_size": 2864152,
+  "file_hash": "1155dd1460c42ffd78e84e65a198c3ae",
+  "framework": "tensorflow",
+  "file_ext": ".h5",
+  "uploaded_at": "2026-04-22T14:29:12.758155",
+  "is_active": true,
+  "accuracy": null,
+  "eval_count": 0
+}

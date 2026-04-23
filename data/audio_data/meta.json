@@ -1,0 +1,94 @@
+{
+  "version": "2026-v1",
+  "emotion_audio": {
+    "total_files": 361,
+    "by_label": {
+      "happy": 74,
+      "sad": 64,
+      "surprise": 59,
+      "fear": 46,
+      "neutral": 67,
+      "anger": 51
+    },
+    "by_group": {
+      "G06": {
+        "total": 98,
+        "by_label": {
+          "happy": 29,
+          "sad": 22,
+          "surprise": 12,
+          "neutral": 15,
+          "fear": 6,
+          "anger": 14
+        }
+      },
+      "G02": {
+        "total": 50,
+        "by_label": {
+          "surprise": 11,
+          "fear": 8,
+          "neutral": 7,
+          "anger": 8,
+          "sad": 8,
+          "happy": 8
+        }
+      },
+      "G07": {
+        "total": 30,
+        "by_label": {
+          "surprise": 6,
+          "fear": 5,
+          "neutral": 4,
+          "anger": 5,
+          "sad": 5,
+          "happy": 5
+        }
+      },
+      "G05": {
+        "total": 15,
+        "by_label": {
+          "surprise": 3,
+          "fear": 3,
+          "neutral": 1,
+          "anger": 2,
+          "sad": 3,
+          "happy": 3
+        }
+      },
+      "G04": {
+        "total": 33,
+        "by_label": {
+          "fear": 5,
+          "anger": 3,
+          "happy": 4,
+          "surprise": 7,
+          "sad": 6,
+          "neutral": 8
+        }
+      },
+      "G01": {
+        "total": 87,
+        "by_label": {
+          "surprise": 11,
+          "fear": 11,
+          "neutral": 24,
+          "anger": 11,
+          "sad": 13,
+          "happy": 17
+        }
+      },
+      "G03": {
+        "total": 48,
+        "by_label": {
+          "happy": 8,
+          "sad": 7,
+          "anger": 8,
+          "neutral": 8,
+          "fear": 8,
+          "surprise": 9
+        }
+      }
+    },
+    "last_updated": "2026-04-22T14:41:39.478426"
+  }
+}

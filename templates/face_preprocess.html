@@ -1,0 +1,1133 @@
+{% extends "base.html" %}
+{% block title %}人脸数据预处理 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<style>
+  .preprocess-container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .panel-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+  }
+
+  .panel-header {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #7C3AED;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* 操作选择器 */
+  .operation-category {
+    margin-bottom: 1.5rem;
+  }
+
+  .category-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .operation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .operation-btn {
+    background: #f3f4f6;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .operation-btn:hover {
+    background: #ede9fe;
+    border-color: #7c3aed;
+  }
+
+  .operation-btn.active {
+    background: #7c3aed;
+    color: white;
+    border-color: #7c3aed;
+  }
+
+  .operation-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .operation-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  /* 预览区域 */
+  .preview-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .preview-box {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .preview-title {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-bottom: 0.75rem;
+  }
+
+  .preview-image {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .preview-image:hover {
+    transform: scale(1.02);
+  }
+
+  /* 参数滑块 */
+  .param-slider {
+    margin-top: 1rem;
+  }
+
+  .param-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+  }
+
+  .param-slider input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #e5e7eb;
+    -webkit-appearance: none;
+  }
+
+  .param-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #7c3aed;
+    cursor: pointer;
+  }
+
+  /* 文件列表 */
+  .file-list {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .file-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.2s;
+  }
+
+  .file-item:hover {
+    background: #f9fafb;
+  }
+
+  .file-item input[type="checkbox"] {
+    margin-right: 0.75rem;
+  }
+
+  .file-thumb {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-right: 0.75rem;
+  }
+
+  .file-info {
+    flex: 1;
+  }
+
+  .file-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .file-meta {
+    font-size: 0.75rem;
+    color: #9ca3af;
+  }
+
+  .file-emotion {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #ede9fe;
+    color: #7c3aed;
+    border-radius: 4px;
+    font-size: 0.75rem;
+  }
+
+  /* 统计卡片 */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .stat-card {
+    background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #7c3aed;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+
+  /* 按钮样式 */
+  .btn-primary {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+  }
+
+  .btn-secondary {
+    background: white;
+    color: #7c3aed;
+    border: 2px solid #7c3aed;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover {
+    background: #f5f3ff;
+  }
+
+  .btn-success {
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  /* 图片放大预览模态框 */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modal.show {
+    display: flex;
+  }
+
+  .modal-content {
+    max-width: 90%;
+    max-height: 90%;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header - 全屏渐变背景 -->
+<div class="page-header text-center">
+  <div class="page-header-icon">🖼️</div>
+  <h1 class="page-title">人脸数据预处理</h1>
+  <p class="page-subtitle">对已标注的人脸数据进行预处理和增强，提升模型泛化能力</p>
+</div>
+
+<div class="preprocess-container">
+
+  <!-- 数据统计 -->
+  <div class="panel-card">
+    <div class="panel-header">
+      <i class="bi bi-graph-up"></i> 数据概览
+    </div>
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card">
+        <div class="stat-value" id="totalCount">-</div>
+        <div class="stat-label">总图片数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="happyCount">-</div>
+        <div class="stat-label">开心</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="sadCount">-</div>
+        <div class="stat-label">难过</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="angryCount">-</div>
+        <div class="stat-label">生气</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="fearCount">-</div>
+        <div class="stat-label">恐惧</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="surpriseCount">-</div>
+        <div class="stat-label">惊讶</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="neutralCount">-</div>
+        <div class="stat-label">平静</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- 左侧：操作选择 -->
+    <div class="col-lg-5">
+      <div class="panel-card">
+        <div class="panel-header">
+          <i class="bi bi-sliders"></i> 选择预处理操作
+        </div>
+
+        <!-- 基础预处理 -->
+        <div class="operation-category">
+          <div class="category-title">基础预处理</div>
+          <div class="operation-grid" id="basicOperations">
+            <!-- 由JS动态生成 -->
+          </div>
+        </div>
+
+        <!-- 几何变换 -->
+        <div class="operation-category">
+          <div class="category-title">几何变换（数据增强）</div>
+          <div class="operation-grid" id="geometricOperations">
+            <!-- 由JS动态生成 -->
+          </div>
+          <div class="param-slider" id="rotationParam" style="display:none;">
+            <div class="param-label">
+              <span>旋转角度</span>
+              <span id="rotationValue">±10°</span>
+            </div>
+            <input type="range" id="rotationSlider" min="5" max="20" value="10">
+          </div>
+        </div>
+
+        <!-- 颜色变换 -->
+        <div class="operation-category">
+          <div class="category-title">颜色变换（数据增强）</div>
+          <div class="operation-grid" id="colorOperations">
+            <!-- 由JS动态生成 -->
+          </div>
+        </div>
+
+        <!-- 参数设置 -->
+        <div class="param-slider" id="brightnessParam" style="display:none;">
+          <div class="param-label">
+            <span>亮度调整</span>
+            <span id="brightnessValue">1.2x</span>
+          </div>
+          <input type="range" id="brightnessSlider" min="5" max="20" value="12">
+        </div>
+
+        <div class="param-slider" id="contrastParam" style="display:none;">
+          <div class="param-label">
+            <span>对比度调整</span>
+            <span id="contrastValue">1.3x</span>
+          </div>
+          <input type="range" id="contrastSlider" min="8" max="20" value="13">
+        </div>
+
+        <div class="param-slider" id="saturationParam" style="display:none;">
+          <div class="param-label">
+            <span>饱和度调整</span>
+            <span id="saturationValue">1.3x</span>
+          </div>
+          <input type="range" id="saturationSlider" min="8" max="20" value="13">
+        </div>
+
+        <div class="param-slider" id="hueParam" style="display:none;">
+          <div class="param-label">
+            <span>色调调整</span>
+            <span id="hueValue">±10°</span>
+          </div>
+          <input type="range" id="hueSlider" min="5" max="30" value="10">
+        </div>
+
+        <div class="param-slider" id="blurParam" style="display:none;">
+          <div class="param-label">
+            <span>模糊程度</span>
+            <span id="blurValue">5</span>
+          </div>
+          <input type="range" id="blurSlider" min="3" max="15" step="2" value="5">
+        </div>
+
+        <div class="mt-3 d-flex gap-2">
+          <button class="btn-secondary" onclick="selectAllOperations()">全选</button>
+          <button class="btn-secondary" onclick="clearAllOperations()">清除</button>
+        </div>
+      </div>
+
+      <!-- 预览区域 -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <i class="bi bi-eye"></i> 效果预览
+        </div>
+        <div class="preview-container">
+          <div class="preview-box">
+            <div class="preview-title">原始图片</div>
+            <img id="originalPreview" class="preview-image" src="" alt="原始图片" style="display:none;">
+            <div id="originalPlaceholder" style="color:#9ca3af;padding:60px 0;">
+              请先在右侧选择一张图片
+            </div>
+          </div>
+          <div class="preview-box">
+            <div class="preview-title">预处理后</div>
+            <img id="processedPreview" class="preview-image" src="" alt="处理后" style="display:none;">
+            <div id="processedPlaceholder" style="color:#9ca3af;padding:60px 0;">
+              点击"应用预览"查看效果
+            </div>
+          </div>
+        </div>
+        <div class="mt-3 text-center">
+          <button class="btn-primary" onclick="applyPreview()">
+            <i class="bi bi-play"></i> 应用预览
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：文件列表 -->
+    <div class="col-lg-7">
+      <div class="panel-card">
+        <div class="panel-header">
+          <i class="bi bi-images"></i> 已标注数据列表
+          <span class="ms-auto badge bg-primary" id="selectedCount">已选择: 0</span>
+        </div>
+
+        <div class="mb-3 d-flex gap-2">
+          <button class="btn-secondary btn-sm" onclick="selectAllFiles()">全选</button>
+          <button class="btn-secondary btn-sm" onclick="deselectAllFiles()">取消全选</button>
+          <button class="btn-success btn-sm" onclick="startBatchProcess()">
+            <i class="bi bi-lightning"></i> 批量预处理（点击后等待处理即可）
+          </button>
+        </div>
+
+        <div class="file-list" id="fileList">
+          <div class="text-center text-muted py-5">
+            加载中...
+          </div>
+        </div>
+      </div>
+
+      <!-- 处理结果 -->
+      <div class="panel-card" id="resultPanel" style="display:none;">
+        <div class="panel-header">
+          <i class="bi bi-check-circle"></i> 处理结果
+        </div>
+        <div id="resultContent">
+          <!-- 由JS填充 -->
+        </div>
+      </div>
+
+      <!-- 导出选项 -->
+      <div class="panel-card" id="exportPanel" style="display:none;">
+        <div class="panel-header">
+          <i class="bi bi-download"></i> 导出预处理数据
+        </div>
+        
+        <!-- 导出进度显示 -->
+        <div id="exportProgressContainer" style="display:none; margin-bottom: 1rem;">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span id="exportProgressText">准备中...</span>
+            <span id="exportProgressPercent" class="badge bg-primary">0%</span>
+          </div>
+          <div class="progress" style="height: 20px;">
+            <div id="exportProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                 role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </div>
+        
+        <button class="btn-success" id="exportBtn" onclick="exportData()">
+          <i class="bi bi-download"></i> 导出ZIP压缩包（请勿重复点击）
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 图片放大预览模态框 -->
+<div class="modal" id="imageModal" onclick="closeImageModal()">
+  <span class="modal-close">&times;</span>
+  <img class="modal-content" id="modalImage" src="">
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// 全局变量
+let groupId = null;
+let fileList = [];
+let selectedFiles = new Set();
+let selectedOperations = new Set();
+
+// 操作定义
+const operations = {
+  basic: [
+    { id: 'align', name: '人脸对齐', icon: '👤' },
+    { id: 'grayscale', name: '灰度化', icon: '⬛' },
+    { id: 'histeq', name: '直方图均衡化', icon: '📈' }
+  ],
+  geometric: [
+    { id: 'hflip', name: '水平翻转', icon: '🔄' },
+    { id: 'rotate', name: '随机旋转', icon: '🔃' },
+    { id: 'crop', name: '随机裁剪', icon: '✂️' }
+  ],
+  color: [
+    { id: 'brightness', name: '亮度调整', icon: '☀️' },
+    { id: 'contrast', name: '对比度', icon: '🔆' },
+    { id: 'saturation', name: '饱和度', icon: '🎨' },
+    { id: 'hue', name: '色调调整', icon: '🌈' },
+    { id: 'blur', name: '模糊处理', icon: '💫' },
+    { id: 'noise', name: '高斯噪声', icon: '📺' }
+  ]
+};
+
+// 初始化
+document.addEventListener('DOMContentLoaded', async function() {
+  // 优先从当前登录用户获取小组信息
+  try {
+    const resp = await fetch('/auth/me');
+    if (resp.ok) {
+      const userData = await resp.json();
+      if (userData.group && userData.group.group_code) {
+        groupId = userData.group.group_code;
+        localStorage.setItem('current_group_id', groupId);
+      }
+    }
+  } catch (err) {
+    console.error('获取用户信息失败:', err);
+  }
+
+  // 如果从登录信息获取失败，尝试从URL参数获取（教师/管理员可能通过URL访问指定小组）
+  if (!groupId) {
+    const urlGroupId = new URLSearchParams(window.location.search).get('group_id');
+    if (urlGroupId) {
+      groupId = urlGroupId;
+    }
+  }
+
+  // 如果还是没有小组ID，显示提示
+  if (!groupId) {
+    document.getElementById('fileList').innerHTML =
+      '<div class="text-center py-5 text-muted">您暂未分配到小组，无法使用数据预处理功能</div>';
+    return;
+  }
+
+  // 加载操作列表
+  renderOperations();
+
+  // 加载文件列表
+  loadFileList();
+
+  // 加载统计数据
+  loadStats();
+});
+
+// 渲染操作按钮
+function renderOperations() {
+  // 基础预处理
+  const basicContainer = document.getElementById('basicOperations');
+  basicContainer.innerHTML = operations.basic.map(op => `
+    <div class="operation-btn" data-op="${op.id}" onclick="toggleOperation('${op.id}')">
+      <div class="operation-icon">${op.icon}</div>
+      <div class="operation-name">${op.name}</div>
+    </div>
+  `).join('');
+
+  // 几何变换
+  const geoContainer = document.getElementById('geometricOperations');
+  geoContainer.innerHTML = operations.geometric.map(op => `
+    <div class="operation-btn" data-op="${op.id}" onclick="toggleOperation('${op.id}')">
+      <div class="operation-icon">${op.icon}</div>
+      <div class="operation-name">${op.name}</div>
+    </div>
+  `).join('');
+
+  // 颜色变换
+  const colorContainer = document.getElementById('colorOperations');
+  colorContainer.innerHTML = operations.color.map(op => `
+    <div class="operation-btn" data-op="${op.id}" onclick="toggleOperation('${op.id}')">
+      <div class="operation-icon">${op.icon}</div>
+      <div class="operation-name">${op.name}</div>
+    </div>
+  `).join('');
+
+  // 绑定参数滑块事件
+  document.getElementById('rotationSlider').addEventListener('input', function() {
+    document.getElementById('rotationValue').textContent = `±${this.value}°`;
+  });
+
+  document.getElementById('brightnessSlider').addEventListener('input', function() {
+    document.getElementById('brightnessValue').textContent = `${(this.value / 10).toFixed(1)}x`;
+  });
+
+  document.getElementById('contrastSlider').addEventListener('input', function() {
+    document.getElementById('contrastValue').textContent = `${(this.value / 10).toFixed(1)}x`;
+  });
+
+  document.getElementById('saturationSlider').addEventListener('input', function() {
+    document.getElementById('saturationValue').textContent = `${(this.value / 10).toFixed(1)}x`;
+  });
+
+  document.getElementById('hueSlider').addEventListener('input', function() {
+    document.getElementById('hueValue').textContent = `±${this.value}°`;
+  });
+
+  document.getElementById('blurSlider').addEventListener('input', function() {
+    document.getElementById('blurValue').textContent = this.value;
+  });
+}
+
+// 切换操作选择
+function toggleOperation(opId) {
+  const btn = document.querySelector(`.operation-btn[data-op="${opId}"]`);
+
+  if (selectedOperations.has(opId)) {
+    selectedOperations.delete(opId);
+    btn.classList.remove('active');
+  } else {
+    selectedOperations.add(opId);
+    btn.classList.add('active');
+  }
+
+  // 显示/隐藏参数滑块
+  if (opId === 'rotate') {
+    document.getElementById('rotationParam').style.display =
+      selectedOperations.has('rotate') ? 'block' : 'none';
+  }
+  if (opId === 'brightness') {
+    document.getElementById('brightnessParam').style.display =
+      selectedOperations.has('brightness') ? 'block' : 'none';
+  }
+  if (opId === 'contrast') {
+    document.getElementById('contrastParam').style.display =
+      selectedOperations.has('contrast') ? 'block' : 'none';
+  }
+  if (opId === 'saturation') {
+    document.getElementById('saturationParam').style.display =
+      selectedOperations.has('saturation') ? 'block' : 'none';
+  }
+  if (opId === 'hue') {
+    document.getElementById('hueParam').style.display =
+      selectedOperations.has('hue') ? 'block' : 'none';
+  }
+  if (opId === 'blur') {
+    document.getElementById('blurParam').style.display =
+      selectedOperations.has('blur') ? 'block' : 'none';
+  }
+}
+
+// 全选/清除操作
+function selectAllOperations() {
+  document.querySelectorAll('.operation-btn').forEach(btn => {
+    const opId = btn.dataset.op;
+    selectedOperations.add(opId);
+    btn.classList.add('active');
+  });
+  // 显示所有参数滑块
+  document.getElementById('rotationParam').style.display = 'block';
+  document.getElementById('brightnessParam').style.display = 'block';
+  document.getElementById('contrastParam').style.display = 'block';
+  document.getElementById('saturationParam').style.display = 'block';
+  document.getElementById('hueParam').style.display = 'block';
+  document.getElementById('blurParam').style.display = 'block';
+}
+
+function clearAllOperations() {
+  selectedOperations.clear();
+  document.querySelectorAll('.operation-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.getElementById('rotationParam').style.display = 'none';
+  document.getElementById('brightnessParam').style.display = 'none';
+  document.getElementById('contrastParam').style.display = 'none';
+  document.getElementById('saturationParam').style.display = 'none';
+  document.getElementById('hueParam').style.display = 'none';
+  document.getElementById('blurParam').style.display = 'none';
+}
+
+// 加载文件列表
+async function loadFileList() {
+  try {
+    const resp = await fetch(`/face_preprocess/data?group_id=${groupId}`);
+    const data = await resp.json();
+
+    if (data.success) {
+      fileList = data.data;
+      renderFileList();
+      updateStats(data.emotion_stats);
+    }
+  } catch (err) {
+    console.error('加载文件列表失败:', err);
+    document.getElementById('fileList').innerHTML = '<div class="text-danger text-center py-5">加载失败</div>';
+  }
+}
+
+// 渲染文件列表
+function renderFileList() {
+  const container = document.getElementById('fileList');
+
+  if (fileList.length === 0) {
+    container.innerHTML = '<div class="text-muted text-center py-5">暂无已标注数据</div>';
+    return;
+  }
+
+  container.innerHTML = fileList.map((file, index) => `
+    <div class="file-item" data-index="${index}">
+      <input type="checkbox" onchange="toggleFileSelection(${index})">
+      <img class="file-thumb" src="${file.url}" alt="${file.filename}"
+           onclick="selectForPreview(${index})">
+      <div class="file-info">
+        <div class="file-name">${file.filename}</div>
+        <div class="file-meta">${(file.size / 1024).toFixed(1)} KB</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// 获取情绪标签
+function getEmotionLabel(emotion) {
+  const labels = {
+    'happy': '开心', 'sad': '难过', 'angry': '生气',
+    'fear': '害怕', 'surprise': '惊讶', 'neutral': '平静', 'disgust': '厌恶'
+  };
+  return labels[emotion] || emotion || '未知';
+}
+
+// 切换文件选择
+function toggleFileSelection(index) {
+  if (selectedFiles.has(index)) {
+    selectedFiles.delete(index);
+  } else {
+    selectedFiles.add(index);
+  }
+  updateSelectedCount();
+}
+
+// 全选/取消全选
+function selectAllFiles() {
+  fileList.forEach((_, i) => selectedFiles.add(i));
+  document.querySelectorAll('.file-item input[type="checkbox"]').forEach(cb => cb.checked = true);
+  updateSelectedCount();
+}
+
+function deselectAllFiles() {
+  selectedFiles.clear();
+  document.querySelectorAll('.file-item input[type="checkbox"]').forEach(cb => cb.checked = false);
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  document.getElementById('selectedCount').textContent = `已选择: ${selectedFiles.size}`;
+}
+
+// 选择图片进行预览
+function selectForPreview(index) {
+  const file = fileList[index];
+  const originalPreview = document.getElementById('originalPreview');
+  const originalPlaceholder = document.getElementById('originalPlaceholder');
+
+  originalPreview.src = file.url;
+  originalPreview.style.display = 'block';
+  originalPlaceholder.style.display = 'none';
+
+  // 清除已选中的复选框，选中当前项
+  selectedFiles.clear();
+  selectedFiles.add(index);
+  document.querySelectorAll('.file-item input[type="checkbox"]').forEach((cb, i) => {
+    cb.checked = i === index;
+  });
+  updateSelectedCount();
+}
+
+// 应用预览
+async function applyPreview() {
+  if (!fileList.length) {
+    alert('没有可处理的图片');
+    return;
+  }
+
+  // 如果没有选中文件，使用第一个
+  const fileIndex = selectedFiles.size > 0 ? [...selectedFiles][0] : 0;
+  const file = fileList[fileIndex];
+
+  if (selectedOperations.size === 0) {
+    alert('请先选择预处理操作');
+    return;
+  }
+
+  // 获取参数
+  const params = {};
+  if (selectedOperations.has('rotate')) {
+    params.rotation_angle = parseInt(document.getElementById('rotationSlider').value);
+  }
+  if (selectedOperations.has('brightness')) {
+    params.brightness_factor = parseInt(document.getElementById('brightnessSlider').value) / 10;
+  }
+  if (selectedOperations.has('contrast')) {
+    params.contrast_factor = parseInt(document.getElementById('contrastSlider').value) / 10;
+  }
+  if (selectedOperations.has('saturation')) {
+    params.saturation_factor = parseInt(document.getElementById('saturationSlider').value) / 10;
+  }
+  if (selectedOperations.has('hue')) {
+    params.hue_shift = parseInt(document.getElementById('hueSlider').value);
+  }
+  if (selectedOperations.has('blur')) {
+    params.blur_kernel = parseInt(document.getElementById('blurSlider').value);
+  }
+
+  // 获取图片数据
+  try {
+    const imgResp = await fetch(file.url);
+    const imgBlob = await imgResp.blob();
+    const reader = new FileReader();
+
+    reader.onload = async function(e) {
+      const imageData = e.target.result;
+
+      // 调用预处理API
+      const resp = await fetch('/face_preprocess/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image: imageData,
+          operations: [...selectedOperations],
+          params: params
+        })
+      });
+
+      const result = await resp.json();
+
+      if (result.success) {
+        const processedPreview = document.getElementById('processedPreview');
+        const processedPlaceholder = document.getElementById('processedPlaceholder');
+
+        processedPreview.src = result.processed;
+        processedPreview.style.display = 'block';
+        processedPlaceholder.style.display = 'none';
+      } else {
+        alert('预处理失败: ' + result.error);
+      }
+    };
+
+    reader.readAsDataURL(imgBlob);
+  } catch (err) {
+    console.error('预览失败:', err);
+    alert('预览失败');
+  }
+}
+
+// 批量处理
+async function startBatchProcess() {
+  if (selectedFiles.size === 0) {
+    alert('请先选择要处理的文件');
+    return;
+  }
+
+  if (selectedOperations.size === 0) {
+    alert('请先选择预处理操作');
+    return;
+  }
+
+  // 获取参数
+  const params = {};
+  if (selectedOperations.has('rotate')) {
+    params.rotation_angle = parseInt(document.getElementById('rotationSlider').value);
+  }
+  if (selectedOperations.has('brightness')) {
+    params.brightness_factor = parseInt(document.getElementById('brightnessSlider').value) / 10;
+  }
+  if (selectedOperations.has('contrast')) {
+    params.contrast_factor = parseInt(document.getElementById('contrastSlider').value) / 10;
+  }
+  if (selectedOperations.has('saturation')) {
+    params.saturation_factor = parseInt(document.getElementById('saturationSlider').value) / 10;
+  }
+  if (selectedOperations.has('hue')) {
+    params.hue_shift = parseInt(document.getElementById('hueSlider').value);
+  }
+  if (selectedOperations.has('blur')) {
+    params.blur_kernel = parseInt(document.getElementById('blurSlider').value);
+  }
+
+  const resp = await fetch('/face_preprocess/batch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      group_id: groupId,
+      operations: [...selectedOperations],
+      params: params,
+      file_indices: [...selectedFiles]
+    })
+  });
+
+  const result = await resp.json();
+
+  if (result.success) {
+    // 显示结果
+    document.getElementById('resultPanel').style.display = 'block';
+    document.getElementById('exportPanel').style.display = 'block';
+
+    document.getElementById('resultContent').innerHTML = `
+      <div class="alert alert-success">
+        <i class="bi bi-check-circle"></i>
+        处理完成！成功处理 ${result.processed_count} 个文件
+        ${result.failed_count > 0 ? `，失败 ${result.failed_count} 个` : ''}
+      </div>
+      <p class="text-muted small">输出目录: ${result.output_dir}</p>
+      <p class="text-muted small">操作后缀: ${result.suffix}</p>
+    `;
+  } else {
+    alert('处理失败: ' + result.error);
+  }
+}
+
+// 导出数据
+async function exportData() {
+  const btn = document.getElementById('exportBtn');
+  const progressContainer = document.getElementById('exportProgressContainer');
+  const progressBar = document.getElementById('exportProgressBar');
+  const progressText = document.getElementById('exportProgressText');
+  const progressPercent = document.getElementById('exportProgressPercent');
+  
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  
+  // 显示进度条
+  progressContainer.style.display = 'block';
+  progressBar.style.width = '0%';
+  progressBar.classList.remove('bg-success', 'bg-danger');
+  progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+  progressText.textContent = '正在连接服务器...';
+  progressPercent.textContent = '0%';
+
+  console.log('开始导出请求，groupId:', groupId);
+
+  // 进度轮询
+  let pollInterval;
+  let pollStarted = false;
+  function startProgressPoll() {
+    if (pollStarted) return;
+    pollStarted = true;
+    pollInterval = setInterval(async () => {
+      try {
+        const resp = await fetch('/face_preprocess/export/progress', {
+          credentials: 'include'
+        });
+        const data = await resp.json();
+        
+        if (data.status !== 'idle' && data.status !== 'error') {
+          const percent = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
+          progressBar.style.width = percent + '%';
+          progressText.textContent = data.message || '正在打包...';
+          progressPercent.textContent = percent + '%';
+          
+          if (data.status === 'completed') {
+            clearInterval(pollInterval);
+          }
+        } else if (data.status === 'error') {
+          clearInterval(pollInterval);
+          progressText.textContent = data.message || '导出失败';
+          progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+          progressBar.classList.add('bg-danger');
+        }
+      } catch (e) {
+        // 忽略轮询错误
+      }
+    }, 200); // 每200ms轮询一次
+  }
+
+  try {
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> 正在打包...';
+    
+    console.log('发送 POST 请求到 /face_preprocess/export');
+    
+    // 发送 POST 请求（只导出预处理后数据）
+    const resp = await fetch('/face_preprocess/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        group_id: groupId,
+        include_original: false,
+        include_processed: true
+      })
+    });
+
+    console.log('收到响应，状态:', resp.status);
+
+    // 停止轮询
+    if (pollInterval) {
+      clearInterval(pollInterval);
+    }
+
+    if (!resp.ok) {
+      throw new Error(`服务器错误: ${resp.status} ${resp.statusText}`);
+    }
+
+    const contentType = resp.headers.get('content-type');
+    console.log('Content-Type:', contentType);
+    
+    if (!contentType || !contentType.includes('application/zip')) {
+      const text = await resp.text();
+      console.log('非 ZIP 响应:', text);
+      throw new Error(`导出失败: ${text.substring(0, 200)}`);
+    }
+
+    // 下载文件
+    console.log('开始下载文件...');
+    progressText.textContent = '正在下载（请耐心等待）...';
+    progressBar.style.width = '100%';
+    progressPercent.textContent = '100%';
+    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    
+    const blob = await resp.blob();
+    console.log('Blob 大小:', blob.size, '类型:', blob.type);
+    
+    if (blob.size === 0) {
+      throw new Error('下载的文件为空');
+    }
+    
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `face_preprocessed_${groupId}.zip`;
+    document.body.appendChild(a);
+    console.log('触发下载...');
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
+    console.log('下载完成');
+
+    // 显示成功
+    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    progressBar.classList.add('bg-success');
+    progressText.textContent = '导出成功！';
+    
+    setTimeout(() => {
+      progressContainer.style.display = 'none';
+    }, 3000);
+    
+  } catch (err) {
+    console.error('导出失败:', err);
+    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    progressBar.classList.add('bg-danger');
+    progressText.textContent = '导出失败: ' + err.message;
+    alert('导出失败: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+    clearInterval(pollInterval);
+  }
+}
+
+// 加载统计数据
+function loadStats() {
+  // 统计数据会随文件列表一起加载
+}
+
+function updateStats(emotionStats) {
+  const stats = emotionStats || {};
+  // 计算总数
+  const total = Object.values(stats).reduce((a, b) => a + b, 0);
+  document.getElementById('totalCount').textContent = total;
+  document.getElementById('happyCount').textContent = stats.happy || 0;
+  document.getElementById('sadCount').textContent = stats.sad || 0;
+  document.getElementById('angryCount').textContent = stats.angry || 0;
+  document.getElementById('fearCount').textContent = stats.fear || 0;
+  document.getElementById('surpriseCount').textContent = stats.surprise || 0;
+  // neutral和disgust归入平静类
+  const neutralCount = (stats.neutral || 0) + (stats.disgust || 0);
+  document.getElementById('neutralCount').textContent = neutralCount;
+}
+
+// 图片放大预览
+function openImageModal(src) {
+  document.getElementById('modalImage').src = src;
+  document.getElementById('imageModal').classList.add('show');
+}
+
+function closeImageModal() {
+  document.getElementById('imageModal').classList.remove('show');
+}
+
+// 绑定放大功能
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('preview-image')) {
+    openImageModal(e.target.src);
+  }
+});
+</script>
+{% endblock %}

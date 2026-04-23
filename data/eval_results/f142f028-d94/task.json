@@ -1,0 +1,272 @@
+{
+  "task_id": "f142f028-d94",
+  "model_id": "36d1ada3-380",
+  "model_name": "face_cnn_fp32_0420_0048",
+  "model_framework": "onnx",
+  "model_path": "/home/pub/code/eduplatform/data/uploaded_models/G06/36d1ada3-380.onnx",
+  "testset_id": "face_20260420_021445",
+  "testset_name": "face_G06_0420_0214",
+  "course": "face",
+  "group_id": "G06",
+  "status": "completed",
+  "created_at": "2026-04-20T02:15:09.053029",
+  "started_at": "2026-04-20T02:15:09.429181",
+  "completed_at": "2026-04-20T02:15:09.893879",
+  "progress": 100,
+  "total_samples": 25,
+  "processed_samples": 25,
+  "metrics": {
+    "accuracy": 0.0,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1_score": 0.0,
+    "total_samples": 25,
+    "correct": 0,
+    "per_class": {
+      "angry": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 1
+      },
+      "disgust": {
+        "precision": 0,
+        "recall": 0,
+        "f1": 0,
+        "support": 0
+      },
+      "fear": {
+        "precision": 0,
+        "recall": 0,
+        "f1": 0,
+        "support": 0
+      },
+      "happy": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 11
+      },
+      "sad": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 7
+      },
+      "surprise": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0,
+        "support": 6
+      },
+      "neutral": {
+        "precision": 0,
+        "recall": 0,
+        "f1": 0,
+        "support": 0
+      }
+    },
+    "confusion_matrix": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        11
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        7
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        6
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ],
+    "emotion_list": [
+      "angry",
+      "disgust",
+      "fear",
+      "happy",
+      "sad",
+      "surprise",
+      "neutral"
+    ]
+  },
+  "predictions": [
+    {
+      "filename": "G06_M09_surprise_003.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14869189262390137
+    },
+    {
+      "filename": "G06_M09_happy_012.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14810626208782196
+    },
+    {
+      "filename": "G06_M09_happy_007.jpg",
+      "predicted": "neutral",
+      "confidence": 0.1475311815738678
+    },
+    {
+      "filename": "G06_M09_sad_002.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14751996099948883
+    },
+    {
+      "filename": "G06_M09_surprise_005.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14869549870491028
+    },
+    {
+      "filename": "G06_M09_happy_005.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14810706675052643
+    },
+    {
+      "filename": "G06_M09_sad_004.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14753182232379913
+    },
+    {
+      "filename": "G06_M09_sad_003.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14752693474292755
+    },
+    {
+      "filename": "G06_M09_angry_001.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14836405217647552
+    },
+    {
+      "filename": "G06_M09_happy_009.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14754308760166168
+    },
+    {
+      "filename": "G06_M09_sad_001.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14761461317539215
+    },
+    {
+      "filename": "G06_M09_surprise_001.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14765554666519165
+    },
+    {
+      "filename": "G06_M09_happy_003.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14802366495132446
+    },
+    {
+      "filename": "G06_M09_happy_008.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14753980934619904
+    },
+    {
+      "filename": "G06_M09_happy_006.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14804711937904358
+    },
+    {
+      "filename": "G06_M09_happy_002.jpg",
+      "predicted": "neutral",
+      "confidence": 0.1481882929801941
+    },
+    {
+      "filename": "G06_M09_sad_007.jpg",
+      "predicted": "neutral",
+      "confidence": 0.1483791321516037
+    },
+    {
+      "filename": "G06_M09_sad_006.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14751702547073364
+    },
+    {
+      "filename": "G06_M09_surprise_002.jpg",
+      "predicted": "neutral",
+      "confidence": 0.1486922651529312
+    },
+    {
+      "filename": "G06_M09_surprise_004.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14869172871112823
+    },
+    {
+      "filename": "G06_M09_happy_010.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14754536747932434
+    },
+    {
+      "filename": "G06_M09_sad_005.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14753267168998718
+    },
+    {
+      "filename": "G06_M09_happy_001.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14796596765518188
+    },
+    {
+      "filename": "G06_M09_happy_011.jpg",
+      "predicted": "neutral",
+      "confidence": 0.14754141867160797
+    },
+    {
+      "filename": "G06_M09_surprise_006.jpg",
+      "predicted": "neutral",
+      "confidence": 0.148692324757576
+    }
+  ],
+  "error": null
+}

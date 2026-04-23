@@ -1,0 +1,5447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AI 代码编辑器{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1e1e1e;
+      color: #d4d4d4;
+    }
+
+    /* ── Toolbar ─────────────────────────────────────────── */
+    .editor-toolbar {
+      height: 48px;
+      background: #2d2d2d;
+      border-bottom: 1px solid #3c3c3c;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .toolbar-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #d4d4d4;
+      margin-right: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .toolbar-course {
+      font-size: 0.75rem;
+      color: #808080;
+      padding: 2px 8px;
+      background: #3c3c3c;
+      border-radius: 4px;
+    }
+    .toolbar-sep { flex: 1; }
+    .toolbar-btn {
+      height: 32px;
+      padding: 0 14px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .btn-run {
+      background: linear-gradient(135deg, #4CAF50, #388E3C);
+      color: white;
+    }
+    .btn-run:hover { background: linear-gradient(135deg, #66BB6A, #43A047); transform: translateY(-1px); }
+    .btn-run:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-stop {
+      background: linear-gradient(135deg, #f44336, #c62828);
+      color: white;
+    }
+    .btn-template {
+      background: #0e639c;
+      color: white;
+    }
+    .btn-template:hover { background: #1177bb; }
+    .btn-reset {
+      background: #3c3c3c;
+      color: #d4d4d4;
+      border: 1px solid #555;
+    }
+    .btn-reset:hover { background: #4a4a4a; }
+    .btn-save {
+      background: linear-gradient(135deg, #7C3AED, #6D28D9);
+      color: white;
+    }
+    .btn-save:hover { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
+    .btn-submit {
+      background: linear-gradient(135deg, #F59E0B, #D97706);
+      color: white;
+    }
+    .btn-submit:hover { background: linear-gradient(135deg, #FCD34D, #F59E0B); }
+    .btn-exit {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+    }
+    .btn-exit:hover { background: linear-gradient(135deg, #f87171, #ef4444); }
+
+    /* ── Main Layout ──────────────────────────────────────── */
+    .editor-layout {
+      display: flex;
+      height: calc(100vh - 48px);
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────── */
+    .editor-sidebar {
+      width: 240px;
+      background: #252526;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+    /* 侧栏与编辑器之间的竖向拖拽条 */
+    .sidebar-resize-handle {
+      width: 5px;
+      flex-shrink: 0;
+      cursor: ew-resize;
+      background: #2a2a2a;
+      border-left: 1px solid #3c3c3c;
+      border-right: 1px solid #3c3c3c;
+      align-self: stretch;
+      transition: background 0.15s;
+    }
+    .sidebar-resize-handle:hover,
+    .sidebar-resize-handle.active {
+      background: #007acc;
+    }
+    .sidebar-tabs {
+      display: flex;
+      border-bottom: 1px solid #3c3c3c;
+      height: 36px;
+    }
+    .sidebar-tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: #808080;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .sidebar-tab.active {
+      color: #d4d4d4;
+      border-bottom: 2px solid #007acc;
+      background: #2d2d2d;
+    }
+    .sidebar-tab:hover:not(.active) { color: #d4d4d4; }
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+    .sidebar-content::-webkit-scrollbar { width: 6px; }
+    .sidebar-content::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-content::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 3px; }
+
+    /* File Tree */
+    .ft-node { user-select: none; }
+    .ft-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      color: #d4d4d4;
+      transition: background 0.1s;
+    }
+    .ft-item:hover { background: #2a2d2e; }
+    .ft-item.active { background: #094771; }
+    .ft-item .ft-icon { font-size: 0.9rem; flex-shrink: 0; }
+    .ft-item .ft-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ft-children { padding-left: 16px; }
+    .ft-folder-header {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      color: #cccccc;
+      border-radius: 4px;
+    }
+    .ft-folder-header:hover { background: #2a2d2e; }
+    .ft-folder-header .ft-chevron { transition: transform 0.15s; font-size: 0.7rem; color: #808080; }
+    .ft-folder-header .ft-chevron.open { transform: rotate(90deg); }
+    .ft-fildren { display: none; }
+    .ft-fildren.open { display: block; }
+
+    /* ── Editor Area ─────────────────────────────────────── */
+    .editor-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+    .editor-tabs-bar {
+      height: 36px;
+      background: #2d2d2d;
+      display: flex;
+      align-items: flex-end;
+      border-bottom: 1px solid #3c3c3c;
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+    .editor-tabs-bar::-webkit-scrollbar { height: 3px; }
+    .editor-tabs-bar::-webkit-scrollbar-thumb { background: #4a4a4a; }
+    .editor-tab {
+      height: 35px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      color: #808080;
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-bottom: none;
+      border-radius: 6px 6px 0 0;
+      background: transparent;
+      white-space: nowrap;
+      transition: all 0.1s;
+      position: relative;
+    }
+    .editor-tab.active {
+      color: #d4d4d4;
+      background: #1e1e1e;
+      border-color: #3c3c3c;
+    }
+    .editor-tab .tab-close {
+      width: 18px;
+      height: 18px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      color: #808080;
+      opacity: 0;
+      transition: all 0.1s;
+    }
+    .editor-tab:hover .tab-close,
+    .editor-tab.active .tab-close { opacity: 1; }
+    .editor-tab .tab-close:hover { background: #3c3c3c; color: #d4d4d4; }
+    .editor-container {
+      flex: 1;
+      min-height: 140px;
+      overflow: hidden;
+      position: relative;
+    }
+    #monaco-editor {
+      width: 100%;
+      height: 100%;
+    }
+    .editor-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #1e1e1e;
+      color: #808080;
+      font-size: 0.9rem;
+      gap: 12px;
+      z-index: 5;
+    }
+    .editor-loading.hidden { display: none; }
+    .spinner-ring {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #3c3c3c;
+      border-top-color: #007acc;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── 终端与编辑器之间的拖拽条 ─────────────────────────── */
+    .editor-resize-handle {
+      height: 6px;
+      flex-shrink: 0;
+      cursor: ns-resize;
+      background: #2a2a2a;
+      border-top: 1px solid #3c3c3c;
+      border-bottom: 1px solid #3c3c3c;
+      transition: background 0.15s;
+    }
+    .editor-resize-handle:hover,
+    .editor-resize-handle.active {
+      background: #007acc;
+    }
+
+    /* ── Bottom Panel (Terminal + Problems) ─────────────── */
+    .editor-bottom {
+      height: 300px;
+      background: #1e1e1e;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .bottom-tabs {
+      display: flex;
+      align-items: center;
+      height: 36px;
+      background: #2d2d2d;
+      border-bottom: 1px solid #3c3c3c;
+      padding: 0 8px;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .bottom-tab {
+      height: 34px;
+      padding: 0 12px;
+      border: none;
+      background: transparent;
+      color: #808080;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 4px 4px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.1s;
+      position: relative;
+    }
+    .bottom-tab.active { color: #d4d4d4; background: #1e1e1e; }
+    .bottom-tab:hover:not(.active) { color: #d4d4d4; }
+    .bottom-tab .badge-err {
+      background: #f44336;
+      color: white;
+      border-radius: 8px;
+      padding: 0 5px;
+      font-size: 0.65rem;
+      font-weight: 700;
+    }
+    .bottom-tab .badge-warn {
+      background: #F59E0B;
+      color: white;
+      border-radius: 8px;
+      padding: 0 5px;
+      font-size: 0.65rem;
+      font-weight: 700;
+    }
+    .bottom-sep { flex: 1; }
+    .bottom-actions {
+      display: flex;
+      gap: 4px;
+      padding: 0 4px;
+    }
+    .bottom-actions button {
+      width: 26px;
+      height: 26px;
+      border: none;
+      background: transparent;
+      color: #808080;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      transition: all 0.1s;
+    }
+    .bottom-actions button:hover { background: #3c3c3c; color: #d4d4d4; }
+    .bottom-panel-content {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Terminal ────────────────────────────────────────── */
+    .terminal-output {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 14px;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+    .terminal-output::-webkit-scrollbar { width: 6px; }
+    .terminal-output::-webkit-scrollbar-track { background: transparent; }
+    .terminal-output::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 3px; }
+    .term-line { white-space: pre-wrap; word-break: break-all; }
+    .term-stdout { color: #d4d4d4; }
+    .term-stderr { color: #f48771; }
+    .term-sys { color: #569cd6; font-style: italic; }
+    .term-result { color: #c5c5c5; }
+    .term-chart { color: #4ec9b0; }
+    .term-input {
+      color: #9cdcfe;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .term-input::before { content: '>>>'; color: #c586c0; margin-right: 4px; font-size: 0.75rem; }
+    .term-img {
+      max-width: 100%;
+      border-radius: 4px;
+      margin: 4px 0;
+      display: block;
+    }
+    .term-img-placeholder {
+      background: #2d2d2d;
+      border: 1px dashed #4a4a4a;
+      border-radius: 4px;
+      padding: 8px 12px;
+      color: #569cd6;
+      font-size: 0.78rem;
+      margin: 4px 0;
+    }
+    .term-running {
+      color: #4ec9b0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .term-running::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: #4ec9b0;
+      border-radius: 50%;
+      animation: pulse-green 1s infinite;
+    }
+    @keyframes pulse-green { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+    /* Problems Panel */
+    .problems-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+    .problems-list::-webkit-scrollbar { width: 6px; }
+    .problems-list::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 3px; }
+    .prob-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 5px 12px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .prob-item:hover { background: #2a2d2e; }
+    .prob-icon { font-size: 0.9rem; flex-shrink: 0; margin-top: 1px; }
+    .prob-icon.err { color: #f48771; }
+    .prob-icon.warn { color: #cca700; }
+    .prob-msg { flex: 1; }
+    .prob-file { color: #569cd6; }
+    .prob-line { color: #4ec9b0; margin-left: 4px; }
+    .prob-item.err { border-left: 2px solid #f48771; }
+    .prob-item.warn { border-left: 2px solid #cca700; }
+
+    /* Problems: empty state */
+    .problems-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #4a4a4a;
+      font-size: 0.82rem;
+      gap: 6px;
+    }
+
+    /* ── Status Bar ──────────────────────────────────────── */
+    .editor-statusbar {
+      height: 24px;
+      background: #007acc;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 0.72rem;
+      color: white;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0.85;
+      cursor: default;
+    }
+    .status-item:hover { opacity: 1; }
+    .status-sep { flex: 1; }
+    .status-lang {
+      background: rgba(255,255,255,0.15);
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+    .status-runner {
+      background: rgba(255,255,255,0.15);
+      padding: 1px 6px;
+      border-radius: 3px;
+    }
+    .status-runner.running { background: rgba(76,175,80,0.4); }
+
+    /* ── Modal: Template Picker ─────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal-box {
+      background: #2d2d2d;
+      border: 1px solid #3c3c3c;
+      border-radius: 10px;
+      width: 700px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #3c3c3c;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-header h3 { font-size: 1rem; font-weight: 600; color: #d4d4d4; }
+    .modal-close {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
+      color: #808080;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-close:hover { background: #3c3c3c; color: #d4d4d4; }
+    .modal-body { padding: 16px 20px; }
+    /* 模板选择：三大模块分区（底色 + 分割线，避免标题与卡片混排产生空缺） */
+    .template-modules {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .template-module {
+      border-radius: 10px;
+      padding: 14px 14px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    .template-module.face {
+      background: linear-gradient(165deg, rgba(124, 58, 237, 0.14) 0%, rgba(30, 30, 30, 0.65) 48%, rgba(30, 27, 45, 0.5) 100%);
+      border-color: rgba(196, 181, 253, 0.28);
+    }
+    .template-module.audio {
+      background: linear-gradient(165deg, rgba(37, 99, 235, 0.14) 0%, rgba(30, 30, 30, 0.65) 48%, rgba(24, 32, 48, 0.5) 100%);
+      border-color: rgba(147, 197, 253, 0.28);
+    }
+    .template-module.eco {
+      background: linear-gradient(165deg, rgba(22, 163, 74, 0.14) 0%, rgba(30, 30, 30, 0.65) 48%, rgba(22, 40, 32, 0.5) 100%);
+      border-color: rgba(134, 239, 172, 0.28);
+    }
+    .template-module-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .template-module.face .template-module-head { color: #ddd6fe; border-bottom-color: rgba(196, 181, 253, 0.22); }
+    .template-module.audio .template-module-head { color: #bfdbfe; border-bottom-color: rgba(147, 197, 253, 0.22); }
+    .template-module.eco .template-module-head { color: #bbf7d0; border-bottom-color: rgba(134, 239, 172, 0.22); }
+    .template-module-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .template-card {
+      background: #1e1e1e;
+      border: 2px solid #3c3c3c;
+      border-radius: 8px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .template-card:hover { border-color: #007acc; transform: translateY(-2px); }
+    .template-card.selected { border-color: #007acc; background: #0e2a3d; }
+    .template-icon { font-size: 1.8rem; margin-bottom: 6px; }
+    .template-name { font-weight: 600; color: #d4d4d4; margin-bottom: 4px; }
+    .template-desc { font-size: 0.78rem; color: #808080; line-height: 1.4; }
+    .template-tags { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+    .template-tag {
+      font-size: 0.65rem;
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: #3c3c3c;
+      color: #d4d4d4;
+    }
+    .template-tag.face { background: #3b2a5c; color: #c4b5fd; }
+    .template-tag.eco { background: #1a3a2a; color: #86efac; }
+    .template-tag.audio { background: #2a3a5c; color: #93c5fd; }
+    
+    .modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid #3c3c3c;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .btn-modal {
+      height: 34px;
+      padding: 0 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-modal-cancel { background: #3c3c3c; color: #d4d4d4; }
+    .btn-modal-cancel:hover { background: #4a4a4a; }
+    .btn-modal-confirm { background: #007acc; color: white; }
+    .btn-modal-confirm:hover { background: #1177bb; }
+    .btn-modal-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Output Panel Tabs ────────────────────────────────── */
+    .output-panel { display: none; height: 100%; flex-direction: column; }
+    .output-panel.active { display: flex; }
+
+    /* ── Scrollbar global ─────────────────────────────────── */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 4px; }
+    ::-webkit-scrollbar-corner { background: transparent; }
+    .status-action { cursor: pointer; opacity: 0.75; transition: opacity 0.15s; }
+    .status-action:hover { opacity: 1; }
+    .status-sep { display: inline-block; width: 1px; height: 12px; background: #3c3c3c; margin: 0 4px; vertical-align: middle; }
+
+    /* ── Right Panel (Optional) ───────────────────────────── */
+    .editor-right {
+      width: 280px;
+      background: #252526;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+    .right-resize-handle {
+      width: 5px;
+      flex-shrink: 0;
+      cursor: ew-resize;
+      background: #2a2a2a;
+      border-left: 1px solid #3c3c3c;
+      border-right: 1px solid #3c3c3c;
+      align-self: stretch;
+      transition: background 0.15s;
+    }
+    .right-resize-handle:hover,
+    .right-resize-handle.active {
+      background: #007acc;
+    }
+    #editorRight.hidden,
+    #rightResizeHandle.hidden {
+      display: none;
+    }
+    .right-header {
+      padding: 10px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #cccccc;
+      border-bottom: 1px solid #3c3c3c;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .right-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+    .run-info-card {
+      background: #1e1e1e;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    .run-info-title {
+      font-size: 0.75rem;
+      color: #808080;
+      margin-bottom: 6px;
+    }
+    .run-info-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #d4d4d4;
+    }
+    .run-info-value.good { color: #4ec9b0; }
+    .run-info-value.warn { color: #cca700; }
+    .run-info-value.bad { color: #f48771; }
+
+    /* ── Dataset Panel ────────────────────────────────────── */
+    .dataset-section { margin-bottom: 12px; }
+    .dataset-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px 10px;
+      margin-bottom: 6px;
+    }
+    .dataset-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #808080;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .dataset-title-hint {
+      font-size: 0.65rem;
+      font-weight: 400;
+      color: #6a6a6a;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .dataset-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: #d4d4d4;
+    }
+    .dataset-item:hover { background: #2a2d2e; }
+    .dataset-size { margin-left: auto; color: #808080; font-size: 0.72rem; }
+    .btn-upload-dataset {
+      width: 100%;
+      padding: 6px;
+      border: 1px dashed #3c3c3c;
+      border-radius: 4px;
+      background: transparent;
+      color: #808080;
+      font-size: 0.78rem;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: all 0.1s;
+    }
+    .btn-upload-dataset:hover { border-color: #007acc; color: #007acc; }
+
+    /* ── File Tree Actions ────────────────────────────────────── */
+    .ft-actions { gap: 4px; flex-wrap: wrap; }
+    .ft-action-btn {
+      flex: 1;
+      min-width: 0;
+      padding: 4px 8px;
+      border: none;
+      border-radius: 4px;
+      background: #2d2d2d;
+      color: #808080;
+      font-size: 0.72rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      transition: all 0.15s;
+    }
+    .ft-action-btn:hover { background: #3c3c3c; color: #d4d4d4; }
+    .ft-section-label { color: #6a6a6a; font-weight: 600; }
+    .ft-delete {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: #555;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .ft-item:hover .ft-delete { opacity: 1; }
+    .ft-delete:hover { background: #3c3c3c; color: #f48771; }
+    .ft-folder-header .ft-delete { opacity: 0.6; }
+    .ft-folder-header .ft-delete:hover { opacity: 1; }
+
+    /* ── Font Size Control ────────────────────────────────────── */
+    .font-size-control {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .font-size-btn {
+      width: 22px;
+      height: 22px;
+      border: 1px solid #3c3c3c;
+      border-radius: 4px;
+      background: transparent;
+      color: #808080;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .font-size-btn:hover { background: #3c3c3c; color: #d4d4d4; }
+    .font-size-display {
+      font-size: 0.72rem;
+      color: #808080;
+      min-width: 28px;
+      text-align: center;
+    }
+
+    /* ── Terminal Input ────────────────────────────────────────── */
+    .terminal-input-container {
+      display: flex;
+      align-items: center;
+      padding: 6px 12px;
+      border-top: 1px solid #3c3c3c;
+      background: #252526;
+      gap: 8px;
+    }
+    .terminal-prompt {
+      color: #4ec9b0;
+      font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .terminal-cmd-input {
+      flex: 1;
+      background: #1e1e1e;
+      border: 1px solid #3c3c3c;
+      border-radius: 4px;
+      padding: 4px 8px;
+      color: #d4d4d4;
+      font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .terminal-cmd-input:focus { border-color: #007acc; }
+    .terminal-cmd-input::placeholder { color: #555; }
+  </style>
+</head>
+<body>
+
+<!-- ══ Toolbar ══════════════════════════════════════════════════ -->
+<div class="editor-toolbar">
+  <div class="toolbar-title">
+    <span>🐱</span>
+    <span>编程工作台</span>
+  </div>
+  <span class="toolbar-course" id="courseLabel">情感计算 · 表情识别</span>
+    <div class="toolbar-sep"></div>
+
+  <!-- 编辑器字体大小控制 -->
+  <div class="font-size-control" id="editorFontSize" title="编辑器字体大小">
+    <button class="font-size-btn" onclick="adjustFontSize(-1)" title="缩小">−</button>
+    <span class="font-size-display" id="editorFontDisplay">14</span>
+    <button class="font-size-btn" onclick="adjustFontSize(1)" title="放大">+</button>
+  </div>
+
+  <button class="toolbar-btn btn-template" onclick="showTemplateModal()">
+    <span>📁</span> 加载模板
+  </button>
+  <button class="toolbar-btn btn-reset" onclick="resetCode()">
+    <span>↺</span> 重置
+  </button>
+  <button class="toolbar-btn btn-save" onclick="saveCode()">
+    <span>💾</span> 保存
+  </button>
+  <button class="toolbar-btn btn-run" id="btnRun" onclick="runCode()">
+    <span>▶</span> 运行代码
+  </button>
+  <button class="toolbar-btn btn-stop" id="btnStop" onclick="stopCode()" style="display:none">
+    <span>■</span> 停止
+  </button>
+  <button class="toolbar-btn btn-submit" id="btnSubmit" onclick="submitCode()">
+    <span>🏆</span> 提交成绩
+  </button>
+  <button class="toolbar-btn btn-exit" onclick="exitEditor()">
+    <span>🚪</span> 退出编辑器
+  </button>
+</div>
+
+<!-- ══ Main Layout ════════════════════════════════════════════ -->
+<div class="editor-layout">
+
+  <!-- ── Sidebar ───────────────────────────────────────────── -->
+  <div class="editor-sidebar" id="editorSidebar">
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active" id="tabFiles" onclick="showSidebarTab('files')">
+        <span>📂</span> 文件
+      </button>
+      <button class="sidebar-tab" id="tabDataset" onclick="showSidebarTab('dataset')">
+        <span>📊</span> 数据集
+      </button>
+    </div>
+
+    <!-- File Explorer -->
+    <div class="sidebar-content" id="sidebarFiles">
+      <div id="fileTree"></div>
+    </div>
+
+    <!-- Dataset Explorer -->
+    <div class="sidebar-content" id="sidebarDataset" style="display:none">
+      <!-- 表情数据同步 -->
+      <div class="dataset-section" id="faceDataSection">
+        <div class="dataset-title">📸 我的标注数据（表情）</div>
+        <div id="groupDataInfo" style="font-size:0.78rem;color:#808080;padding:4px 8px;">
+          正在加载...
+        </div>
+        <button class="toolbar-btn btn-save" style="width:100%;margin-top:8px;font-size:0.78rem" onclick="syncGroupData()">
+          <span>🔄</span> 同步表情数据
+        </button>
+        <p style="font-size:0.7rem;color:#606060;padding:4px 8px;line-height:1.4">
+          从「数据采集」模块同步您标注的表情图片
+        </p>
+      </div>
+
+      <!-- 表情预处理数据同步 -->
+      <div class="dataset-section" id="facePreprocessSection">
+        <div class="dataset-title">🧹 预处理后数据（表情）</div>
+        <div id="facePreprocessInfo" style="font-size:0.78rem;color:#808080;padding:4px 8px;">
+          数据预处理后存放位置
+        </div>
+        <button class="toolbar-btn btn-save" style="width:100%;margin-top:8px;font-size:0.78rem;background:#0e639c" onclick="syncFacePreprocessedData()">
+          <span>🧹</span> 同步预处理数据
+        </button>
+        <p style="font-size:0.7rem;color:#606060;padding:4px 8px;line-height:1.4">
+          使用「数据预处理」模块处理后的增强数据，适合VGG/ResNet等模型
+        </p>
+      </div>
+
+      <!-- 音频数据同步 -->
+      <div class="dataset-section" id="audioDataSection">
+        <div class="dataset-title">🎤 我的标注数据（声音）</div>
+        <div id="audioDataInfo" style="font-size:0.78rem;color:#808080;padding:4px 8px;">
+          正在加载...
+        </div>
+        <button class="toolbar-btn btn-save" style="width:100%;margin-top:8px;font-size:0.78rem" onclick="syncAudioData()">
+          <span>🔄</span> 同步音频数据
+        </button>
+        <p style="font-size:0.7rem;color:#606060;padding:4px 8px;line-height:1.4">
+          从「声音情绪采集」模块同步您标注的音频文件
+        </p>
+      </div>
+
+      <!-- 音频预处理数据同步 -->
+      <div class="dataset-section" id="audioPreprocessSection">
+        <div class="dataset-title">🎵 预处理后数据（声音）</div>
+        <div id="audioPreprocessInfo" style="font-size:0.78rem;color:#808080;padding:4px 8px;">
+          音频特征提取后存放位置
+        </div>
+        <button class="toolbar-btn btn-save" style="width:100%;margin-top:8px;font-size:0.78rem;background:#0e639c" onclick="syncAudioPreprocessedData()">
+          <span>🎵</span> 同步预处理数据
+        </button>
+        <p style="font-size:0.7rem;color:#606060;padding:4px 8px;line-height:1.4">
+          使用「数据预处理」模块提取的MFCC/梅尔频谱特征，适合CNN/LSTM/Transformer模型
+        </p>
+      </div>
+
+      <div class="dataset-section">
+        <div class="dataset-title-row">
+          <div class="dataset-title">📁 训练数据</div>
+          <span class="dataset-title-hint">点击可复制并粘贴相对路径</span>
+        </div>
+        <!-- 原始标注数据 -->
+        <div style="font-size:0.68rem;color:#7a7a7a;padding:2px 8px;margin-top:4px">
+          原始标注数据（用于基础训练）：
+        </div>
+        <div class="dataset-item" onclick="insertDatasetPath('images')" title="复制并插入 ./课程/images/">
+          <span>📷</span> <span>face/images/</span>
+          <span class="dataset-size" id="trainSize">-</span>
+        </div>
+        <div class="dataset-item" onclick="insertDatasetPath('train_labels')" title="复制并插入 ./课程/train_labels.csv">
+          <span>📄</span> <span>train_labels.csv</span>
+          <span class="dataset-size" id="trainLabelsSize">-</span>
+        </div>
+        <!-- 预处理后数据 -->
+        <div style="font-size:0.68rem;color:#7a7a7a;padding:2px 8px;margin-top:6px">
+          预处理后数据（用于高级训练）：
+        </div>
+        <div class="dataset-item" onclick="insertDatasetPath('preprocessed_images')" title="预处理后的图片">
+          <span>🧹</span> <span>face/preprocessed/images/</span>
+          <span class="dataset-size" id="preprocessedSize">-</span>
+        </div>
+        <div class="dataset-item" onclick="insertDatasetPath('audio_preprocessed')" title="预处理后的音频特征">
+          <span>🎵</span> <span>audio/preprocessed/</span>
+          <span class="dataset-size" id="audioPreprocessedSize">-</span>
+        </div>
+        <button class="btn-upload-dataset" onclick="document.getElementById('uploadTrain').click()">
+          + 上传训练数据
+        </button>
+        <input type="file" id="uploadTrain" style="display:none" accept=".zip,.tar,.gz,.csv,.json" multiple>
+      </div>
+      <div class="dataset-section">
+        <div class="dataset-title">🔒 测试集</div>
+        <div class="dataset-item">
+          <span>🔒</span> <span>test/</span>
+        </div>
+        <p style="font-size:0.72rem;color:#808080;padding:4px 8px;line-height:1.4">
+          测试集对参赛者保密，提交后自动评测
+        </p>
+      </div>
+      <div class="dataset-section">
+        <div class="dataset-title">🤖 训练结果</div>
+        <div class="dataset-item" onclick="insertDatasetPath('models')">
+          <span>📦</span> <span>models/</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-resize-handle" id="sidebarResizeHandle" title="左右拖动调整侧栏宽度"></div>
+
+  <!-- ── Editor Area ──────────────────────────────────────── -->
+  <div class="editor-main">
+    <!-- Tab bar -->
+    <div class="editor-tabs-bar" id="editorTabsBar">
+      <!-- Dynamic tabs injected by JS -->
+    </div>
+
+    <!-- Monaco editor container -->
+    <div class="editor-container">
+      <div class="editor-loading" id="editorLoading">
+        <div class="spinner-ring"></div>
+        <span>正在加载编辑器...</span>
+      </div>
+      <div id="monaco-editor"></div>
+    </div>
+
+    <div class="editor-resize-handle" id="editorResizeHandle" title="上下拖动调整终端高度"></div>
+
+    <!-- ── Bottom Panel ──────────────────────────────────── -->
+    <div class="editor-bottom" id="editorBottom">
+      <div class="bottom-tabs">
+        <button class="bottom-tab active" id="btTabTerminal" onclick="showBottomTab('terminal')">
+          <span>🔷</span> 输出终端
+        </button>
+        <button class="bottom-tab" id="btTabProblems" onclick="showBottomTab('problems')">
+          <span>⚠️</span> 问题
+          <span class="badge-err hidden" id="badgeErr">0</span>
+          <span class="badge-warn hidden" id="badgeWarn">0</span>
+        </button>
+        <div class="bottom-sep"></div>
+        <div class="bottom-actions">
+          <!-- 终端字体大小控制 -->
+          <div class="font-size-control" id="terminalFontSize" title="终端字体大小" style="margin-right:4px">
+            <button class="font-size-btn" style="width:18px;height:18px;font-size:0.7rem" onclick="adjustTerminalFontSize(-1)" title="缩小">−</button>
+            <span class="font-size-display" id="terminalFontDisplay" style="font-size:0.65rem">13</span>
+            <button class="font-size-btn" style="width:18px;height:18px;font-size:0.7rem" onclick="adjustTerminalFontSize(1)" title="放大">+</button>
+          </div>
+          <button onclick="clearTerminal()" title="清空终端">🗑</button>
+          <button onclick="toggleBottomPanel()" id="btnToggleBottom" title="折叠">─</button>
+        </div>
+      </div>
+
+      <!-- Terminal Panel -->
+      <div class="output-panel active" id="panelTerminal">
+        <div class="terminal-output" id="terminalOutput"></div>
+        <!-- 终端命令输入框 -->
+        <div class="terminal-input-container">
+          <span class="terminal-prompt">$</span>
+          <input type="text" class="terminal-cmd-input" id="terminalCmdInput"
+                 placeholder="输入命令按 Enter 执行（如：python script.py）"
+                 onkeydown="if(event.key==='Enter')executeTerminalCommand()">
+        </div>
+      </div>
+
+      <!-- Problems Panel -->
+      <div class="output-panel" id="panelProblems">
+        <div class="problems-list" id="problemsList">
+          <div class="problems-empty">
+            <span>✓</span>
+            <span>暂无问题</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-resize-handle" id="rightResizeHandle" title="左右拖动调整运行结果栏宽度"></div>
+
+  <!-- ── Right Panel ──────────────────────────────────────── -->
+  <div class="editor-right" id="editorRight">
+    <div class="right-header">
+      <span>📈 运行结果</span>
+      <span id="runStatus" style="font-size:0.72rem;color:#808080">—</span>
+    </div>
+    <div class="right-content">
+      <div class="run-info-card">
+        <div class="run-info-title">准确率 (Accuracy)</div>
+        <div class="run-info-value" id="resultAccuracy">—</div>
+      </div>
+      <div class="run-info-card">
+        <div class="run-info-title">F1 分数</div>
+        <div class="run-info-value" id="resultF1">—</div>
+      </div>
+      <div class="run-info-card">
+        <div class="run-info-title">训练时间</div>
+        <div class="run-info-value" id="resultTime">—</div>
+      </div>
+      <div class="run-info-card">
+        <div class="run-info-title">排名</div>
+        <div class="run-info-value good" id="resultRank">—</div>
+      </div>
+      <div class="run-info-card" style="background:#1a1a2e">
+        <div class="run-info-title">上次提交</div>
+        <div class="run-info-value" id="resultLastSubmit" style="font-size:0.85rem">—</div>
+      </div>
+
+      <div style="margin-top:12px">
+        <div class="dataset-title">排行榜 Top 5</div>
+        <div id="editorLeaderboard">
+          <div style="font-size:0.78rem;color:#808080;text-align:center;padding:8px">加载中...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Status Bar ══════════════════════════════════════════════ -->
+<div class="editor-statusbar">
+  <span class="status-item" id="statusBranch">main</span>
+  <span class="status-item status-lang" id="statusLang">Python</span>
+  <span class="status-sep"></span>
+  <span class="status-item status-runner" id="statusRunner">就绪</span>
+  <span class="status-item" id="statusLn">Ln 1, Col 1</span>
+  <span class="status-item" id="statusEncoding">UTF-8</span>
+  <span class="status-sep"></span>
+  <span class="status-item status-action" id="statusToggleRight" title="显示/隐藏运行结果栏"
+        onclick="toggleRightPanel()">📈</span>
+  <span class="status-item status-action" id="statusToggleBottom" title="显示/隐藏终端"
+        onclick="toggleBottomPanel()">🔷</span>
+</div>
+
+<!-- ══ Template Picker Modal ══════════════════════════════════ -->
+<div class="modal-overlay hidden" id="templateModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>📁 选择代码模板</h3>
+      <button class="modal-close" onclick="hideTemplateModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="template-modules">
+        <section class="template-module face" aria-label="表情识别训练模板">
+          <div class="template-module-head">😀 表情识别训练模板</div>
+          <div class="template-module-grid">
+        <div class="template-card selected" data-template="face_cnn" onclick="selectTemplate(this)">
+          <div class="template-icon">😀</div>
+              <div class="template-name">表情 CNN 基础</div>
+              <div class="template-desc">基础卷积神经网络，适合入门学习，参数少训练快</div>
+          <div class="template-tags">
+            <span class="template-tag face">CNN</span>
+            <span class="template-tag face">TensorFlow</span>
+          </div>
+        </div>
+            <div class="template-card" data-template="face_vgg" onclick="selectTemplate(this)">
+              <div class="template-icon">🧠</div>
+              <div class="template-name">表情 VGG16</div>
+              <div class="template-desc">VGG16迁移学习，ImageNet预训练权重，适合提升准确率</div>
+          <div class="template-tags">
+                <span class="template-tag face">VGG16</span>
+                <span class="template-tag face">迁移学习</span>
+          </div>
+        </div>
+            <div class="template-card" data-template="face_resnet" onclick="selectTemplate(this)">
+              <div class="template-icon">🔗</div>
+              <div class="template-name">表情 ResNet18</div>
+              <div class="template-desc">残差网络ResNet18，残差连接解决深层网络训练难题</div>
+              <div class="template-tags">
+                <span class="template-tag face">ResNet</span>
+                <span class="template-tag face">残差连接</span>
+              </div>
+            </div>
+            <div class="template-card" data-template="face_mobilenet" onclick="selectTemplate(this)">
+              <div class="template-icon">📱</div>
+              <div class="template-name">表情 MobileNetV2</div>
+              <div class="template-desc">轻量级网络，深度可分离卷积，适合边缘设备部署</div>
+              <div class="template-tags">
+                <span class="template-tag face">MobileNet</span>
+                <span class="template-tag face">轻量级</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="template-module audio" aria-label="声音情绪识别模板">
+          <div class="template-module-head">🎤 声音情绪识别模板</div>
+          <div class="template-module-grid">
+            <div class="template-card" data-template="audio_cnn" onclick="selectTemplate(this)">
+              <div class="template-icon">🎤</div>
+              <div class="template-name">声音 CNN</div>
+              <div class="template-desc">CNN处理MFCC梅尔频谱图特征，捕捉局部模式</div>
+              <div class="template-tags">
+                <span class="template-tag audio">CNN</span>
+                <span class="template-tag audio">MFCC</span>
+              </div>
+            </div>
+            <div class="template-card" data-template="audio_lstm" onclick="selectTemplate(this)">
+              <div class="template-icon">🔄</div>
+              <div class="template-name">声音 LSTM</div>
+              <div class="template-desc">双向LSTM处理音频时序数据，捕捉长距离依赖</div>
+              <div class="template-tags">
+                <span class="template-tag audio">LSTM</span>
+                <span class="template-tag audio">时序</span>
+              </div>
+            </div>
+            <div class="template-card" data-template="audio_gru" onclick="selectTemplate(this)">
+              <div class="template-icon">⚡</div>
+              <div class="template-name">声音 GRU</div>
+              <div class="template-desc">GRU门控循环单元，轻量级时序建模，效果接近LSTM</div>
+              <div class="template-tags">
+                <span class="template-tag audio">GRU</span>
+                <span class="template-tag audio">轻量级</span>
+              </div>
+            </div>
+            <div class="template-card" data-template="audio_transformer" onclick="selectTemplate(this)">
+              <div class="template-icon">🧩</div>
+              <div class="template-name">声音 Transformer</div>
+              <div class="template-desc">Transformer自注意力机制，现代架构，适合大数据</div>
+              <div class="template-tags">
+                <span class="template-tag audio">Transformer</span>
+                <span class="template-tag audio">注意力</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="template-module eco" aria-label="生态瓶时序预测模板">
+          <div class="template-module-head">🌿 生态瓶时序预测模板</div>
+          <div class="template-module-grid">
+        <div class="template-card" data-template="eco_lstm" onclick="selectTemplate(this)">
+          <div class="template-icon">🌿</div>
+              <div class="template-name">生态瓶 LSTM</div>
+              <div class="template-desc">LSTM时序预测生态瓶传感器数据，多步预测未来</div>
+          <div class="template-tags">
+            <span class="template-tag eco">LSTM</span>
+            <span class="template-tag eco">时序</span>
+          </div>
+        </div>
+        <div class="template-card" data-template="eco_arima" onclick="selectTemplate(this)">
+          <div class="template-icon">📊</div>
+              <div class="template-name">生态瓶 ARIMA</div>
+              <div class="template-desc">ARIMA传统时序分析，统计方法，解释性强</div>
+          <div class="template-tags">
+            <span class="template-tag eco">ARIMA</span>
+                <span class="template-tag eco">统计</span>
+          </div>
+        </div>
+          </div>
+        </section>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-modal btn-modal-cancel" onclick="hideTemplateModal()">取消</button>
+      <button class="btn-modal btn-modal-confirm" id="btnLoadTemplate" onclick="loadSelectedTemplate()">加载模板</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Scripts ═════════════════════════════════════════════════ -->
+<script src="{{ url_for('static', filename='js/editor/file_tree.js') }}"></script>
+<script src="{{ url_for('static', filename='js/editor/terminal.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/monaco-editor/min/vs/loader.js') }}"></script>
+<script>
+// ── Config ────────────────────────────────────────────────────
+const EDITOR_CONFIG = {
+  course: '{{ course|default("face") }}',       // "face" | "eco"
+  monacoTheme: 'vs-dark',
+  fontSize: 14,
+  fontFamily: "'Cascadia Code', 'Fira Code', Consolas, monospace",
+  tabSize: 4,
+  wordWrap: 'off',
+  minimap: { enabled: false },
+  lineNumbers: 'on',
+  scrollBeyondLastLine: false,
+  automaticLayout: true,
+  renderWhitespace: 'selection',
+  bracketPairColorization: { enabled: true },
+};
+
+// ── Editor State ──────────────────────────────────────────────
+let monacoEditor = null;
+let openTabs = [];
+let activeTabPath = '';
+let unsavedChanges = new Set();
+let isRunning = false;
+let currentProcess = null;
+let currentTemplate = 'face_cnn';
+let editorFontSize = 14;  // 编辑器字体大小
+let terminalFontSize = 13; // 终端字体大小
+
+// ── Template Code ─────────────────────────────────────────────
+const TEMPLATE_FILES = {
+  face_cnn: {
+    'train.py': `# 表情识别 CNN 训练脚本
+# 课程：情感计算 · 表情识别
+# 数据集：FER2013（已预处理为 48x48 灰度图）
+# 框架：TensorFlow/Keras
+
+import os
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, models, callbacks
+from tensorflow.keras.utils import to_categorical
+from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
+
+print("=" * 50)
+print("  表情识别 CNN 训练")
+print("  课程：情感计算 · 表情识别")
+print("=" * 50)
+
+# ── 1. 加载数据 ─────────────────────────────────────────────
+# 工作目录 = 小组沙箱目录，./data/ 相对于小组目录存放共享数据
+DATA_DIR = './data/face'
+TRAIN_CSV = os.path.join(DATA_DIR, 'train_labels.csv')
+
+print("\\n📂 第1步：加载训练数据...")
+if os.path.exists(TRAIN_CSV):
+    df = pd.read_csv(TRAIN_CSV)
+    print(f"   加载了 {len(df)} 条训练数据")
+    print(f"   情绪分布:\\n{df['label'].value_counts()}")
+else:
+    print(f"   ⚠️  未找到 {TRAIN_CSV}")
+    print("   💡 请先在左侧「数据集」面板上传训练数据")
+
+# ── 2. 数据预处理 ──────────────────────────────────────────
+print("\\n🔧 第2步：数据预处理...")
+
+EMOTION_LABELS = {
+    0: '生气', 1: '厌恶', 2: '恐惧',
+    3: '开心', 4: '平静', 5: '难过', 6: '惊讶'
+}
+
+NUM_CLASSES = len(EMOTION_LABELS)
+IMG_SIZE = 48
+EPOCHS = 10
+BATCH_SIZE = 32
+
+print(f"   图像尺寸: {IMG_SIZE}x{IMG_SIZE}")
+print(f"   情绪类别数: {NUM_CLASSES}")
+print(f"   训练轮次: {EPOCHS}")
+print(f"   批次大小: {BATCH_SIZE}")
+
+# ── 3. 构建 CNN 模型 ───────────────────────────────────────
+print("\\n🏗️ 第3步：构建 CNN 模型...")
+
+def build_cnn():
+    model = models.Sequential([
+        # 第1个卷积块
+        layers.Conv2D(32, (3, 3), padding='same', activation='relu',
+                      input_shape=(IMG_SIZE, IMG_SIZE, 1)),
+        layers.BatchNormalization(),
+        layers.Conv2D(64, (3, 3), padding='same', activation='relu'),
+        layers.BatchNormalization(),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+
+        # 第2个卷积块
+        layers.Conv2D(128, (3, 3), padding='same', activation='relu'),
+        layers.BatchNormalization(),
+        layers.Conv2D(256, (3, 3), padding='same', activation='relu'),
+        layers.BatchNormalization(),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+
+        # 全连接层
+        layers.Flatten(),
+        layers.Dense(512, activation='relu'),
+        layers.BatchNormalization(),
+        layers.Dropout(0.5),
+        layers.Dense(NUM_CLASSES, activation='softmax')
+    ])
+    return model
+
+model = build_cnn()
+model.compile(
+    optimizer=keras.optimizers.Adam(learning_rate=0.001),
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+model.summary()
+
+# ── 4. 模拟训练（演示用）───────────────────────────────────
+print("\\n🚀 第4步：开始训练...")
+
+# 模拟生成一些训练数据
+num_samples = 5000
+X_train = np.random.rand(num_samples, IMG_SIZE, IMG_SIZE, 1).astype('float32') * 255
+y_train = np.random.randint(0, NUM_CLASSES, num_samples)
+y_train = to_categorical(y_train, NUM_CLASSES)
+
+X_val = np.random.rand(1000, IMG_SIZE, IMG_SIZE, 1).astype('float32') * 255
+y_val = np.random.randint(0, NUM_CLASSES, 1000)
+y_val = to_categorical(y_val, NUM_CLASSES)
+
+history = model.fit(
+    X_train, y_train,
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
+    validation_data=(X_val, y_val),
+    verbose=1
+)
+
+# ── 5. 评估 ─────────────────────────────────────────────────
+print("\\n📊 第5步：评估模型...")
+
+loss, accuracy = model.evaluate(X_val, y_val, verbose=0)
+print(f"\\n🎯 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+print(f"📉 验证集损失: {loss:.4f}")
+
+# ── 6. 保存模型 ─────────────────────────────────────────────
+# 使用相对路径，保存到小组工作目录下的 models/ 子目录
+SAVE_DIR = './models'
+os.makedirs(SAVE_DIR, exist_ok=True)
+SAVE_PATH = os.path.join(SAVE_DIR, 'face_cnn_model.h5')
+model.save(SAVE_PATH)
+print(f"\\n💾 模型已保存到: {SAVE_PATH}")
+
+# ── 7. 预测示例 ─────────────────────────────────────────────
+print("\\n🔮 预测示例:")
+sample = X_val[:5]
+preds = model.predict(sample, verbose=0)
+for i, pred in enumerate(preds):
+    emotion_id = np.argmax(pred)
+    print(f"   样本{i+1}: {EMOTION_LABELS[emotion_id]} (置信度: {pred[emotion_id]:.2%})")
+
+print("\\n✅ 训练完成！")
+`,
+
+    'model.py': `# 模型定义模块
+# 包含 CNN、VGG、ResNet 等不同架构
+
+import tensorflow as tf
+from tensorflow.keras import layers, models
+
+def build_vgg():
+    \"\"\"VGG风格的表情识别模型\"\"\"
+    model = models.Sequential([
+        layers.Conv2D(64, (3, 3), padding='same', activation='relu', input_shape=(48, 48, 1)),
+        layers.Conv2D(64, (3, 3), padding='same', activation='relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(128, (3, 3), padding='same', activation='relu'),
+        layers.Conv2D(128, (3, 3), padding='same', activation='relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Flatten(),
+        layers.Dense(256, activation='relu'),
+        layers.Dropout(0.5),
+        layers.Dense(7, activation='softmax')
+    ])
+    return model
+`,
+
+    'README.md': `# 表情识别 CNN 训练模板
+
+## 使用说明
+
+1. **上传数据**: 在左侧「数据集」面板上传训练集
+2. **调整超参数**: 修改 EPOCHS、BATCH_SIZE 等
+3. **运行代码**: 点击「运行代码」按钮
+4. **查看结果**: 查看准确率、F1分数等指标
+5. **提交成绩**: 点击「提交成绩」参与排行榜竞争
+`
+  },
+
+  eco_lstm: {
+    'train.py': `# 生态瓶 LSTM 时序预测训练脚本
+# 课程：时序预测 · 生态瓶
+# 模型：LSTM (Long Short-Term Memory)
+# 数据：生态瓶传感器时序数据
+
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+import warnings
+warnings.filterwarnings('ignore')
+
+print("=" * 50)
+print("  生态瓶 LSTM 时序预测")
+print("  课程：时序预测 · 生态瓶")
+print("=" * 50)
+
+# ── 1. 加载数据 ─────────────────────────────────────────────
+# 工作目录 = 小组沙箱目录，./data/ 相对于小组目录存放共享数据
+DATA_PATH = './data/eco/sensor_data.csv'
+print("\\n📂 第1步：加载传感器数据...")
+if os.path.exists(DATA_PATH):
+    df = pd.read_csv(DATA_PATH, parse_dates=['timestamp'])
+    print(f"   加载了 {len(df)} 条数据")
+    print(f"   时间范围: {df['timestamp'].min()} ~ {df['timestamp'].max()}")
+    print(f"   通道: {', '.join(df.columns[1:])}")
+else:
+    print(f"   ⚠️  未找到 {DATA_PATH}")
+    print("   💡 请在生态瓶页面采集数据后导入")
+
+# ── 2. 数据探索 ────────────────────────────────────────────
+print("\\n📊 第2步：数据探索...")
+
+np.random.seed(42)
+num_points = 200
+timestamps = pd.date_range('2024-01-01', periods=num_points, freq='H')
+
+light = 300 + 100 * np.sin(np.arange(num_points) * 0.1) + np.random.randn(num_points) * 20
+temp = 25 + 3 * np.sin(np.arange(num_points) * 0.1 + 1) + np.random.randn(num_points) * 0.5
+humidity = 65 + 10 * np.sin(np.arange(num_points) * 0.05) + np.random.randn(num_points) * 3
+
+df = pd.DataFrame({'timestamp': timestamps, 'light': light, 'temperature': temp, 'humidity': humidity})
+print(f"   生成模拟数据 {len(df)} 条")
+print(df.describe().round(2))
+
+# ── 3. 数据预处理 ──────────────────────────────────────────
+print("\\n🔧 第3步：数据预处理...")
+
+CHANNEL = 'light'  # 预测目标：light | temperature | humidity
+LOOK_BACK = 12    # 用多少个历史时间步预测
+PREDICT_STEPS = 6  # 预测未来多少步
+
+data = df[CHANNEL].values.reshape(-1, 1)
+scaler = MinMaxScaler(feature_range=(0, 1))
+data_scaled = scaler.fit_transform(data)
+
+def create_dataset(data, look_back=12):
+    X, y = [], []
+    for i in range(len(data) - look_back):
+        X.append(data[i:(i+look_back), 0])
+        y.append(data[i+look_back, 0])
+    return np.array(X), np.array(y)
+
+X, y = create_dataset(data_scaled, LOOK_BACK)
+X = X.reshape(X.shape[0], X.shape[1], 1)
+
+split = int(len(X) * 0.8)
+X_train, X_test = X[:split], X[split:]
+y_train, y_test = y[:split], y[split:]
+
+print(f"   训练集: {len(X_train)} 样本")
+print(f"   测试集: {len(X_test)} 样本")
+print(f"   回看窗口: {LOOK_BACK} 步")
+print(f"   预测步长: {PREDICT_STEPS} 步")
+
+# ── 4. 构建 LSTM 模型 ───────────────────────────────────────
+print("\\n🏗️ 第4步：构建 LSTM 模型...")
+
+try:
+    import tensorflow as tf
+    from tensorflow import keras
+    from tensorflow.keras import layers
+
+    model = keras.Sequential([
+        layers.LSTM(64, return_sequences=True, input_shape=(LOOK_BACK, 1)),
+        layers.LSTM(32),
+        layers.Dense(16, activation='relu'),
+        layers.Dense(1)
+    ])
+    model.compile(optimizer='adam', loss='mse', metrics=['mae'])
+    print("   LSTM 模型已构建 (64→32→16→1)")
+    model.summary()
+except ImportError:
+    print("   ⚠️  TensorFlow 未安装，跳过实际训练")
+    model = None
+
+# ── 5. 训练 ─────────────────────────────────────────────────
+print("\\n🚀 第5步：训练 LSTM 模型...")
+
+if model:
+    EPOCHS = 10
+    BATCH_SIZE = 32
+    history = model.fit(
+        X_train, y_train,
+        epochs=EPOCHS,
+        batch_size=BATCH_SIZE,
+        validation_split=0.1,
+        verbose=1
+    )
+else:
+    EPOCHS = 10
+    print(f"   模拟训练 {EPOCHS} 轮...")
+
+# ── 6. 评估 ─────────────────────────────────────────────────
+print("\\n📊 第6步：评估模型...")
+
+if model:
+    train_pred = model.predict(X_train, verbose=0)
+    test_pred = model.predict(X_test, verbose=0)
+
+    train_rmse = np.sqrt(mean_squared_error(y_train, train_pred))
+    test_rmse = np.sqrt(mean_squared_error(y_test, test_pred))
+    test_mae = mean_absolute_error(y_test, test_pred)
+
+    print(f"\\n🎯 训练集 RMSE: {train_rmse:.4f}")
+    print(f"🎯 测试集 RMSE: {test_rmse:.4f}")
+    print(f"🎯 测试集 MAE: {test_mae:.4f}")
+else:
+    test_rmse = np.random.uniform(0.05, 0.15)
+    test_mae = np.random.uniform(0.03, 0.10)
+    print(f"\\n🎯 测试集 RMSE: {test_rmse:.4f} (模拟)")
+    print(f"🎯 测试集 MAE: {test_mae:.4f} (模拟)")
+
+# ── 7. 预测未来 ─────────────────────────────────────────────
+print("\\n🔮 第7步：预测未来...")
+
+if model:
+    last_seq = data_scaled[-LOOK_BACK:].reshape(1, LOOK_BACK, 1)
+    future_pred = []
+    current = last_seq
+    for _ in range(PREDICT_STEPS):
+        p = model.predict(current, verbose=0)
+        future_pred.append(p[0, 0])
+        current = np.append(current[:, 1:, :], p.reshape(1, 1, 1), axis=1)
+
+    future_pred = scaler.inverse_transform(np.array(future_pred).reshape(-1, 1)).flatten()
+    print(f"   未来 {PREDICT_STEPS} 步预测 ({CHANNEL}):")
+    for i, val in enumerate(future_pred, 1):
+        print(f"     第{i}步: {val:.2f}")
+else:
+    future_pred = [300 + i * 5 + np.random.randn() * 3 for i in range(PREDICT_STEPS)]
+    print(f"   未来 {PREDICT_STEPS} 步预测 ({CHANNEL}) [模拟]:")
+    for i, val in enumerate(future_pred, 1):
+        print(f"     第{i}步: {val:.2f}")
+
+print("\\n✅ 训练完成！")
+`,
+
+    'README.md': `# 生态瓶 LSTM 时序预测模板
+
+## 功能
+- LSTM 时序预测模型
+- 数据归一化处理
+- 滚动多步预测
+- 评估指标 (RMSE, MAE)
+
+## 调整超参数
+- \`CHANNEL\`: 预测目标 (light/temperature/humidity)
+- \`LOOK_BACK\`: 回看窗口大小
+- \`PREDICT_STEPS\`: 预测步数
+- \`EPOCHS\`: 训练轮次
+`
+  },
+
+  eco_arima: {
+    'train.py': `# 生态瓶 ARIMA 时序分析
+# 课程：时序预测 · 生态瓶
+# 模型：ARIMA (AutoRegressive Integrated Moving Average)
+
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.stattools import adfuller
+from sklearn.metrics import mean_squared_error
+import warnings
+warnings.filterwarnings('ignore')
+
+print("=" * 50)
+print("  生态瓶 ARIMA 时序分析")
+print("  课程：时序预测 · 生态瓶")
+print("=" * 50)
+
+# ── 1. 生成模拟数据 ────────────────────────────────────────
+print("\\n📂 第1步：准备时序数据...")
+
+np.random.seed(42)
+num_points = 200
+timestamps = pd.date_range('2024-01-01', periods=num_points, freq='H')
+
+# 模拟光照数据：带有日周期性和趋势
+t = np.arange(num_points)
+light = 300 + 50 * np.sin(t * 0.26) + 20 * np.sin(t * 0.52) + np.random.randn(num_points) * 15
+
+df = pd.DataFrame({'timestamp': timestamps, 'light': light})
+df.set_index('timestamp', inplace=True)
+print(f"   生成 {len(df)} 条光照时序数据")
+print(f"   描述统计:\\n{df['light'].describe().round(2)}")
+
+# ── 2. 平稳性检验 ──────────────────────────────────────────
+print("\\n📊 第2步：ADF 平稳性检验...")
+result = adfuller(df['light'])
+print(f"   ADF 统计量: {result[0]:.4f}")
+print(f"   p-value: {result[1]:.4f}")
+print(f"   {'✓ 序列平稳' if result[1] < 0.05 else '⚠️  序列非平稳，需要差分'}")
+
+# ── 3. ACF/PACF 分析 ───────────────────────────────────────
+print("\\n🔍 第3步：ACF/PACF 分析...")
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+print("   ACF: 评估自相关阶数 q")
+print("   PACF: 评估偏自相关阶数 p")
+
+# ── 4. 拟合 ARIMA 模型 ─────────────────────────────────────
+print("\\n🏗️ 第4步：拟合 ARIMA 模型...")
+CHANNEL = 'light'
+P, D, Q = 2, 0, 2  # ARIMA 参数
+
+print(f"   模型: ARIMA({P},{D},{Q})")
+model = ARIMA(df[CHANNEL], order=(P, D, Q))
+fitted = model.fit()
+print(f"   AIC: {fitted.aic:.2f}")
+print(f"   BIC: {fitted.bic:.2f}")
+
+# ── 5. 预测 ─────────────────────────────────────────────────
+print("\\n🔮 第5步：滚动预测...")
+
+PREDICT_STEPS = 12
+forecast = fitted.get_forecast(steps=PREDICT_STEPS)
+forecast_mean = forecast.predicted_mean
+forecast_ci = forecast.conf_int()
+
+print(f"\\n   未来 {PREDICT_STEPS} 步光照预测:")
+for i, (idx, val) in enumerate(forecast_mean.items()):
+    lo, hi = forecast_ci.iloc[i]
+    print(f"     t+{i+1}: {val:.2f} (95%CI: [{lo:.2f}, {hi:.2f}])")
+
+# ── 6. 评估 ─────────────────────────────────────────────────
+print("\\n📈 第6步：模型评估...")
+
+# 留一交叉验证
+train = df['light'][:-PREDICT_STEPS]
+test = df['light'][-PREDICT_STEPS:]
+eval_model = ARIMA(train, order=(P, D, Q)).fit()
+eval_pred = eval_model.forecast(steps=PREDICT_STEPS)
+rmse = np.sqrt(mean_squared_error(test, eval_pred))
+print(f"   滚动预测 RMSE: {rmse:.4f}")
+
+print("\\n✅ ARIMA 分析完成！")
+`,
+
+    'README.md': `# 生态瓶 ARIMA 时序分析模板
+
+## 功能
+- ADF 平稳性检验
+- ACF/PACF 分析
+- ARIMA 模型拟合
+- 置信区间预测
+
+## 调整参数
+- \`P\`: 自回归阶数
+- \`D\`: 差分阶数
+-         \`Q\`: 移动平均阶数
+`
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 表情识别 VGG16 模板
+  // ═══════════════════════════════════════════════════════════════════════
+  face_vgg: {
+    'train.py': `# ═══════════════════════════════════════════════════════════════════════════════
+# 表情识别 VGG16 训练脚本
+# 课程：情感计算 · 表情识别
+# 模型架构：VGG16（迁移学习）
+#
+# 【数据说明】
+# 本模板使用"数据预处理"后的标注数据进行训练
+# - 原始已标注数据：./face/images/（来自数据采集模块）
+# - 预处理后数据：./face/preprocessed/images/（经过数据增强和标准化处理）
+#
+# 【学生可修改的参数位置】
+# 1. IMG_SIZE（第30行）：图像输入尺寸，默认48x48
+# 2. EPOCHS（第31行）：训练轮次，默认15
+# 3. BATCH_SIZE（第32行）：批次大小，默认32
+# 4. LEARNING_RATE（第33行）：学习率，默认0.0001
+# 5. FREEZE_LAYERS（第35行）：冻结层数，0表示全训练
+#
+# 【依赖库】
+# pip install tensorflow pandas scikit-learn pillow numpy
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import os
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, models, callbacks
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.applications import VGG16
+from sklearn.model_selection import train_test_split
+import warnings
+warnings.filterwarnings('ignore')
+
+print("=" * 70)
+print("  表情识别 VGG16 迁移学习训练")
+print("  课程：情感计算 · 表情识别")
+print("  迁移学习：使用 ImageNet 预训练权重")
+print("=" * 70)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 【学生可修改】超参数配置区域
+# ═══════════════════════════════════════════════════════════════════════════
+
+# 图像处理参数
+IMG_SIZE = 48          # 输入图像尺寸，VGG16需要48的倍数如48、64、96
+NUM_CLASSES = 7       # 情绪类别数（生气、厌恶、恐惧、开心、平静、难过、惊讶）
+
+# 训练参数
+EPOCHS = 15           # 训练轮次，建议10-30
+BATCH_SIZE = 32       # 批次大小，建议16-64，显存不足可减小
+LEARNING_RATE = 0.0001 # 学习率，迁移学习用较小学习率
+
+# 迁移学习参数
+FREEZE_LAYERS = 0     # 冻结VGG前面的层数，0表示全部训练全连接层
+USE_PREPROCESSED = True # 是否使用预处理后的数据
+
+# 情绪标签映射
+EMOTION_LABELS = {
+    0: '生气(angry)', 1: '厌恶(disgust)', 2: '恐惧(fear)',
+    3: '开心(happy)', 4: '平静(neutral)', 5: '难过(sad)', 6: '惊讶(surprise)'
+}
+
+# 数据路径配置
+# 预处理后数据（推荐使用）
+PREPROCESSED_DATA_DIR = './face/preprocessed'
+PREPROCESSED_IMAGES_DIR = os.path.join(PREPROCESSED_DATA_DIR, 'images')
+PREPROCESSED_CSV = os.path.join(PREPROCESSED_DATA_DIR, 'train_labels.csv')
+
+# 原始标注数据
+RAW_DATA_DIR = './face'
+RAW_IMAGES_DIR = os.path.join(RAW_DATA_DIR, 'images')
+RAW_CSV = os.path.join(RAW_DATA_DIR, 'train_labels.csv')
+
+# 模型保存路径
+MODEL_SAVE_PATH = './models/face_vgg16_model.h5'
+CONFIG_SAVE_PATH = './models/model_config.json'
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 数据加载函数
+# ═══════════════════════════════════════════════════════════════════════════
+
+def get_data_paths():
+    """获取数据路径，根据USE_PREPROCESSED选择数据源"""
+    if USE_PREPROCESSED and os.path.exists(PREPROCESSED_CSV):
+        print("   📂 使用预处理后的数据")
+        return PREPROCESSED_IMAGES_DIR, PREPROCESSED_CSV, '预处理后数据'
+    elif os.path.exists(RAW_CSV):
+        print("   📂 使用原始标注数据")
+        return RAW_IMAGES_DIR, RAW_CSV, '原始标注数据'
+    else:
+        return None, None, None
+
+def load_image(img_path, target_size=(IMG_SIZE, IMG_SIZE)):
+    """加载并预处理单张图片"""
+    try:
+        from PIL import Image
+        img = Image.open(img_path)
+        # 转换为灰度图（表情数据通常是灰度）
+        if img.mode != 'L':
+            img = img.convert('L')
+        img = img.resize(target_size)
+        img_array = np.array(img, dtype=np.float32)
+        # 归一化到[0,1]
+        img_array = img_array / 255.0
+        return img_array
+    except Exception as e:
+        print(f"   ⚠️  加载失败 {img_path}: {e}")
+        return None
+
+def load_dataset(images_dir, csv_path):
+    """加载整个数据集"""
+    if not os.path.exists(csv_path):
+        print(f"   ⚠️  标签文件不存在: {csv_path}")
+        print("   💡 请先点击「同步表情数据」将标注图片同步到工作空间")
+        return None, None
+
+    df = pd.read_csv(csv_path)
+    print(f"   ✓ 加载了 {len(df)} 条训练数据")
+
+    # 显示情绪分布
+    print(f"\n   情绪分布:")
+    for emotion, count in df['label'].value_counts().items():
+        print(f"      {EMOTION_LABELS.get(emotion, emotion)}: {count} 张")
+
+    # 加载图片
+    X, y = [], []
+    failed = 0
+
+    for idx, row in df.iterrows():
+        img_path = os.path.join(images_dir, row['filename'])
+        img = load_image(img_path)
+        if img is not None:
+            X.append(img)
+            # 处理标签（可能是数字或字符串）
+            label = row['label']
+            if isinstance(label, str):
+                emotion_map = {'angry':0, 'disgust':1, 'fear':2, 'happy':3,
+                              'sad':4, 'neutral':5, 'surprise':6}
+                label = emotion_map.get(label, 5)
+            y.append(label)
+        else:
+            failed += 1
+
+    if len(X) == 0:
+        print("   ⚠️  未能加载任何图片")
+        return None, None
+
+    print(f"   ✓ 成功加载 {len(X)} 张图片")
+    if failed > 0:
+        print(f"   ⚠️  {failed} 张图片加载失败")
+
+    return np.array(X), np.array(y)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 模型构建
+# ═══════════════════════════════════════════════════════════════════════════
+
+def build_vgg16_model():
+    """
+    构建VGG16迁移学习模型
+    VGG16由牛津大学提出，结构简单但参数量大，适合迁移学习
+    """
+    print("\n🏗️ 构建VGG16迁移学习模型...")
+
+    # 加载预训练的VGG16模型（不包括顶层全连接层）
+    # weights='imagenet': 使用ImageNet预训练权重
+    # include_top=False: 不包含全连接层，可以自定义输入尺寸
+    base_model = VGG16(
+        weights='imagenet',
+        include_top=False,
+        input_shape=(IMG_SIZE, IMG_SIZE, 3)  # VGG16需要3通道输入
+    )
+
+    # 设置前面的层是否可训练
+    if FREEZE_LAYERS > 0:
+        # 冻结前面的层
+        for layer in base_model.layers[:-FREEZE_LAYERS]:
+            layer.trainable = False
+        print(f"   ✓ 已冻结前 {FREEZE_LAYERS} 层")
+    else:
+        # 全部可训练
+        for layer in base_model.layers:
+            layer.trainable = True
+        print("   ✓ 所有层可训练（微调模式）")
+
+    # 构建完整的模型
+    model = models.Sequential([
+        # 将灰度图复制为3通道以适应VGG16
+        layers.Lambda(lambda x: tf.tile(x, [1, 1, 1, 3]), name='expand_channels'),
+        # VGG16特征提取器
+        base_model,
+        # 全连接分类器
+        layers.Flatten(name='flatten'),
+        layers.Dense(512, activation='relu', name='fc1'),
+        layers.BatchNormalization(name='bn1'),
+        layers.Dropout(0.5, name='dropout1'),
+        layers.Dense(256, activation='relu', name='fc2'),
+        layers.BatchNormalization(name='bn2'),
+        layers.Dropout(0.3, name='dropout2'),
+        # 输出层
+        layers.Dense(NUM_CLASSES, activation='softmax', name='output')
+    ])
+
+    # 编译模型
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    return model
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 主训练流程
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n📂 第1步：加载训练数据...")
+
+images_dir, csv_path, data_type = get_data_paths()
+if images_dir is None:
+    print("   ⚠️  未找到任何训练数据！")
+    print("   💡 请先：")
+    print("      1. 在「数据采集」模块采集并标注表情图片")
+    print("      2. 在「数据预处理」模块进行数据增强和标准化")
+    print("      3. 在编辑器「数据集」面板点击「同步表情数据」")
+    exit(1)
+
+X, y = load_dataset(images_dir, csv_path)
+if X is None:
+    exit(1)
+
+# 添加通道维度
+X = X.reshape(-1, IMG_SIZE, IMG_SIZE, 1)
+
+# 划分训练集和验证集
+X_train, X_val, y_train, y_val = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# 转换为one-hot编码
+y_train = to_categorical(y_train, NUM_CLASSES)
+y_val = to_categorical(y_val, NUM_CLASSES)
+
+print(f"\n   训练集: {len(X_train)} 张")
+print(f"   验证集: {len(X_val)} 张")
+
+# 数据增强
+print("\n🔧 第2步：配置数据增强...")
+data_augmentation = keras.Sequential([
+    layers.RandomRotation(0.1),    # 随机旋转±10%
+    layers.RandomZoom(0.1),        # 随机缩放±10%
+    layers.RandomContrast(0.1),    # 随机对比度±10%
+])
+
+print("   ✓ 已配置数据增强（旋转、缩放、对比度）")
+
+print("\n🏗️ 第3步：构建VGG16模型...")
+
+model = build_vgg16_model()
+
+print("\n   模型结构:")
+model.summary()
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 【学生可修改】回调函数配置
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n🚀 第4步：配置训练回调...")
+
+# 早停回调：当验证集准确率不再提升时停止训练
+early_stopping = callbacks.EarlyStopping(
+    monitor='val_accuracy',
+    patience=5,              # 等待5个epoch没有改善
+    restore_best_weights=True
+)
+
+# 学习率衰减
+lr_scheduler = callbacks.ReduceLROnPlateau(
+    monitor='val_loss',
+    factor=0.5,              # 性能不佳时学习率减半
+    patience=3,              # 等待3个epoch
+    min_lr=1e-7
+)
+
+# 模型检查点
+checkpoint = callbacks.ModelCheckpoint(
+    MODEL_SAVE_PATH,
+    monitor='val_accuracy',
+    save_best_only=True,
+    mode='max'
+)
+
+print("   ✓ 早停回调：监控val_accuracy，耐心值5")
+print("   ✓ 学习率调度：监控val_loss")
+print("   ✓ 模型检查点：保存最佳模型")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 开始训练
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n🚀 第5步：开始训练...")
+print(f"   训练轮次: {EPOCHS}")
+print(f"   批次大小: {BATCH_SIZE}")
+print(f"   学习率: {LEARNING_RATE}")
+print(f"   数据类型: {data_type}")
+
+history = model.fit(
+    X_train, y_train,
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
+    validation_data=(X_val, y_val),
+    callbacks=[early_stopping, lr_scheduler, checkpoint],
+    verbose=1
+)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 模型评估
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n📊 第6步：评估模型...")
+
+loss, accuracy = model.evaluate(X_val, y_val, verbose=0)
+
+print(f"\n🎯 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+print(f"📉 验证集损失: {loss:.4f}")
+
+# 训练历史
+print("\n📈 训练曲线:")
+print(f"   最佳训练准确率: {max(history.history['accuracy']):.4f}")
+print(f"   最佳验证准确率: {max(history.history['val_accuracy']):.4f}")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 保存模型
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n💾 第7步：保存模型...")
+
+os.makedirs('./models', exist_ok=True)
+
+model.save(MODEL_SAVE_PATH)
+print(f"   ✓ 模型已保存到: {MODEL_SAVE_PATH}")
+
+# 保存配置
+import json
+config = {
+    'model_type': 'face_vgg16',
+    'num_classes': NUM_CLASSES,
+    'img_size': IMG_SIZE,
+    'emotion_labels': EMOTION_LABELS,
+    'accuracy': float(accuracy),
+    'train_samples': len(X_train),
+    'val_samples': len(X_val),
+    'epochs_trained': len(history.history['accuracy']),
+    'data_type': data_type
+}
+with open(CONFIG_SAVE_PATH, 'w', encoding='utf-8') as f:
+    json.dump(config, f, ensure_ascii=False, indent=2)
+print(f"   ✓ 配置已保存到: {CONFIG_SAVE_PATH}")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 预测示例
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n🔮 第8步：预测示例...")
+
+sample_indices = np.random.choice(len(X_val), min(5, len(X_val)), replace=False)
+samples = X_val[sample_indices]
+true_labels = np.argmax(y_val[sample_indices], axis=1)
+
+preds = model.predict(samples, verbose=0)
+
+print("\n   预测结果对比:")
+print("   " + "-" * 60)
+for i, (pred, true_idx) in enumerate(zip(preds, true_labels)):
+    pred_idx = np.argmax(pred)
+    confidence = pred[pred_idx]
+    status = "✓" if pred_idx == true_idx else "✗"
+    print(f"   {status} 样本{i+1}: 真实={EMOTION_LABELS[true_idx]}, "
+          f"预测={EMOTION_LABELS[pred_idx]} (置信度: {confidence:.2%})")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 训练结果汇总
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n" + "=" * 70)
+print("  训练完成！")
+print("=" * 70)
+print(f"\n✅ 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+print(f"✅ 模型文件: {MODEL_SAVE_PATH}")
+print(f"✅ 使用数据: {data_type}")
+print("\n💡 提示：点击「提交成绩」可将模型保存到模型库并参与排行榜！")
+print("💡 学生实验建议：")
+print("   1. 尝试调整 EPOCHS 和 BATCH_SIZE")
+print("   2. 尝试不同的 FREEZE_LAYERS 值（0-4）")
+print("   3. 观察学习率对训练的影响")
+`,
+
+    'README.md': `# 表情识别 VGG16 迁移学习模板
+
+## 模板说明
+
+本模板使用 VGG16 架构进行表情识别，采用迁移学习策略。
+
+## 算法原理
+
+VGG16 由牛津大学视觉几何组（Visual Geometry Group）提出，其主要特点是：
+- 使用 3×3 小卷积核代替大卷积核，减少参数量
+- 深层网络结构（16层）能够提取更抽象的特征
+- ImageNet 预训练权重包含丰富的图像特征
+
+## 数据路径
+
+- **预处理后数据**（推荐）：\`./face/preprocessed/\`
+- **原始标注数据**：\`./face/\`
+
+## 学生可修改参数
+
+| 参数 | 位置 | 默认值 | 说明 |
+|------|------|--------|------|
+| IMG_SIZE | train.py:30 | 48 | 输入图像尺寸 |
+| EPOCHS | train.py:31 | 15 | 训练轮次 |
+| BATCH_SIZE | train.py:32 | 32 | 批次大小 |
+| LEARNING_RATE | train.py:33 | 0.0001 | 学习率 |
+| FREEZE_LAYERS | train.py:35 | 0 | 冻结层数 |
+
+## 实验建议
+
+1. **冻结层数实验**：尝试冻结不同层数观察效果
+2. **学习率实验**：对比不同学习率的收敛速度
+3. **数据增强实验**：调整数据增强策略
+`
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 表情识别 ResNet 模板
+  // ═══════════════════════════════════════════════════════════════════════
+  face_resnet: {
+    'train.py': `# ═══════════════════════════════════════════════════════════════════════════════
+# 表情识别 ResNet 训练脚本
+# 课程：情感计算 · 表情识别
+# 模型架构：ResNet18（残差网络）
+#
+# 【数据说明】
+# 本模板使用"数据预处理"后的标注数据进行训练
+# - 原始已标注数据：./face/images/
+# - 预处理后数据：./face/preprocessed/images/
+#
+# 【学生可修改的参数位置】
+# 1. IMG_SIZE（第30行）：图像输入尺寸，默认48x48
+# 2. EPOCHS（第31行）：训练轮次，默认20
+# 3. BATCH_SIZE（第32行）：批次大小，默认32
+# 4. LEARNING_RATE（第33行）：学习率，默认0.001
+# 5. RESNET_BLOCKS（第35行）：残差块数量配置
+#
+# 【ResNet核心原理】
+# ResNet通过"残差连接"（Skip Connection）解决深层网络梯度消失问题
+# 输出 = F(x) + x，其中F(x)是学习到的残差
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import os
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, models, callbacks
+from tensorflow.keras.utils import to_categorical
+from sklearn.model_selection import train_test_split
+import warnings
+warnings.filterwarnings('ignore')
+
+print("=" * 70)
+print("  表情识别 ResNet18 训练")
+print("  课程：情感计算 · 表情识别")
+print("  核心：残差连接（Skip Connection）")
+print("=" * 70)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 【学生可修改】超参数配置区域
+# ═══════════════════════════════════════════════════════════════════════════
+
+# 图像处理参数
+IMG_SIZE = 48          # 输入图像尺寸
+NUM_CLASSES = 7       # 情绪类别数
+
+# 训练参数
+EPOCHS = 20           # 训练轮次，建议15-30
+BATCH_SIZE = 32       # 批次大小
+LEARNING_RATE = 0.001 # 学习率
+
+# ResNet结构参数
+RESNET_BLOCKS = [2, 2, 2]  # 每个阶段的残差块数量 [stage1, stage2, stage3]
+INITIAL_FILTERS = 32       # 初始卷积核数量
+
+# 数据路径
+USE_PREPROCESSED = True
+PREPROCESSED_DATA_DIR = './face/preprocessed'
+RAW_DATA_DIR = './face'
+
+# 情绪标签
+EMOTION_LABELS = {
+    0: '生气(angry)', 1: '厌恶(disgust)', 2: '恐惧(fear)',
+    3: '开心(happy)', 4: '平静(neutral)', 5: '难过(sad)', 6: '惊讶(surprise)'
+}
+
+# 模型保存
+MODEL_SAVE_PATH = './models/face_resnet_model.h5'
+CONFIG_SAVE_PATH = './models/model_config.json'
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 数据加载
+# ═══════════════════════════════════════════════════════════════════════════
+
+def get_data_paths():
+    """获取数据路径"""
+    if USE_PREPROCESSED:
+        csv_path = os.path.join(PREPROCESSED_DATA_DIR, 'train_labels.csv')
+        img_dir = os.path.join(PREPROCESSED_DATA_DIR, 'images')
+        if os.path.exists(csv_path):
+            return img_dir, csv_path, '预处理后数据'
+    csv_path = os.path.join(RAW_DATA_DIR, 'train_labels.csv')
+    img_dir = os.path.join(RAW_DATA_DIR, 'images')
+    if os.path.exists(csv_path):
+        return img_dir, csv_path, '原始标注数据'
+    return None, None, None
+
+def load_image(img_path):
+    """加载图片"""
+    try:
+        from PIL import Image
+        img = Image.open(img_path).convert('L')
+        img = img.resize((IMG_SIZE, IMG_SIZE))
+        return np.array(img, dtype=np.float32) / 255.0
+    except:
+        return None
+
+def load_dataset(img_dir, csv_path):
+    """加载数据集"""
+    df = pd.read_csv(csv_path)
+    print(f"   ✓ 加载了 {len(df)} 条训练数据")
+
+    print(f"\n   情绪分布:")
+    for emotion, count in df['label'].value_counts().items():
+        print(f"      {EMOTION_LABELS.get(emotion, emotion)}: {count} 张")
+
+    X, y = [], []
+    for idx, row in df.iterrows():
+        img = load_image(os.path.join(img_dir, row['filename']))
+        if img is not None:
+            X.append(img)
+            label = row['label']
+            if isinstance(label, str):
+                emotion_map = {'angry':0, 'disgust':1, 'fear':2, 'happy':3,
+                              'sad':4, 'neutral':5, 'surprise':6}
+                label = emotion_map.get(label, 5)
+            y.append(label)
+
+    return np.array(X), np.array(y)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ResNet残差块定义
+# ═══════════════════════════════════════════════════════════════════════════
+
+class ResidualBlock(layers.Layer):
+    """
+    残差块（Residual Block）
+    核心思想：H(x) = F(x) + x，其中F(x)是学习到的残差
+    通过Shortcut Connection（捷径连接）实现恒等映射
+    """
+    def __init__(self, filters, stride=1, **kwargs):
+        super().__init__(**kwargs)
+        self.filters = filters
+        self.stride = stride
+
+        # 第一个卷积层
+        self.conv1 = layers.Conv2D(filters, 3, stride, padding='same', use_bias=False)
+        self.bn1 = layers.BatchNormalization()
+        self.act1 = layers.Activation('relu')
+
+        # 第二个卷积层
+        self.conv2 = layers.Conv2D(filters, 3, 1, padding='same', use_bias=False)
+        self.bn2 = layers.BatchNormalization()
+
+        # Shortcut Connection：如果输入输出维度不同，需要调整
+        self.shortcut = lambda x: x
+        self.need_shortcut = stride != 1 or True  # 总是需要shortcut
+
+    def call(self, inputs, training=None):
+        # 主路径
+        x = self.conv1(inputs)
+        x = self.bn1(x, training=training)
+        x = self.act1(x)
+
+        x = self.conv2(x)
+        x = self.bn2(x, training=training)
+
+        # 捷径连接
+        if self.need_shortcut:
+            # 调整shortcut的维度以匹配主路径
+            shortcut = layers.MaxPooling2D(self.stride)(inputs) if self.stride > 1 else inputs
+            # 填充到相同维度
+            diff = self.filters - int(shortcut.shape[-1])
+            if diff > 0:
+                shortcut = layers.ZeroPadding2D(((0,0),(0,diff)))(shortcut)
+            x = layers.Add()([x, shortcut])
+        else:
+            x = layers.Add()([x, inputs])
+
+        return layers.Activation('relu')(x)
+
+def build_resnet_model():
+    """
+    构建ResNet18模型
+    结构：输入 -> Conv1 -> Stage1 -> Stage2 -> Stage3 -> GAP -> FC -> 输出
+    """
+    print("\n🏗️ 构建ResNet18模型...")
+
+    inputs = layers.Input(shape=(IMG_SIZE, IMG_SIZE, 1))
+
+    # 初始卷积层
+    x = layers.Conv2D(INITIAL_FILTERS, 7, 2, padding='same', use_bias=False)(inputs)
+    x = layers.BatchNormalization()(x)
+    x = layers.Activation('relu')(x)
+    x = layers.MaxPooling2D(3, 2, padding='same')(x)
+
+    # 残差阶段
+    # Stage 1: 32 -> 32
+    for i in range(RESNET_BLOCKS[0]):
+        x = ResidualBlock(INITIAL_FILTERS, 1)(x)
+
+    # Stage 2: 32 -> 64
+    x = ResidualBlock(INITIAL_FILTERS*2, 2)(x)
+    for i in range(RESNET_BLOCKS[1]-1):
+        x = ResidualBlock(INITIAL_FILTERS*2, 1)(x)
+
+    # Stage 3: 64 -> 128
+    x = ResidualBlock(INITIAL_FILTERS*4, 2)(x)
+    for i in range(RESNET_BLOCKS[2]-1):
+        x = ResidualBlock(INITIAL_FILTERS*4, 1)(x)
+
+    # 全局平均池化
+    x = layers.GlobalAveragePooling2D()(x)
+
+    # 全连接层
+    x = layers.Dense(256, activation='relu')(x)
+    x = layers.Dropout(0.5)(x)
+    outputs = layers.Dense(NUM_CLASSES, activation='softmax')(x)
+
+    model = models.Model(inputs, outputs)
+
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    return model
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 主训练流程
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n📂 第1步：加载训练数据...")
+
+img_dir, csv_path, data_type = get_data_paths()
+if img_dir is None:
+    print("   ⚠️  未找到训练数据！")
+    print("   💡 请先同步标注数据到工作空间")
+    exit(1)
+
+X, y = load_dataset(img_dir, csv_path)
+
+X = X.reshape(-1, IMG_SIZE, IMG_SIZE, 1)
+
+X_train, X_val, y_train, y_val = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+y_train = to_categorical(y_train, NUM_CLASSES)
+y_val = to_categorical(y_val, NUM_CLASSES)
+
+print(f"\n   训练集: {len(X_train)} 张")
+print(f"   验证集: {len(X_val)} 张")
+
+print("\n🏗️ 第2步：构建ResNet18模型...")
+model = build_resnet_model()
+print("\n   模型结构:")
+model.summary()
+
+# 回调配置
+early_stopping = callbacks.EarlyStopping(
+    monitor='val_accuracy', patience=5, restore_best_weights=True)
+lr_scheduler = callbacks.ReduceLROnPlateau(
+    monitor='val_loss', factor=0.5, patience=3, min_lr=1e-6)
+checkpoint = callbacks.ModelCheckpoint(
+    MODEL_SAVE_PATH, monitor='val_accuracy', save_best_only=True)
+
+print("\n🚀 第3步：开始训练...")
+print(f"   训练轮次: {EPOCHS}")
+print(f"   批次大小: {BATCH_SIZE}")
+print(f"   学习率: {LEARNING_RATE}")
+
+history = model.fit(
+    X_train, y_train,
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
+    validation_data=(X_val, y_val),
+    callbacks=[early_stopping, lr_scheduler, checkpoint],
+    verbose=1
+)
+
+print("\n📊 第4步：评估模型...")
+loss, accuracy = model.evaluate(X_val, y_val, verbose=0)
+
+print(f"\n🎯 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+print(f"📉 验证集损失: {loss:.4f}")
+
+print("\n💾 第5步：保存模型...")
+os.makedirs('./models', exist_ok=True)
+model.save(MODEL_SAVE_PATH)
+
+import json
+config = {
+    'model_type': 'face_resnet18',
+    'num_classes': NUM_CLASSES,
+    'img_size': IMG_SIZE,
+    'emotion_labels': EMOTION_LABELS,
+    'accuracy': float(accuracy),
+    'data_type': data_type
+}
+with open(CONFIG_SAVE_PATH, 'w', encoding='utf-8') as f:
+    json.dump(config, f, ensure_ascii=False, indent=2)
+
+print("\n" + "=" * 70)
+print("  训练完成！")
+print("=" * 70)
+print(f"\n✅ 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+print(f"✅ 模型文件: {MODEL_SAVE_PATH}")
+print("\n💡 学生实验建议：")
+print("   1. 调整 RESNET_BLOCKS 观察网络深度影响")
+print("   2. 尝试不同的 INITIAL_FILTERS 值")
+print("   3. 对比有无残差连接的训练效果")
+`,
+
+    'README.md': `# 表情识别 ResNet18 模板
+
+## 算法原理
+
+ResNet（Residual Network）由微软研究院提出，核心创新是残差连接：
+
+**传统网络**：H(x) = F(x) （学习完整映射）
+**ResNet**：H(x) = F(x) + x （学习残差）
+
+残差连接使得梯度可以直接反向传播到浅层，解决深层网络训练困难的问题。
+
+## 学生可修改参数
+
+| 参数 | 位置 | 默认值 | 说明 |
+|------|------|--------|------|
+| IMG_SIZE | train.py:36 | 48 | 输入图像尺寸 |
+| EPOCHS | train.py:37 | 20 | 训练轮次 |
+| RESNET_BLOCKS | train.py:40 | [2,2,2] | 各阶段残差块数量 |
+
+## 实验建议
+
+1. **深度实验**：增加或减少残差块数量
+2. **宽度实验**：调整 INITIAL_FILTERS
+3. **消融实验**：对比去掉残差连接的效果
+`
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 表情识别 MobileNetV2 模板
+  // ═══════════════════════════════════════════════════════════════════════
+  face_mobilenet: {
+    'train.py': `# ═══════════════════════════════════════════════════════════════════════════════
+# 表情识别 MobileNetV2 训练脚本
+# 课程：情感计算 · 表情识别
+# 模型架构：MobileNetV2（轻量级网络）
+#
+# 【数据说明】
+# - 预处理后数据：./face/preprocessed/
+# - 原始标注数据：./face/
+#
+# 【学生可修改的参数位置】
+# 1. IMG_SIZE（第28行）：图像尺寸，默认64（MobileNet需要较大尺寸）
+# 2. EPOCHS（第29行）：训练轮次，默认15
+# 3. ALPHA（第31行）：网络宽度因子，0.75或1.0
+#
+# 【MobileNet核心原理】
+# MobileNet使用深度可分离卷积（Depthwise Separable Convolution）
+# 大幅减少参数量和计算量，适合移动端/嵌入式设备部署
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import os
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, models, callbacks
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.applications import MobileNetV2
+from sklearn.model_selection import train_test_split
+import warnings
+warnings.filterwarnings('ignore')
+
+print("=" * 70)
+print("  表情识别 MobileNetV2 训练（轻量级）")
+print("  课程：情感计算 · 表情识别")
+print("  核心：深度可分离卷积，专注边缘部署")
+print("=" * 70)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 【学生可修改】超参数配置
+# ═══════════════════════════════════════════════════════════════════════════
+
+IMG_SIZE = 64         # MobileNetV2要求最小32x32，建议64或96
+NUM_CLASSES = 7
+EPOCHS = 15
+BATCH_SIZE = 32
+LEARNING_RATE = 0.001
+ALPHA = 0.75          # 网络宽度因子，0.75表示75%宽度
+
+USE_PREPROCESSED = True
+DATA_DIR = './face/preprocessed' if USE_PREPROCESSED else './face'
+
+EMOTION_LABELS = {
+    0: '生气', 1: '厌恶', 2: '恐惧',
+    3: '开心', 4: '平静', 5: '难过', 6: '惊讶'
+}
+
+MODEL_SAVE_PATH = './models/face_mobilenet_model.h5'
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 数据加载
+# ═══════════════════════════════════════════════════════════════════════════
+
+def load_data():
+    """加载数据"""
+    csv_path = os.path.join(DATA_DIR, 'train_labels.csv')
+    img_dir = os.path.join(DATA_DIR, 'images')
+
+    if not os.path.exists(csv_path):
+        csv_path = './face/train_labels.csv'
+        img_dir = './face/images'
+
+    if not os.path.exists(csv_path):
+        print("   ⚠️  未找到训练数据！")
+        print("   💡 请先同步标注数据")
+        return None, None
+
+    df = pd.read_csv(csv_path)
+    print(f"   ✓ 加载了 {len(df)} 条训练数据")
+
+    print(f"\n   情绪分布:")
+    for emotion, count in df['label'].value_counts().items():
+        print(f"      {EMOTION_LABELS.get(emotion, emotion)}: {count} 张")
+
+    X, y = [], []
+    for idx, row in df.iterrows():
+        try:
+            from PIL import Image
+            img = Image.open(os.path.join(img_dir, row['filename'])).convert('L')
+            img = img.resize((IMG_SIZE, IMG_SIZE))
+            X.append(np.array(img, dtype=np.float32) / 255.0)
+            label = row['label']
+            if isinstance(label, str):
+                m = {'angry':0,'disgust':1,'fear':2,'happy':3,'sad':4,'neutral':5,'surprise':6}
+                label = m.get(label, 5)
+            y.append(label)
+        except:
+            pass
+
+    return np.array(X), np.array(y)
+
+def build_mobilenet_model():
+    """构建MobileNetV2模型"""
+    print("\n🏗️ 构建MobileNetV2模型...")
+    print(f"   宽度因子: {ALPHA}")
+
+    # MobileNetV2需要3通道输入
+    base_model = MobileNetV2(
+        weights=None,  # 不使用预训练权重（表情任务差异较大）
+        include_top=False,
+        input_shape=(IMG_SIZE, IMG_SIZE, 3),
+        alpha=ALPHA
+    )
+
+    model = models.Sequential([
+        # 灰度转RGB
+        layers.Lambda(lambda x: tf.tile(x, [1, 1, 1, 3])),
+        base_model,
+        layers.GlobalAveragePooling2D(),
+        layers.Dense(128, activation='relu'),
+        layers.Dropout(0.5),
+        layers.Dense(NUM_CLASSES, activation='softmax')
+    ])
+
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    return model
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 主训练流程
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n📂 第1步：加载训练数据...")
+X, y = load_data()
+if X is None:
+    exit(1)
+
+X = X.reshape(-1, IMG_SIZE, IMG_SIZE, 1)
+
+X_train, X_val, y_train, y_val = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+y_train = to_categorical(y_train, NUM_CLASSES)
+y_val = to_categorical(y_val, NUM_CLASSES)
+
+print(f"\n   训练集: {len(X_train)} 张")
+print(f"   验证集: {len(X_val)} 张")
+
+print("\n🏗️ 第2步：构建MobileNetV2模型...")
+model = build_mobilenet_model()
+model.summary()
+
+# 训练
+print("\n🚀 第3步：开始训练...")
+print(f"   模型特点：轻量级，参数量少，适合边缘部署")
+
+history = model.fit(
+    X_train, y_train,
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
+    validation_data=(X_val, y_val),
+    callbacks=[
+        callbacks.EarlyStopping(monitor='val_accuracy', patience=5, restore_best_weights=True),
+        callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3)
+    ],
+    verbose=1
+)
+
+# 评估
+print("\n📊 第4步：评估模型...")
+loss, accuracy = model.evaluate(X_val, y_val, verbose=0)
+
+print(f"\n🎯 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+print(f"📉 验证集损失: {loss:.4f}")
+
+# 保存模型
+print("\n💾 第5步：保存模型...")
+os.makedirs('./models', exist_ok=True)
+model.save(MODEL_SAVE_PATH)
+
+# 计算模型大小
+model_size = os.path.getsize(MODEL_SAVE_PATH) / (1024 * 1024)
+print(f"   模型大小: {model_size:.2f} MB")
+
+import json
+config = {
+    'model_type': 'face_mobilenet',
+    'num_classes': NUM_CLASSES,
+    'img_size': IMG_SIZE,
+    'alpha': ALPHA,
+    'model_size_mb': model_size,
+    'accuracy': float(accuracy)
+}
+with open('./models/model_config.json', 'w', encoding='utf-8') as f:
+    json.dump(config, f, ensure_ascii=False, indent=2)
+
+print("\n" + "=" * 70)
+print("  训练完成！")
+print("=" * 70)
+print(f"\n✅ 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+print(f"✅ 模型大小: {model_size:.2f} MB")
+print("\n💡 MobileNet特点：")
+print("   1. 参数量少，适合移动端部署")
+print("   2. 推理速度快")
+print("   3. 可通过调整ALPHA控制模型大小")
+`,
+
+    'README.md': `# 表情识别 MobileNetV2 模板
+
+## 算法原理
+
+MobileNetV2由Google提出，核心创新是**深度可分离卷积**：
+
+**标准卷积**：参数量 = C_in × C_out × K × K
+**深度可分离卷积**：参数量 = C_in × K × K + C_in × C_out × 1 × 1
+
+这使得MobileNet比标准CNN轻量几十倍，非常适合边缘设备。
+
+## 学生可修改参数
+
+| 参数 | 位置 | 默认值 | 说明 |
+|------|------|--------|------|
+| IMG_SIZE | train.py:28 | 64 | 输入尺寸 |
+| ALPHA | train.py:31 | 0.75 | 宽度因子 |
+
+## 实验建议
+
+1. **大小对比**：对比不同ALPHA值的精度和速度
+2. **模型压缩**：尝试量化或剪枝
+3. **部署测试**：将模型导出为TFLite格式
+`
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 声音识别 CNN 模板
+  // ═══════════════════════════════════════════════════════════════════════
+  audio_cnn: {
+    'train.py': `# ═══════════════════════════════════════════════════════════════════════════════
+# 声音情绪识别 CNN 训练脚本
+# 课程：情感计算 · 声音识别
+# 模型架构：CNN（卷积神经网络）
+#
+# 【数据说明】
+# 本模板使用"数据预处理"后的音频数据进行训练
+# - 原始已标注音频：./audio/audios/（来自声音情绪采集模块）
+# - 预处理后特征：./audio/preprocessed/（MFCC、梅尔频谱图等特征）
+#
+# 【学生可修改的参数位置】
+# 1. N_MFCC（第32行）：MFCC特征维度，默认40
+# 2. MAX_LEN（第33行）：时间步最大长度，默认100
+# 3. EPOCHS（第35行）：训练轮次，默认20
+# 4. BATCH_SIZE（第36行）：批次大小，默认32
+#
+# 【核心原理】
+# CNN通过卷积核提取音频特征的局部模式
+# 适合处理MFCC、梅尔频谱图等2D特征表示
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import os
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, models, callbacks
+from tensorflow.keras.utils import to_categorical
+from sklearn.model_selection import train_test_split
+import warnings
+warnings.filterwarnings('ignore')
+
+print("=" * 70)
+print("  声音情绪识别 CNN 训练")
+print("  课程：情感计算 · 声音识别")
+print("  特征：MFCC（梅尔频率倒谱系数）")
+print("=" * 70)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 【学生可修改】超参数配置
+# ═══════════════════════════════════════════════════════════════════════════
+
+# MFCC特征参数
+SAMPLE_RATE = 16000      # 采样率
+N_MFCC = 40              # MFCC系数数量，建议20-60
+N_FFT = 400              # FFT窗口大小
+HOP_LENGTH = 160         # 帧移
+MAX_LEN = 100            # 时间步最大长度
+
+# 训练参数
+NUM_CLASSES = 6          # 情绪类别数（生气、恐惧、开心、平静、难过、惊讶）
+EPOCHS = 20
+BATCH_SIZE = 32
+LEARNING_RATE = 0.001
+
+# 数据路径配置
+# 预处理后数据（推荐）
+USE_PREPROCESSED = True
+PREPROCESSED_DATA_DIR = './audio/preprocessed'
+PREPROCESSED_CSV = os.path.join(PREPROCESSED_DATA_DIR, 'train_labels.csv')
+
+# 原始标注数据
+RAW_AUDIO_DIR = './audio/audios'
+RAW_CSV = './audio/train_labels.csv'
+
+# 情绪标签映射
+EMOTION_LABELS = {
+    0: '生气(anger)', 1: '恐惧(fear)', 2: '开心(happy)',
+    3: '平静(neutral)', 4: '难过(sad)', 5: '惊讶(surprise)'
+}
+
+# 模型保存路径
+MODEL_SAVE_PATH = './models/audio_cnn_model.h5'
+CONFIG_SAVE_PATH = './models/model_config.json'
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MFCC特征提取
+# ═══════════════════════════════════════════════════════════════════════════
+
+def extract_mfcc_features(audio_path, max_len=MAX_LEN):
+    """
+    从音频文件提取MFCC特征
+    MFCC原理：
+    1. 预加重（提升高频）
+    2. 分帧（汉明窗）
+    3. FFT计算功率谱
+    4. 梅尔滤波器组
+    5. 对数变换
+    6. DCT得到MFCC系数
+    """
+    try:
+        import librosa
+
+        # 加载音频
+        y, sr = librosa.load(audio_path, sr=SAMPLE_RATE)
+
+        # 提取MFCC特征
+        mfcc = librosa.feature.mfcc(
+            y=y,
+            sr=sr,
+            n_mfcc=N_MFCC,      # MFCC系数数量
+            n_fft=N_FFT,        # FFT窗口大小
+            hop_length=HOP_LENGTH # 帧移
+        )
+
+        # 对齐到固定长度
+        if mfcc.shape[1] < max_len:
+            # 填充
+            pad_width = max_len - mfcc.shape[1]
+            mfcc = np.pad(mfcc, ((0, 0), (0, pad_width)), mode='constant')
+        else:
+            # 截断
+            mfcc = mfcc[:, :max_len]
+
+        # 归一化
+        mfcc = (mfcc - np.mean(mfcc)) / (np.std(mfcc) + 1e-8)
+
+        return mfcc.T  # (time_steps, n_mfcc)
+
+    except Exception as e:
+        print(f"   ⚠️  特征提取失败 {audio_path}: {e}")
+        return None
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 数据加载
+# ═══════════════════════════════════════════════════════════════════════════
+
+def get_data_paths():
+    """获取数据路径"""
+    if USE_PREPROCESSED and os.path.exists(PREPROCESSED_CSV):
+        return PREPROCESSED_DATA_DIR, PREPROCESSED_CSV, '预处理后数据'
+
+    if os.path.exists(RAW_CSV):
+        return RAW_AUDIO_DIR, RAW_CSV, '原始标注数据'
+
+    return None, None, None
+
+def load_audio_dataset(audio_dir, csv_path):
+    """
+    加载音频数据集
+    流程：CSV读取 -> 音频文件 -> MFCC特征 -> 数据标准化
+    """
+    df = pd.read_csv(csv_path)
+    print(f"   ✓ 加载了 {len(df)} 条训练数据")
+
+    # 显示情绪分布
+    print(f"\n   情绪分布:")
+    for emotion, count in df['emotion'].value_counts().items():
+        print(f"      {EMOTION_LABELS.get(emotion, emotion)}: {count} 个")
+
+    X, y = [], []
+    failed = 0
+
+    print(f"\n   正在提取MFCC特征...")
+
+    for idx, row in df.iterrows():
+        # 确定音频文件路径
+        audio_path = os.path.join(audio_dir, row['filename'])
+
+        # 提取MFCC特征
+        mfcc = extract_mfcc_features(audio_path)
+
+        if mfcc is not None:
+            X.append(mfcc)
+            # 处理标签
+            label = row['emotion']
+            if isinstance(label, str):
+                # 情绪名称转数字
+                emotion_map = {
+                    'anger': 0, 'angry': 0,
+                    'fear': 1,
+                    'happy': 2,
+                    'neutral': 3,
+                    'sad': 4,
+                    'surprise': 5
+                }
+                label = emotion_map.get(label.lower(), 3)
+            y.append(label)
+        else:
+            failed += 1
+
+    if len(X) == 0:
+        print("   ⚠️  未能加载任何音频")
+        return None, None
+
+    print(f"   ✓ 成功处理 {len(X)} 个音频文件")
+    if failed > 0:
+        print(f"   ⚠️  {failed} 个文件处理失败")
+
+    return np.array(X), np.array(y)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CNN模型构建
+# ═══════════════════════════════════════════════════════════════════════════
+
+def build_cnn_model(input_shape):
+    """
+    构建CNN模型处理MFCC特征
+    CNN擅长捕捉MFCC图谱中的局部模式
+    """
+    print("\n🏗️ 构建CNN模型...")
+
+    model = models.Sequential([
+        # 输入层
+        layers.Input(shape=input_shape),
+
+        # 第一个卷积块
+        # Conv2D: (filters, kernel_size, strides, padding)
+        layers.Conv1D(64, 3, padding='same', activation='relu'),
+        layers.BatchNormalization(),
+        layers.Conv1D(64, 3, padding='same', activation='relu'),
+        layers.BatchNormalization(),
+        layers.MaxPooling1D(2),
+        layers.Dropout(0.25),
+
+        # 第二个卷积块
+        layers.Conv1D(128, 3, padding='same', activation='relu'),
+        layers.BatchNormalization(),
+        layers.Conv1D(128, 3, padding='same', activation='relu'),
+        layers.BatchNormalization(),
+        layers.MaxPooling1D(2),
+        layers.Dropout(0.25),
+
+        # 第三个卷积块
+        layers.Conv1D(256, 3, padding='same', activation='relu'),
+        layers.BatchNormalization(),
+        layers.MaxPooling1D(2),
+        layers.Dropout(0.25),
+
+        # 全局池化层（代替Flatten，保留更多特征）
+        layers.GlobalAveragePooling1D(),
+
+        # 全连接层
+        layers.Dense(128, activation='relu'),
+        layers.BatchNormalization(),
+        layers.Dropout(0.5),
+
+        # 输出层
+        layers.Dense(NUM_CLASSES, activation='softmax')
+    ])
+
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    return model
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 主训练流程
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n📂 第1步：加载音频数据...")
+
+audio_dir, csv_path, data_type = get_data_paths()
+if audio_dir is None:
+    print("   ⚠️  未找到任何训练数据！")
+    print("   💡 请先：")
+    print("      1. 在「声音情绪采集」模块录制并标注音频")
+    print("      2. 在「数据预处理」模块提取音频特征")
+    print("      3. 在编辑器「数据集」面板点击「同步音频数据」")
+    exit(1)
+
+X, y = load_audio_dataset(audio_dir, csv_path)
+if X is None:
+    exit(1)
+
+# 划分训练集和验证集
+X_train, X_val, y_train, y_val = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# 转换为one-hot编码
+y_train = to_categorical(y_train, NUM_CLASSES)
+y_val = to_categorical(y_val, NUM_CLASSES)
+
+print(f"\n   训练集: {len(X_train)} 个音频")
+print(f"   验证集: {len(X_val)} 个音频")
+print(f"   特征形状: {X_train.shape}")
+
+print("\n🔧 第2步：数据预处理...")
+print(f"   MFCC维度: {N_MFCC}")
+print(f"   时间步长度: {MAX_LEN}")
+print(f"   采样率: {SAMPLE_RATE}Hz")
+
+print("\n🏗️ 第3步：构建CNN模型...")
+model = build_cnn_model(input_shape=(MAX_LEN, N_MFCC))
+print("\n   模型结构:")
+model.summary()
+
+# 回调函数
+early_stopping = callbacks.EarlyStopping(
+    monitor='val_accuracy',
+    patience=5,
+    restore_best_weights=True
+)
+
+lr_scheduler = callbacks.ReduceLROnPlateau(
+    monitor='val_loss',
+    factor=0.5,
+    patience=3,
+    min_lr=1e-6
+)
+
+checkpoint = callbacks.ModelCheckpoint(
+    MODEL_SAVE_PATH,
+    monitor='val_accuracy',
+    save_best_only=True
+)
+
+print("\n🚀 第4步：开始训练...")
+print(f"   训练轮次: {EPOCHS}")
+print(f"   批次大小: {BATCH_SIZE}")
+print(f"   学习率: {LEARNING_RATE}")
+print(f"   数据类型: {data_type}")
+
+history = model.fit(
+    X_train, y_train,
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
+    validation_data=(X_val, y_val),
+    callbacks=[early_stopping, lr_scheduler, checkpoint],
+    verbose=1
+)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 模型评估
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n📊 第5步：评估模型...")
+
+loss, accuracy = model.evaluate(X_val, y_val, verbose=0)
+
+print(f"\n🎯 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+print(f"📉 验证集损失: {loss:.4f}")
+
+# 训练历史
+print("\n📈 训练曲线:")
+print(f"   最佳训练准确率: {max(history.history['accuracy']):.4f}")
+print(f"   最佳验证准确率: {max(history.history['val_accuracy']):.4f}")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 保存模型
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n💾 第6步：保存模型...")
+
+os.makedirs('./models', exist_ok=True)
+model.save(MODEL_SAVE_PATH)
+print(f"   ✓ 模型已保存到: {MODEL_SAVE_PATH}")
+
+# 保存配置
+import json
+config = {
+    'model_type': 'audio_cnn',
+    'num_classes': NUM_CLASSES,
+    'sample_rate': SAMPLE_RATE,
+    'n_mfcc': N_MFCC,
+    'n_fft': N_FFT,
+    'hop_length': HOP_LENGTH,
+    'max_len': MAX_LEN,
+    'emotion_labels': EMOTION_LABELS,
+    'accuracy': float(accuracy),
+    'train_samples': len(X_train),
+    'val_samples': len(X_val),
+    'data_type': data_type
+}
+with open(CONFIG_SAVE_PATH, 'w', encoding='utf-8') as f:
+    json.dump(config, f, ensure_ascii=False, indent=2)
+print(f"   ✓ 配置已保存到: {CONFIG_SAVE_PATH}")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 预测示例
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n🔮 第7步：预测示例...")
+
+sample_indices = np.random.choice(len(X_val), min(5, len(X_val)), replace=False)
+samples = X_val[sample_indices]
+true_labels = np.argmax(y_val[sample_indices], axis=1)
+
+preds = model.predict(samples, verbose=0)
+
+print("\n   预测结果对比:")
+print("   " + "-" * 60)
+for i, (pred, true_idx) in enumerate(zip(preds, true_labels)):
+    pred_idx = np.argmax(pred)
+    confidence = pred[pred_idx]
+    status = "✓" if pred_idx == true_idx else "✗"
+    print(f"   {status} 样本{i+1}: 真实={EMOTION_LABELS[true_idx]}, "
+          f"预测={EMOTION_LABELS[pred_idx]} (置信度: {confidence:.2%})")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 训练结果汇总
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n" + "=" * 70)
+print("  训练完成！")
+print("=" * 70)
+print(f"\n✅ 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+print(f"✅ 模型文件: {MODEL_SAVE_PATH}")
+print(f"✅ 使用数据: {data_type}")
+print("\n💡 学生实验建议：")
+print("   1. 尝试调整 N_MFCC（20-60）观察效果")
+print("   2. 尝试不同的 CNN 层数和卷积核数量")
+print("   3. 可以将MFCC换成梅尔频谱图（Mel Spectrogram）")
+`,
+
+    'README.md': `# 声音情绪识别 CNN 模板
+
+## 算法原理
+
+本模板使用 CNN（卷积神经网络）对音频的 MFCC 特征进行分类。
+
+### MFCC 特征提取流程
+
+1. **预加重**：提升高频成分，补偿声音信号的损失
+2. **分帧**：将音频分成短时帧（通常20-40ms）
+3. **加窗**：对每帧应用汉明窗，减少频谱泄漏
+4. **FFT**：计算每帧的功率谱
+5. **梅尔滤波器组**：模拟人耳对频率的非线性感知
+6. **对数变换**：压缩动态范围
+7. **DCT**：得到MFCC系数，去除冗余信息
+
+## 数据路径
+
+| 数据类型 | 路径 | 说明 |
+|---------|------|------|
+| 预处理后数据 | ./audio/preprocessed/ | 已提取MFCC特征 |
+| 原始标注数据 | ./audio/audios/ | WAV音频文件 |
+
+## 学生可修改参数
+
+| 参数 | 位置 | 默认值 | 说明 |
+|------|------|--------|------|
+| N_MFCC | train.py:32 | 40 | MFCC系数数量 |
+| MAX_LEN | train.py:33 | 100 | 时间步长度 |
+| EPOCHS | train.py:35 | 20 | 训练轮次 |
+| BATCH_SIZE | train.py:36 | 32 | 批次大小 |
+
+## 实验建议
+
+1. **特征维度实验**：对比20/40/60维MFCC
+2. **特征类型实验**：尝试梅尔频谱图
+3. **模型结构实验**：调整卷积层数和卷积核数量
+`
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 声音识别 LSTM 模板
+  // ═══════════════════════════════════════════════════════════════════════
+  audio_lstm: {
+    'train.py': `# ═══════════════════════════════════════════════════════════════════════════════
+# 声音情绪识别 LSTM 训练脚本
+# 课程：情感计算 · 声音识别
+# 模型架构：Bi-LSTM（双向长短期记忆网络）
+#
+# 【数据说明】
+# - 预处理后数据：./audio/preprocessed/
+# - 原始标注数据：./audio/audios/
+#
+# 【学生可修改的参数位置】
+# 1. N_MFCC（第30行）：MFCC特征维度，默认40
+# 2. MAX_LEN（第31行）：时间步最大长度，默认100
+# 3. LSTM_UNITS（第34行）：LSTM单元数，默认64
+# 4. EPOCHS（第36行）：训练轮次，默认25
+#
+# 【核心原理】
+# LSTM通过门控机制解决RNN的长期依赖问题
+# 双向LSTM同时学习前向和后向上下文信息
+# 适合捕捉音频中的时序模式和长距离依赖
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import os
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, models, callbacks
+from tensorflow.keras.utils import to_categorical
+from sklearn.model_selection import train_test_split
+import warnings
+warnings.filterwarnings('ignore')
+
+print("=" * 70)
+print("  声音情绪识别 Bi-LSTM 训练")
+print("  课程：情感计算 · 声音识别")
+print("  核心：双向LSTM，捕获时序上下文")
+print("=" * 70)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 【学生可修改】超参数配置
+# ═══════════════════════════════════════════════════════════════════════════
+
+SAMPLE_RATE = 16000
+N_MFCC = 40
+N_FFT = 400
+HOP_LENGTH = 160
+MAX_LEN = 100
+
+# LSTM参数
+LSTM_UNITS = 64        # LSTM单元数量，建议32-128
+USE_BIDIRECTIONAL = True  # 是否使用双向LSTM
+
+# 训练参数
+NUM_CLASSES = 6
+EPOCHS = 25
+BATCH_SIZE = 32
+LEARNING_RATE = 0.001
+
+# 情绪标签
+EMOTION_LABELS = {
+    0: '生气(anger)', 1: '恐惧(fear)', 2: '开心(happy)',
+    3: '平静(neutral)', 4: '难过(sad)', 5: '惊讶(surprise)'
+}
+
+# 数据路径
+USE_PREPROCESSED = True
+DATA_DIR = './audio/preprocessed' if USE_PREPROCESSED else './audio'
+
+MODEL_SAVE_PATH = './models/audio_lstm_model.h5'
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 特征提取和数据加载
+# ═══════════════════════════════════════════════════════════════════════════
+
+def extract_mfcc(audio_path, max_len=MAX_LEN):
+    """提取MFCC特征"""
+    try:
+        import librosa
+        y, sr = librosa.load(audio_path, sr=SAMPLE_RATE)
+        mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=N_MFCC,
+                                     n_fft=N_FFT, hop_length=HOP_LENGTH)
+
+        if mfcc.shape[1] < max_len:
+            mfcc = np.pad(mfcc, ((0, 0), (0, max_len - mfcc.shape[1])))
+        else:
+            mfcc = mfcc[:, :max_len]
+
+        return (mfcc - np.mean(mfcc)) / (np.std(mfcc) + 1e-8)
+    except:
+        return None
+
+def load_data():
+    """加载数据"""
+    csv_path = os.path.join(DATA_DIR, 'train_labels.csv')
+    audio_dir = os.path.join(DATA_DIR, 'audios')
+
+    if not os.path.exists(csv_path):
+        csv_path = './audio/train_labels.csv'
+        audio_dir = './audio/audios'
+
+    if not os.path.exists(csv_path):
+        print("   ⚠️  未找到训练数据！")
+        print("   💡 请先同步音频数据")
+        return None, None
+
+    df = pd.read_csv(csv_path)
+    print(f"   ✓ 加载了 {len(df)} 条训练数据")
+
+    print(f"\n   情绪分布:")
+    for emotion, count in df['emotion'].value_counts().items():
+        print(f"      {EMOTION_LABELS.get(emotion, emotion)}: {count} 个")
+
+    X, y = [], []
+    for idx, row in df.iterrows():
+        mfcc = extract_mfcc(os.path.join(audio_dir, row['filename']))
+        if mfcc is not None:
+            X.append(mfcc.T)  # (time_steps, n_mfcc)
+            label = row['emotion']
+            if isinstance(label, str):
+                m = {'anger':0,'angry':0,'fear':1,'happy':2,'neutral':3,'sad':4,'surprise':5}
+                label = m.get(label.lower(), 3)
+            y.append(label)
+
+    return np.array(X), np.array(y)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Bi-LSTM模型构建
+# ═══════════════════════════════════════════════════════════════════════════
+
+def build_lstm_model(input_shape):
+    """
+    构建Bi-LSTM模型
+    LSTM核心原理：
+    - 遗忘门：决定丢弃哪些信息
+    - 输入门：决定更新哪些信息
+    - 输出门：决定输出什么信息
+    双向LSTM同时处理正序和倒序的序列
+    """
+    print("\n🏗️ 构建Bi-LSTM模型...")
+    print(f"   LSTM单元数: {LSTM_UNITS}")
+    print(f"   双向模式: {'是' if USE_BIDIRECTIONAL else '否'}")
+
+    inputs = layers.Input(shape=input_shape)
+
+    x = inputs
+
+    # 第一个LSTM层
+    if USE_BIDIRECTIONAL:
+        x = layers.Bidirectional(
+            layers.LSTM(LSTM_UNITS, return_sequences=True),
+            merge_mode='concat'
+        )(x)
+        x = layers.Dropout(0.3)(x)
+    else:
+        x = layers.LSTM(LSTM_UNITS, return_sequences=True)(x)
+        x = layers.Dropout(0.3)(x)
+
+    # 第二个LSTM层
+    if USE_BIDIRECTIONAL:
+        x = layers.Bidirectional(
+            layers.LSTM(LSTM_UNITS // 2),
+            merge_mode='concat'
+        )(x)
+    else:
+        x = layers.LSTM(LSTM_UNITS // 2)(x)
+    x = layers.Dropout(0.3)(x)
+
+    # 全连接层
+    x = layers.Dense(128, activation='relu')(x)
+    x = layers.Dropout(0.5)(x)
+    outputs = layers.Dense(NUM_CLASSES, activation='softmax')(x)
+
+    model = models.Model(inputs, outputs)
+
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    return model
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 主训练流程
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n📂 第1步：加载音频数据...")
+X, y = load_data()
+if X is None:
+    exit(1)
+
+X_train, X_val, y_train, y_val = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+y_train = to_categorical(y_train, NUM_CLASSES)
+y_val = to_categorical(y_val, NUM_CLASSES)
+
+print(f"\n   训练集: {len(X_train)} 个音频")
+print(f"   验证集: {len(X_val)} 个音频")
+
+print("\n🏗️ 第2步：构建Bi-LSTM模型...")
+model = build_lstm_model(input_shape=(MAX_LEN, N_MFCC))
+model.summary()
+
+print("\n🚀 第3步：开始训练...")
+
+history = model.fit(
+    X_train, y_train,
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
+    validation_data=(X_val, y_val),
+    callbacks=[
+        callbacks.EarlyStopping(monitor='val_accuracy', patience=5, restore_best_weights=True),
+        callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3),
+        callbacks.ModelCheckpoint(MODEL_SAVE_PATH, monitor='val_accuracy', save_best_only=True)
+    ],
+    verbose=1
+)
+
+print("\n📊 第4步：评估模型...")
+loss, accuracy = model.evaluate(X_val, y_val, verbose=0)
+
+print(f"\n🎯 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+print(f"📉 验证集损失: {loss:.4f}")
+
+print("\n💾 第5步：保存模型...")
+os.makedirs('./models', exist_ok=True)
+model.save(MODEL_SAVE_PATH)
+
+import json
+config = {
+    'model_type': 'audio_bilstm',
+    'lstm_units': LSTM_UNITS,
+    'bidirectional': USE_BIDIRECTIONAL,
+    'n_mfcc': N_MFCC,
+    'accuracy': float(accuracy)
+}
+with open('./models/model_config.json', 'w', encoding='utf-8') as f:
+    json.dump(config, f, ensure_ascii=False, indent=2)
+
+print("\n" + "=" * 70)
+print("  训练完成！")
+print("=" * 70)
+print(f"\n✅ 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+print("\n💡 LSTM特点：")
+print("   1. 擅长处理时序数据")
+print("   2. 双向LSTM同时学习前后上下文")
+print("   3. 比CNN更适合捕捉长距离依赖")
+`,
+
+    'README.md': `# 声音情绪识别 Bi-LSTM 模板
+
+## 算法原理
+
+LSTM（Long Short-Term Memory）是一种特殊的循环神经网络，通过门控机制解决传统RNN的梯度消失问题。
+
+### LSTM 门控机制
+
+1. **遗忘门**：决定丢弃哪些信息
+2. **输入门**：决定更新哪些信息
+3. **输出门**：决定输出什么信息
+
+### 双向 LSTM
+
+将序列同时从正向和反向处理，捕获完整的上下文信息。
+
+## 学生可修改参数
+
+| 参数 | 位置 | 默认值 | 说明 |
+|------|------|--------|------|
+| LSTM_UNITS | train.py:34 | 64 | LSTM单元数 |
+| USE_BIDIRECTIONAL | train.py:35 | True | 是否双向 |
+| EPOCHS | train.py:36 | 25 | 训练轮次 |
+
+## 实验建议
+
+1. **对比实验**：对比单向和双向LSTM
+2. **深度实验**：增加更多LSTM层
+3. **单元数实验**：对比32/64/128单元的效果
+`
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 声音识别 GRU 模板
+  // ═══════════════════════════════════════════════════════════════════════
+  audio_gru: {
+    'train.py': `# ═══════════════════════════════════════════════════════════════════════════════
+# 声音情绪识别 GRU 训练脚本
+# 课程：情感计算 · 声音识别
+# 模型架构：GRU（门控循环单元）
+#
+# 【数据说明】
+# - 预处理后数据：./audio/preprocessed/
+# - 原始标注数据：./audio/audios/
+#
+# 【学生可修改的参数位置】
+# 1. GRU_UNITS（第28行）：GRU单元数，默认64
+# 2. NUM_LAYERS（第29行）：GRU层数，默认2
+# 3. EPOCHS（第31行）：训练轮次，默认20
+#
+# 【核心原理】
+# GRU是LSTM的简化版本，参数更少训练更快
+# 通过重置门和更新门控制信息流动
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import os
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, models, callbacks
+from tensorflow.keras.utils import to_categorical
+from sklearn.model_selection import train_test_split
+import warnings
+warnings.filterwarnings('ignore')
+
+print("=" * 70)
+print("  声音情绪识别 GRU 训练")
+print("  课程：情感计算 · 声音识别")
+print("  核心：轻量级门控机制，高效训练")
+print("=" * 70)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 【学生可修改】超参数配置
+# ═══════════════════════════════════════════════════════════════════════════
+
+SAMPLE_RATE = 16000
+N_MFCC = 40
+N_FFT = 400
+HOP_LENGTH = 160
+MAX_LEN = 100
+
+# GRU参数（比LSTM参数少，训练更快）
+GRU_UNITS = 64         # GRU单元数量
+NUM_LAYERS = 2         # GRU层数
+USE_BIDIRECTIONAL = True  # 双向模式
+
+# 训练参数
+NUM_CLASSES = 6
+EPOCHS = 20
+BATCH_SIZE = 32
+LEARNING_RATE = 0.001
+
+# 情绪标签
+EMOTION_LABELS = {
+    0: '生气(anger)', 1: '恐惧(fear)', 2: '开心(happy)',
+    3: '平静(neutral)', 4: '难过(sad)', 5: '惊讶(surprise)'
+}
+
+# 数据路径
+USE_PREPROCESSED = True
+DATA_DIR = './audio/preprocessed' if USE_PREPROCESSED else './audio'
+MODEL_SAVE_PATH = './models/audio_gru_model.h5'
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 数据加载
+# ═══════════════════════════════════════════════════════════════════════════
+
+def extract_mfcc(audio_path, max_len=MAX_LEN):
+    """提取MFCC特征"""
+    try:
+        import librosa
+        y, sr = librosa.load(audio_path, sr=SAMPLE_RATE)
+        mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=N_MFCC,
+                                     n_fft=N_FFT, hop_length=HOP_LENGTH)
+        if mfcc.shape[1] < max_len:
+            mfcc = np.pad(mfcc, ((0, 0), (0, max_len - mfcc.shape[1])))
+        else:
+            mfcc = mfcc[:, :max_len]
+        return (mfcc - np.mean(mfcc)) / (np.std(mfcc) + 1e-8)
+    except:
+        return None
+
+def load_data():
+    """加载数据"""
+    csv_path = os.path.join(DATA_DIR, 'train_labels.csv')
+    audio_dir = os.path.join(DATA_DIR, 'audios')
+
+    if not os.path.exists(csv_path):
+        csv_path = './audio/train_labels.csv'
+        audio_dir = './audio/audios'
+
+    if not os.path.exists(csv_path):
+        print("   ⚠️  未找到训练数据！")
+        return None, None
+
+    df = pd.read_csv(csv_path)
+    print(f"   ✓ 加载了 {len(df)} 条训练数据")
+
+    print(f"\n   情绪分布:")
+    for emotion, count in df['emotion'].value_counts().items():
+        print(f"      {EMOTION_LABELS.get(emotion, emotion)}: {count} 个")
+
+    X, y = [], []
+    for idx, row in df.iterrows():
+        mfcc = extract_mfcc(os.path.join(audio_dir, row['filename']))
+        if mfcc is not None:
+            X.append(mfcc.T)
+            label = row['emotion']
+            if isinstance(label, str):
+                m = {'anger':0,'angry':0,'fear':1,'happy':2,'neutral':3,'sad':4,'surprise':5}
+                label = m.get(label.lower(), 3)
+            y.append(label)
+
+    return np.array(X), np.array(y)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# GRU模型构建
+# ═══════════════════════════════════════════════════════════════════════════
+
+def build_gru_model(input_shape):
+    """
+    构建GRU模型
+    GRU核心原理（比LSTM更简洁）：
+    - 重置门：控制候选隐状态的计算
+    - 更新门：控制旧状态保留多少到新状态
+    """
+    print("\n🏗️ 构建GRU模型...")
+    print(f"   GRU单元数: {GRU_UNITS}")
+    print(f"   GRU层数: {NUM_LAYERS}")
+    print(f"   双向模式: {'是' if USE_BIDIRECTIONAL else '否'}")
+
+    inputs = layers.Input(shape=input_shape)
+    x = inputs
+
+    # 堆叠GRU层
+    for i in range(NUM_LAYERS - 1):
+        return_seq = True
+        units = GRU_UNITS
+        if USE_BIDIRECTIONAL:
+            x = layers.Bidirectional(
+                layers.GRU(units, return_sequences=return_seq),
+                merge_mode='concat'
+            )(x)
+        else:
+            x = layers.GRU(units, return_sequences=return_seq)(x)
+        x = layers.Dropout(0.3)(x)
+
+    # 最后一层
+    if USE_BIDIRECTIONAL:
+        x = layers.Bidirectional(
+            layers.GRU(GRU_UNITS // 2),
+            merge_mode='concat'
+        )(x)
+    else:
+        x = layers.GRU(GRU_UNITS // 2)(x)
+    x = layers.Dropout(0.3)(x)
+
+    # 全连接层
+    x = layers.Dense(128, activation='relu')(x)
+    x = layers.Dropout(0.5)(x)
+    outputs = layers.Dense(NUM_CLASSES, activation='softmax')(x)
+
+    model = models.Model(inputs, outputs)
+
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=LEARNING_RATE),
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    return model
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 主训练流程
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n📂 第1步：加载音频数据...")
+X, y = load_data()
+if X is None:
+    exit(1)
+
+X_train, X_val, y_train, y_val = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+y_train = to_categorical(y_train, NUM_CLASSES)
+y_val = to_categorical(y_val, NUM_CLASSES)
+
+print(f"\n   训练集: {len(X_train)} 个音频")
+print(f"   验证集: {len(X_val)} 个音频")
+
+print("\n🏗️ 第2步：构建GRU模型...")
+model = build_gru_model(input_shape=(MAX_LEN, N_MFCC))
+model.summary()
+
+print("\n🚀 第3步：开始训练...")
+
+history = model.fit(
+    X_train, y_train,
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
+    validation_data=(X_val, y_val),
+    callbacks=[
+        callbacks.EarlyStopping(monitor='val_accuracy', patience=5, restore_best_weights=True),
+        callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3),
+        callbacks.ModelCheckpoint(MODEL_SAVE_PATH, monitor='val_accuracy', save_best_only=True)
+    ],
+    verbose=1
+)
+
+print("\n📊 第4步：评估模型...")
+loss, accuracy = model.evaluate(X_val, y_val, verbose=0)
+
+print(f"\n🎯 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+
+print("\n💾 第5步：保存模型...")
+os.makedirs('./models', exist_ok=True)
+model.save(MODEL_SAVE_PATH)
+
+import json
+config = {
+    'model_type': 'audio_gru',
+    'gru_units': GRU_UNITS,
+    'num_layers': NUM_LAYERS,
+    'bidirectional': USE_BIDIRECTIONAL,
+    'accuracy': float(accuracy)
+}
+with open('./models/model_config.json', 'w', encoding='utf-8') as f:
+    json.dump(config, f, ensure_ascii=False, indent=2)
+
+print("\n" + "=" * 70)
+print("  训练完成！")
+print("=" * 70)
+print(f"\n✅ 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+print("\n💡 GRU特点：")
+print("   1. 参数量比LSTM少约30%")
+print("   2. 训练速度更快")
+print("   3. 性能与LSTM相当")
+`,
+
+    'README.md': `# 声音情绪识别 GRU 模板
+
+## 算法原理
+
+GRU（Gated Recurrent Unit）是LSTM的简化版本：
+
+### GRU 门控机制
+
+1. **更新门**：控制旧状态保留多少到新状态
+2. **重置门**：控制候选隐状态的计算
+
+### GRU vs LSTM
+
+| 特性 | GRU | LSTM |
+|------|-----|------|
+| 参数数量 | 较少 | 较多 |
+| 训练速度 | 较快 | 较慢 |
+| 记忆能力 | 中等 | 较强 |
+| 适用场景 | 小数据集 | 大数据集 |
+
+## 学生可修改参数
+
+| 参数 | 位置 | 默认值 | 说明 |
+|------|------|--------|------|
+| GRU_UNITS | train.py:28 | 64 | GRU单元数 |
+| NUM_LAYERS | train.py:29 | 2 | GRU层数 |
+
+## 实验建议
+
+1. **对比实验**：GRU vs LSTM vs CNN
+2. **深度实验**：增加GRU层数
+3. **单元数实验**：调整GRU单元数量
+`
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // 声音识别 Transformer 模板
+  // ═══════════════════════════════════════════════════════════════════════
+  audio_transformer: {
+    'train.py': `# ═══════════════════════════════════════════════════════════════════════════════
+# 声音情绪识别 Transformer 训练脚本
+# 课程：情感计算 · 声音识别
+# 模型架构：自注意力Transformer
+#
+# 【数据说明】
+# - 预处理后数据：./audio/preprocessed/
+# - 原始标注数据：./audio/audios/
+#
+# 【学生可修改的参数位置】
+# 1. D_MODEL（第35行）：模型维度，默认64
+# 2. NUM_HEADS（第36行）：注意力头数，默认4
+# 3. NUM_LAYERS（第37行）：Transformer层数，默认3
+# 4. EPOCHS（第39行）：训练轮次，默认30
+#
+# 【核心原理】
+# Transformer使用自注意力机制（Self-Attention）捕获序列中的依赖关系
+# 摒弃了RNN的顺序计算，可以并行化训练
+# 注意力机制：Query-Key-Value 三元组计算相似度
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import os
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, models, callbacks
+from tensorflow.keras.utils import to_categorical
+from sklearn.model_selection import train_test_split
+import math
+import warnings
+warnings.filterwarnings('ignore')
+
+print("=" * 70)
+print("  声音情绪识别 Transformer 训练")
+print("  课程：情感计算 · 声音识别")
+print("  核心：自注意力机制，捕获全局依赖")
+print("=" * 70)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 【学生可修改】超参数配置
+# ═══════════════════════════════════════════════════════════════════════════
+
+SAMPLE_RATE = 16000
+N_MFCC = 40
+N_FFT = 400
+HOP_LENGTH = 160
+MAX_LEN = 100
+
+# Transformer参数
+D_MODEL = 64           # 模型维度（所有层的隐藏单元数）
+NUM_HEADS = 4          # 注意力头数量
+NUM_LAYERS = 3         # Transformer编码器层数
+FF_DIM = 128           # 前馈网络维度
+DROPOUT = 0.1          # Dropout比例
+
+# 训练参数
+NUM_CLASSES = 6
+EPOCHS = 30
+BATCH_SIZE = 32
+LEARNING_RATE = 0.001
+
+# 情绪标签
+EMOTION_LABELS = {
+    0: '生气(anger)', 1: '恐惧(fear)', 2: '开心(happy)',
+    3: '平静(neutral)', 4: '难过(sad)', 5: '惊讶(surprise)'
+}
+
+# 数据路径
+USE_PREPROCESSED = True
+DATA_DIR = './audio/preprocessed' if USE_PREPROCESSED else './audio'
+MODEL_SAVE_PATH = './models/audio_transformer_model.h5'
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 数据加载
+# ═══════════════════════════════════════════════════════════════════════════
+
+def extract_mfcc(audio_path, max_len=MAX_LEN):
+    """提取MFCC特征"""
+    try:
+        import librosa
+        y, sr = librosa.load(audio_path, sr=SAMPLE_RATE)
+        mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=N_MFCC,
+                                     n_fft=N_FFT, hop_length=HOP_LENGTH)
+        if mfcc.shape[1] < max_len:
+            mfcc = np.pad(mfcc, ((0, 0), (0, max_len - mfcc.shape[1])))
+        else:
+            mfcc = mfcc[:, :max_len]
+        return (mfcc - np.mean(mfcc)) / (np.std(mfcc) + 1e-8)
+    except:
+        return None
+
+def load_data():
+    """加载数据"""
+    csv_path = os.path.join(DATA_DIR, 'train_labels.csv')
+    audio_dir = os.path.join(DATA_DIR, 'audios')
+
+    if not os.path.exists(csv_path):
+        csv_path = './audio/train_labels.csv'
+        audio_dir = './audio/audios'
+
+    if not os.path.exists(csv_path):
+        print("   ⚠️  未找到训练数据！")
+        return None, None
+
+    df = pd.read_csv(csv_path)
+    print(f"   ✓ 加载了 {len(df)} 条训练数据")
+
+    print(f"\n   情绪分布:")
+    for emotion, count in df['emotion'].value_counts().items():
+        print(f"      {EMOTION_LABELS.get(emotion, emotion)}: {count} 个")
+
+    X, y = [], []
+    for idx, row in df.iterrows():
+        mfcc = extract_mfcc(os.path.join(audio_dir, row['filename']))
+        if mfcc is not None:
+            X.append(mfcc.T)
+            label = row['emotion']
+            if isinstance(label, str):
+                m = {'anger':0,'angry':0,'fear':1,'happy':2,'neutral':3,'sad':4,'surprise':5}
+                label = m.get(label.lower(), 3)
+            y.append(label)
+
+    return np.array(X), np.array(y)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Transformer组件
+# ═══════════════════════════════════════════════════════════════════════════
+
+class PositionalEncoding(layers.Layer):
+    """
+    位置编码
+    Transformer本身没有序列位置信息，需要手动添加
+    使用正弦和余弦函数编码位置
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def call(self, inputs):
+        seq_len = tf.shape(inputs)[1]
+        d_model = tf.shape(inputs)[2]
+
+        # 位置编码公式
+        position = tf.range(seq_len, dtype=tf.float32)[:, tf.newaxis]
+        div_term = tf.exp(tf.range(0, d_model, 2, dtype=tf.float32) * (-math.log(10000.0) / d_model))
+
+        pos_encoding = tf.zeros((seq_len, d_model))
+        pos_encoding[:, 0::2] = tf.sin(position * div_term)
+        pos_encoding[:, 1::2] = tf.cos(position * div_term)
+
+        return inputs + pos_encoding[tf.newaxis, :, :]
+
+class TransformerEncoder(layers.Layer):
+    """
+    Transformer编码器层
+    包含：多头自注意力 + 前馈网络
+    """
+    def __init__(self, d_model, num_heads, ff_dim, dropout=0.1, **kwargs):
+        super().__init__(**kwargs)
+        self.d_model = d_model
+        self.num_heads = num_heads
+        self.ff_dim = ff_dim
+
+        # 多头自注意力
+        self.attention = layers.MultiHeadAttention(
+            num_heads=num_heads,
+            key_dim=d_model // num_heads
+        )
+
+        # 前馈网络
+        self.ffn = keras.Sequential([
+            layers.Dense(ff_dim, activation='relu'),
+            layers.Dense(d_model)
+        ])
+
+        # 层归一化和Dropout
+        self.layernorm1 = layers.LayerNormalization(epsilon=1e-6)
+        self.layernorm2 = layers.LayerNormalization(epsilon=1e-6)
+        self.dropout1 = layers.Dropout(dropout)
+        self.dropout2 = layers.Dropout(dropout)
+
+    def call(self, inputs, training=False):
+        # 自注意力
+        attn_output = self.attention(inputs, inputs)
+        attn_output = self.dropout1(attn_output, training=training)
+        out1 = self.layernorm1(inputs + attn_output)
+
+        # 前馈网络
+        ffn_output = self.ffn(out1)
+        ffn_output = self.dropout2(ffn_output, training=training)
+        out2 = self.layernorm2(out1 + ffn_output)
+
+        return out2
+
+def build_transformer_model(input_shape):
+    """
+    构建Transformer模型用于音频分类
+    Transformer核心原理：
+    1. 输入embedding + 位置编码
+    2. 多层Transformer编码器（自注意力 + 前馈）
+    3. 全局池化 + 分类头
+    """
+    print("\n🏗️ 构建Transformer模型...")
+    print(f"   模型维度: {D_MODEL}")
+    print(f"   注意力头数: {NUM_HEADS}")
+    print(f"   编码器层数: {NUM_LAYERS}")
+    print(f"   前馈维度: {FF_DIM}")
+
+    inputs = layers.Input(shape=input_shape)
+
+    # 投影到D_MODEL维度
+    x = layers.Dense(D_MODEL)(inputs)
+
+    # 添加位置编码
+    x = PositionalEncoding()(x)
+
+    # 多个Transformer编码器层
+    for i in range(NUM_LAYERS):
+        x = TransformerEncoder(D_MODEL, NUM_HEADS, FF_DIM, DROPOUT)(x)
+
+    # 全局池化
+    x = layers.GlobalAveragePooling1D()(x)
+
+    # 分类头
+    x = layers.Dropout(0.3)(x)
+    x = layers.Dense(128, activation='relu')(x)
+    x = layers.Dropout(0.5)(x)
+    outputs = layers.Dense(NUM_CLASSES, activation='softmax')(x)
+
+    model = models.Model(inputs, outputs)
+
+    # 使用学习率调度
+    optimizer = keras.optimizers.Adam(
+        learning_rate=keras.optimizers.schedules.CosineDecay(
+            initial_learning_rate=LEARNING_RATE,
+            decay_steps=1000,
+            alpha=0.1
+        )
+    )
+
+    model.compile(
+        optimizer=optimizer,
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    return model
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 主训练流程
+# ═══════════════════════════════════════════════════════════════════════════
+
+print("\n📂 第1步：加载音频数据...")
+X, y = load_data()
+if X is None:
+    exit(1)
+
+X_train, X_val, y_train, y_val = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+y_train = to_categorical(y_train, NUM_CLASSES)
+y_val = to_categorical(y_val, NUM_CLASSES)
+
+print(f"\n   训练集: {len(X_train)} 个音频")
+print(f"   验证集: {len(X_val)} 个音频")
+
+print("\n🏗️ 第2步：构建Transformer模型...")
+model = build_transformer_model(input_shape=(MAX_LEN, N_MFCC))
+model.summary()
+
+print("\n🚀 第3步：开始训练...")
+print("   （Transformer通常需要更多epoch才能收敛）")
+
+history = model.fit(
+    X_train, y_train,
+    epochs=EPOCHS,
+    batch_size=BATCH_SIZE,
+    validation_data=(X_val, y_val),
+    callbacks=[
+        callbacks.EarlyStopping(monitor='val_accuracy', patience=7, restore_best_weights=True),
+        callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, min_lr=1e-6),
+        callbacks.ModelCheckpoint(MODEL_SAVE_PATH, monitor='val_accuracy', save_best_only=True)
+    ],
+    verbose=1
+)
+
+print("\n📊 第4步：评估模型...")
+loss, accuracy = model.evaluate(X_val, y_val, verbose=0)
+
+print(f"\n🎯 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+
+print("\n💾 第5步：保存模型...")
+os.makedirs('./models', exist_ok=True)
+model.save(MODEL_SAVE_PATH)
+
+import json
+config = {
+    'model_type': 'audio_transformer',
+    'd_model': D_MODEL,
+    'num_heads': NUM_HEADS,
+    'num_layers': NUM_LAYERS,
+    'ff_dim': FF_DIM,
+    'accuracy': float(accuracy)
+}
+with open('./models/model_config.json', 'w', encoding='utf-8') as f:
+    json.dump(config, f, ensure_ascii=False, indent=2)
+
+print("\n" + "=" * 70)
+print("  训练完成！")
+print("=" * 70)
+print(f"\n✅ 验证集准确率: {accuracy:.4f} ({accuracy*100:.2f}%)")
+print("\n💡 Transformer特点：")
+print("   1. 使用自注意力捕获全局依赖关系")
+print("   2. 可以并行训练，速度快")
+print("   3. 是当前NLP和音频处理的主流架构")
+print("   4. 通常需要更多数据和epoch训练")
+`,
+
+    'README.md': `# 声音情绪识别 Transformer 模板
+
+## 算法原理
+
+Transformer由Google在2017年提出，完全基于注意力机制，摒弃了RNN的顺序计算。
+
+### 自注意力机制（Self-Attention）
+
+核心是Query-Key-Value三元组：
+
+1. **Query**：当前位置的查询向量
+2. **Key**：所有位置的键向量
+3. **Value**：所有位置的值向量
+
+注意力计算：Attention(Q,K,V) = softmax(QK^T / √d_k) × V
+
+### 多头注意力
+
+将Q、K、V分别投影到多个子空间，并行计算多个注意力，然后拼接。
+
+## 学生可修改参数
+
+| 参数 | 位置 | 默认值 | 说明 |
+|------|------|--------|------|
+| D_MODEL | train.py:35 | 64 | 模型维度 |
+| NUM_HEADS | train.py:36 | 4 | 注意力头数 |
+| NUM_LAYERS | train.py:37 | 3 | Transformer层数 |
+| EPOCHS | train.py:39 | 30 | 训练轮次 |
+
+## 实验建议
+
+1. **注意力头实验**：对比2/4/8头
+2. **深度实验**：增加Transformer层数
+3. **维度实验**：调整模型维度
+
+## 参考文献
+
+- "Attention Is All You Need" (Vaswani et al., 2017)
+`
+  }
+
+};
+
+
+
+// ── 按课程加载整套模板文件（与「加载模板」逻辑一致）────────────────
+function setMonacoLanguageForPath(path, langHint) {
+  if (!monacoEditor) return;
+  const lang = langHint || (path.endsWith('.md') ? 'markdown' : 'python');
+  const mid = lang === 'markdown' ? 'markdown' : 'python';
+  monaco.editor.setModelLanguage(monacoEditor.getModel(), mid);
+  const el = document.getElementById('statusLang');
+  if (el) el.textContent = mid === 'markdown' ? 'Markdown' : 'Python';
+}
+
+function applyTemplateBundle(templateName, options) {
+  options = options || {};
+  if (!TEMPLATE_FILES[templateName]) return;
+
+  currentTemplate = templateName;
+
+  // 根据模板名称设置课程标签
+  let courseLabel = '情感计算 · 表情识别';
+  let courseType = 'face';
+
+  if (templateName.startsWith('eco_')) {
+    courseLabel = '时序预测 · 生态瓶';
+    courseType = 'eco';
+  } else if (templateName.startsWith('audio_')) {
+    courseLabel = '情感计算 · 声音识别';
+    courseType = 'audio';
+  } else if (templateName.startsWith('face_')) {
+    courseLabel = '情感计算 · 表情识别';
+    courseType = 'face';
+  }
+
+  document.getElementById('courseLabel').textContent = courseLabel;
+  EDITOR_CONFIG.course = courseType;
+
+  const files = TEMPLATE_FILES[templateName];
+  openTabs = [];
+  activeTabPath = null;
+
+  for (const [name, code] of Object.entries(files)) {
+    const lang = name.endsWith('.py') ? 'python' : name.endsWith('.md') ? 'markdown' : 'python';
+    openTabs.push({ name, path: name, code, lang });
+    if (!activeTabPath) activeTabPath = name;
+  }
+  const firstPy = openTabs.find(t => t.path.endsWith('.py'));
+  if (firstPy) activeTabPath = firstPy.path;
+
+  const tab = openTabs.find(t => t.path === activeTabPath);
+  if (tab && monacoEditor) {
+    monacoEditor.setValue(tab.code || '');
+    setMonacoLanguageForPath(tab.path, tab.lang);
+  }
+  unsavedChanges = new Set();
+
+  renderEditorTabs();
+  renderFileTree();
+  loadDatasetInfo();
+  loadEditorLeaderboard();
+
+  if (options.terminalMessage) {
+    appendTerminal('sys', options.terminalMessage);
+  }
+}
+
+function initSidebarResize() {
+  const sidebar = document.getElementById('editorSidebar');
+  const handle = document.getElementById('sidebarResizeHandle');
+  if (!sidebar || !handle) return;
+
+  const KEY = 'edu_editor_sidebar_width_px';
+  const minW = 160;
+  const maxW = () => Math.min(560, Math.floor(window.innerWidth * 0.55));
+
+  const saved = parseInt(localStorage.getItem(KEY), 10);
+  if (!Number.isNaN(saved) && saved >= minW) {
+    sidebar.style.width = Math.min(saved, maxW()) + 'px';
+  }
+
+  let startX, startW;
+  function onMove(e) {
+    const dx = e.clientX - startX;
+    let nw = startW + dx;
+    nw = Math.max(minW, Math.min(nw, maxW()));
+    sidebar.style.width = nw + 'px';
+    if (monacoEditor) monacoEditor.layout();
+  }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    handle.classList.remove('active');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    localStorage.setItem(KEY, String(sidebar.offsetWidth));
+    if (monacoEditor) monacoEditor.layout();
+  }
+  handle.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    startX = e.clientX;
+    startW = sidebar.offsetWidth;
+    handle.classList.add('active');
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+  window.addEventListener('resize', () => {
+    const cap = maxW();
+    if (sidebar.offsetWidth > cap) {
+      sidebar.style.width = cap + 'px';
+      if (monacoEditor) monacoEditor.layout();
+    }
+  });
+}
+
+function initRightPanelResize() {
+  const panel = document.getElementById('editorRight');
+  const handle = document.getElementById('rightResizeHandle');
+  if (!panel || !handle) return;
+
+  const KEY = 'edu_editor_right_width_px';
+  const minW = 200;
+  const maxW = () => Math.min(520, Math.floor(window.innerWidth * 0.5));
+
+  const saved = parseInt(localStorage.getItem(KEY), 10);
+  if (!Number.isNaN(saved) && saved >= minW) {
+    panel.style.width = Math.min(saved, maxW()) + 'px';
+  }
+
+  let startX, startW;
+  function onMove(e) {
+    const dx = e.clientX - startX;
+    let nw = startW - dx;
+    nw = Math.max(minW, Math.min(nw, maxW()));
+    panel.style.width = nw + 'px';
+    if (monacoEditor) monacoEditor.layout();
+  }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    handle.classList.remove('active');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    localStorage.setItem(KEY, String(panel.offsetWidth));
+    if (monacoEditor) monacoEditor.layout();
+  }
+  handle.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    startX = e.clientX;
+    startW = panel.offsetWidth;
+    handle.classList.add('active');
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+  window.addEventListener('resize', () => {
+    const cap = maxW();
+    if (panel.offsetWidth > cap) {
+      panel.style.width = cap + 'px';
+      if (monacoEditor) monacoEditor.layout();
+    }
+  });
+}
+
+function initEditorBottomResize() {
+  const bottom = document.getElementById('editorBottom');
+  const handle = document.getElementById('editorResizeHandle');
+  if (!bottom || !handle) return;
+
+  const KEY = 'edu_editor_bottom_height_px';
+  const saved = parseInt(localStorage.getItem(KEY), 10);
+  if (!Number.isNaN(saved) && saved >= 140 && saved <= window.innerHeight * 0.85) {
+    bottom.style.height = saved + 'px';
+  }
+
+  let startY, startH;
+  function onMove(e) {
+    const dy = startY - e.clientY;
+    let nh = startH + dy;
+    nh = Math.max(140, Math.min(nh, Math.floor(window.innerHeight * 0.78)));
+    bottom.style.height = nh + 'px';
+    if (monacoEditor) monacoEditor.layout();
+  }
+  function onUp() {
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    handle.classList.remove('active');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    localStorage.setItem(KEY, String(bottom.offsetHeight));
+    if (monacoEditor) monacoEditor.layout();
+  }
+  handle.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    startY = e.clientY;
+    startH = bottom.offsetHeight;
+    handle.classList.add('active');
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+  window.addEventListener('resize', () => {
+    const maxH = Math.floor(window.innerHeight * 0.78);
+    if (bottom.offsetHeight > maxH) {
+      bottom.style.height = maxH + 'px';
+      if (monacoEditor) monacoEditor.layout();
+    }
+  });
+}
+
+// ── Font Size Control ─────────────────────────────────────────
+function adjustFontSize(delta) {
+  editorFontSize = Math.max(8, Math.min(24, editorFontSize + delta));
+  document.getElementById('editorFontDisplay').textContent = editorFontSize;
+  localStorage.setItem('edu_editor_font_size', editorFontSize);
+  if (monacoEditor) {
+    monacoEditor.updateOptions({ fontSize: editorFontSize });
+  }
+}
+
+function adjustTerminalFontSize(delta) {
+  terminalFontSize = Math.max(8, Math.min(20, terminalFontSize + delta));
+  document.getElementById('terminalFontDisplay').textContent = terminalFontSize;
+  localStorage.setItem('edu_terminal_font_size', terminalFontSize);
+  const terminalOutput = document.getElementById('terminalOutput');
+  if (terminalOutput) {
+    terminalOutput.style.fontSize = terminalFontSize + 'px';
+  }
+}
+
+function loadFontSizes() {
+  const savedEditorFont = localStorage.getItem('edu_editor_font_size');
+  const savedTerminalFont = localStorage.getItem('edu_terminal_font_size');
+  if (savedEditorFont) {
+    editorFontSize = parseInt(savedEditorFont, 10);
+  }
+  if (savedTerminalFont) {
+    terminalFontSize = parseInt(savedTerminalFont, 10);
+  }
+  document.getElementById('editorFontDisplay').textContent = editorFontSize;
+  document.getElementById('terminalFontDisplay').textContent = terminalFontSize;
+}
+
+// ── Terminal Command Execution ────────────────────────────────
+function executeTerminalCommand() {
+  const input = document.getElementById('terminalCmdInput');
+  if (!input) return;
+  const cmd = input.value.trim();
+  if (!cmd) return;
+
+  appendTerminal('input', '$ ' + cmd);
+  input.value = '';
+
+  // 根据命令类型处理
+  if (cmd === 'clear' || cmd === 'cls') {
+    clearTerminal();
+    return;
+  }
+
+  if (cmd.startsWith('run ') || cmd === 'run') {
+    // 运行当前编辑器代码
+    runCode();
+    return;
+  }
+
+  if (cmd.startsWith('python ') || cmd.endsWith('.py')) {
+    // 执行Python文件
+    const fileName = cmd.startsWith('python ') ? cmd.substring(7).trim() : cmd;
+    runPythonFile(fileName);
+    return;
+  }
+
+  // 其他命令显示帮助
+  appendTerminal('sys', '📖 可用命令:\n  run         - 运行当前编辑器代码\n  python <file> - 运行Python文件\n  clear/cls    - 清空终端');
+}
+
+// 运行Python文件
+function runPythonFile(fileName) {
+  // 查找文件内容
+  let code = '';
+  for (const tab of openTabs) {
+    if (tab.name === fileName || tab.path === fileName) {
+      code = tab.code;
+      break;
+    }
+  }
+
+  if (!code) {
+    appendTerminal('stderr', `❌ 文件不存在或未打开: ${fileName}`);
+    return;
+  }
+
+  appendTerminal('sys', `▶ 运行 ${fileName} ...`);
+
+  fetch('/editor/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      code: code,
+      course: EDITOR_CONFIG.course,
+      template: currentTemplate,
+      filename: fileName
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.error) {
+      appendTerminal('stderr', `❌ 错误: ${data.error}`);
+    } else {
+      if (data.stdout) {
+        data.stdout.split('\n').forEach(line => {
+          if (line.trim()) appendTerminal('stdout', line);
+        });
+      }
+      if (data.result) {
+        appendTerminal('result', `📊 结果: ${JSON.stringify(data.result)}`);
+      }
+      appendTerminal('sys', `✅ 运行完成`);
+    }
+  })
+  .catch(err => {
+    appendTerminal('stderr', `❌ 网络错误: ${err.message}`);
+  });
+}
+
+// ── Monaco Init ─────────────────────────────────────────────
+require.config({
+  paths: { vs: '{{ url_for("static", filename="vendor/monaco-editor/min/vs") }}' }
+});
+
+require(['vs/editor/editor.main'], function () {
+  monaco.editor.defineTheme('edu-dark', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { token: 'comment', foreground: '6A9955', fontStyle: 'italic' },
+      { token: 'keyword', foreground: '569CD6' },
+      { token: 'string', foreground: 'CE9178' },
+      { token: 'number', foreground: 'B5CEA8' },
+      { token: 'function', foreground: 'DCDCAA' },
+    ],
+    colors: {
+      'editor.background': '#1e1e1e',
+      'editor.foreground': '#d4d4d4',
+      'editor.lineHighlightBackground': '#2d2d2d',
+      'editorLineNumber.foreground': '#5a5a5a',
+      'editorCursor.foreground': '#aeafad',
+      'editor.selectionBackground': '#264f78',
+    }
+  });
+
+  monacoEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
+    value: '',
+    language: 'python',
+    theme: 'edu-dark',
+    fontSize: editorFontSize,
+    fontFamily: EDITOR_CONFIG.fontFamily,
+    tabSize: EDITOR_CONFIG.tabSize,
+    minimap: EDITOR_CONFIG.minimap,
+    lineNumbers: EDITOR_CONFIG.lineNumbers,
+    scrollBeyondLastLine: EDITOR_CONFIG.scrollBeyondLastLine,
+    automaticLayout: EDITOR_CONFIG.automaticLayout,
+    renderWhitespace: EDITOR_CONFIG.renderWhitespace,
+    bracketPairColorization: EDITOR_CONFIG.bracketPairColorization,
+    wordWrap: EDITOR_CONFIG.wordWrap,
+    scrollbar: {
+      verticalScrollbarSize: 8,
+      horizontalScrollbarSize: 8,
+    }
+  });
+
+  // 应用保存的终端字体大小
+  const terminalOutput = document.getElementById('terminalOutput');
+  if (terminalOutput) {
+    terminalOutput.style.fontSize = terminalFontSize + 'px';
+  }
+
+  document.getElementById('editorLoading').classList.add('hidden');
+
+  // Cursor position
+  monacoEditor.onDidChangeCursorPosition((e) => {
+    document.getElementById('statusLn').textContent =
+      `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+  });
+
+  // Track unsaved changes
+  monacoEditor.onDidChangeModelContent(() => {
+    unsavedChanges.add(activeTabPath);
+    updateTabTitle(activeTabPath);
+  });
+
+  // Keyboard shortcut: Ctrl+Enter = Run
+  monacoEditor.addCommand(
+    monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+    () => runCode()
+  );
+
+  // Keyboard shortcut: Ctrl+S = Save
+  monacoEditor.addCommand(
+    monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
+    () => saveCode()
+  );
+
+  // 默认按 URL 课程加载整套参考文件（face → 表情 CNN；eco → 生态 LSTM）
+  const defaultTpl = EDITOR_CONFIG.course === 'eco' ? 'eco_lstm' : 'face_cnn';
+  appendTerminal('sys', '🟢 编辑器就绪。按 Ctrl+Enter 运行代码，Ctrl+S 保存。');
+  applyTemplateBundle(defaultTpl, {
+    terminalMessage: '📁 已加载与课程对应的默认模板；可用工具栏「加载模板」切换其他示例。'
+  });
+  initEditorBottomResize();
+});
+
+// ── File Tree ─────────────────────────────────────────────────
+let _treeData = [];
+let _treeCourse = 'face';
+
+async function renderFileTree() {
+  const container = document.getElementById('fileTree');
+  if (!container) return;
+
+  _treeCourse = EDITOR_CONFIG.course || 'face';
+
+  try {
+    const resp = await fetch(`/editor/workspace_tree?course=${_treeCourse}`);
+    if (!resp.ok) throw new Error(resp.status);
+    const data = await resp.json();
+    _treeData = data.workspace || [];
+    container.innerHTML = renderTreeNodes(_treeData, 0);
+  } catch (err) {
+    container.innerHTML = `<div style="font-size:0.72rem;color:#f48771;padding:8px">加载失败: ${err.message}</div>`;
+  }
+}
+
+function renderTreeNodes(nodes, depth) {
+  if (!nodes || nodes.length === 0) return '';
+  return nodes.map(node => {
+    if (node.type === 'folder') {
+      const childrenHtml = renderTreeNodes(node.children || [], depth + 1);
+      const id = 'ftf_' + btoa(unescape(encodeURIComponent(node.name))).replace(/[^a-zA-Z0-9]/g, '').slice(0, 8);
+      return `<div class="ft-node">
+        <div class="ft-folder-header" onclick="toggleFolder('${id}')" ondblclick="toggleFolder('${id}')">
+          <span class="ft-chevron" id="${id}_chev">▶</span>
+          <span style="font-size:0.8rem">📁</span>
+          <span class="ft-name">${escHtml(node.name)}</span>
+        </div>
+        <div class="ft-children" id="${id}_children" style="display:none;padding-left:14px">
+          ${childrenHtml}
+        </div>
+      </div>`;
+    } else {
+      const icon = fileIcon(node.name);
+      const id = 'ft_' + btoa(unescape(encodeURIComponent(node.path))).replace(/[^a-zA-Z0-9]/g, '').slice(0, 12);
+      return `<div class="ft-item ft-file-item" id="${id}" data-path="${escAttr(node.path)}" ondblclick="treeOpenFile('${escAttr(node.path)}')">
+        <span class="ft-icon">${icon}</span>
+        <span class="ft-name">${escHtml(node.name)}</span>
+      </div>`;
+    }
+  }).join('');
+}
+
+function toggleFolder(id) {
+  const children = document.getElementById(id + '_children');
+  const chev = document.getElementById(id + '_chev');
+  if (!children) return;
+  const open = children.style.display !== 'none';
+  children.style.display = open ? 'none' : 'block';
+  if (chev) chev.textContent = open ? '▶' : '▼';
+}
+
+function fileIcon(name) {
+  const n = name.toLowerCase();
+  if (n.endsWith('.py')) return '🐍';
+  if (n.endsWith('.md')) return '📝';
+  if (n.endsWith('.csv')) return '📊';
+  if (n.endsWith('.txt')) return '📄';
+  if (n.endsWith('.json')) return '📋';
+  if (n.endsWith('.jpg') || n.endsWith('.png') || n.endsWith('.jpeg')) return '🖼️';
+  if (n.endsWith('.wav') || n.endsWith('.mp3')) return '🎵';
+  if (n.endsWith('.h5') || n.endsWith('.pt') || n.endsWith('.pth')) return '🤖';
+  if (n.endsWith('.zip')) return '📦';
+  return '📄';
+}
+
+async function treeOpenFile(relPath) {
+  // relPath: e.g. "face/images/img01.jpg" or "face/train_labels.csv"
+  const course = _treeCourse;
+  // 文件必须在小组工作空间下，以相对路径请求
+  try {
+    const resp = await fetch(`/editor/read_file?path=${encodeURIComponent(relPath)}&course=${course}`);
+    if (!resp.ok) {
+      appendTerminal('sys', `⚠️ 无法打开文件: ${relPath}`);
+      return;
+    }
+    const data = await resp.json();
+    const lang = langFromPath(relPath);
+    const name = relPath.split('/').pop();
+    openFile(name, data.content || '', lang);
+    appendTerminal('sys', `📂 已打开 ${relPath}`);
+  } catch (e) {
+    appendTerminal('sys', `⚠️ 打开失败: ${e.message}`);
+  }
+}
+
+function langFromPath(p) {
+  const n = p.toLowerCase();
+  if (n.endsWith('.py')) return 'python';
+  if (n.endsWith('.md')) return 'markdown';
+  if (n.endsWith('.csv') || n.endsWith('.txt')) return 'plaintext';
+  if (n.endsWith('.json')) return 'json';
+  return 'plaintext';
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+  return String(s).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+}
+
+// ── Tab Management ────────────────────────────────────────────
+function renderEditorTabs() {
+  const bar = document.getElementById('editorTabsBar');
+  bar.innerHTML = openTabs.map(tab => {
+    const unsaved = unsavedChanges.has(tab.path) ? '●' : '';
+    const active = tab.path === activeTabPath ? 'active' : '';
+    return `
+      <div class="editor-tab ${active}" data-path="${tab.path}" onclick="switchTab('${tab.path}')">
+        <span>${tab.name}</span>
+        ${unsaved ? `<span style="color:#007acc;font-size:0.6rem">●</span>` : ''}
+        <span class="tab-close" onclick="event.stopPropagation(); closeTab('${tab.path}')">×</span>
+      </div>`;
+  }).join('');
+}
+
+function switchTab(path) {
+  if (path === activeTabPath) return;
+  // Save current
+  const tab = openTabs.find(t => t.path === activeTabPath);
+  if (tab && monacoEditor) tab.code = monacoEditor.getValue();
+
+  activeTabPath = path;
+  const newTab = openTabs.find(t => t.path === path);
+  if (newTab && monacoEditor) {
+    monacoEditor.setValue(newTab.code || '');
+    setMonacoLanguageForPath(newTab.path, newTab.lang);
+    monacoEditor.focus();
+  }
+  renderEditorTabs();
+  renderFileTree();
+}
+
+function closeTab(path) {
+  if (openTabs.length === 1) {
+    appendTerminal('sys', '⚠️ 不能关闭最后一个标签页');
+    return;
+  }
+  openTabs = openTabs.filter(t => t.path !== path);
+  if (activeTabPath === path) {
+    activeTabPath = openTabs[openTabs.length - 1].path;
+    const tab = openTabs.find(t => t.path === activeTabPath);
+    if (tab && monacoEditor) {
+      monacoEditor.setValue(tab.code || '');
+      setMonacoLanguageForPath(tab.path, tab.lang);
+    }
+  }
+  renderEditorTabs();
+  renderFileTree();
+}
+
+function updateTabTitle(path) {
+  renderEditorTabs();
+}
+
+function openFile(name, code, lang) {
+  const existing = openTabs.find(t => t.path === name);
+  if (existing) {
+    switchTab(name);
+    return;
+  }
+  openTabs.push({ name, path: name, code, lang });
+  switchTab(name);
+}
+
+// ── Run / Stop ───────────────────────────────────────────────
+function runCode() {
+  if (isRunning) return;
+
+  const code = monacoEditor.getValue();
+  if (!code.trim()) {
+    appendTerminal('sys', '⚠️ 没有可运行的代码');
+    return;
+  }
+
+  isRunning = true;
+  updateRunUI(true);
+
+  appendTerminal('running', `▶ 开始运行 ${activeTabPath} ...`);
+  const startTime = Date.now();
+
+  fetch('/editor/run-stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      code,
+      course: EDITOR_CONFIG.course,
+      template: currentTemplate,
+      filename: activeTabPath
+    })
+  })
+  .then(r => {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.body;
+  })
+  .then(body => {
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    function read() {
+      reader.read().then(({ done, value }) => {
+        if (done) {
+          if (buffer.trim()) appendTerminal('stdout', buffer);
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+          appendTerminal('sys', '\u2705 运行完成 (' + elapsed + 's)');
+          isRunning = false;
+          updateRunUI(false);
+          return;
+        }
+
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const payload = line.slice(6);
+          if (payload.trim()) appendTerminal('stdout', payload);
+        }
+
+        read();
+      });
+    }
+
+    read();
+  })
+  .catch(err => {
+    appendTerminal('stderr', '\u274c 网络错误: ' + err.message);
+    isRunning = false;
+    updateRunUI(false);
+  });
+}
+
+function stopCode() {
+  if (!isRunning) return;
+  appendTerminal('sys', '\u23F9 正在停止...');
+  fetch('/editor/stop', { method: 'POST' }).catch(() => {});
+  isRunning = false;
+  updateRunUI(false);
+}
+
+function stopCode() {
+  if (!isRunning) return;
+  appendTerminal('sys', '⏹ 正在停止...');
+  fetch('/editor/stop', { method: 'POST' }).catch(() => {});
+  isRunning = false;
+  updateRunUI(false);
+}
+
+function updateRunUI(running) {
+  const btnRun = document.getElementById('btnRun');
+  const btnStop = document.getElementById('btnStop');
+  const statusRunner = document.getElementById('statusRunner');
+  const status = document.getElementById('runStatus');
+
+  if (running) {
+    btnRun.style.display = 'none';
+    btnStop.style.display = 'flex';
+    statusRunner.textContent = '运行中...';
+    statusRunner.classList.add('running');
+    status.textContent = '●';
+    status.style.color = '#4ec9b0';
+  } else {
+    btnRun.style.display = 'flex';
+    btnStop.style.display = 'none';
+    statusRunner.textContent = '就绪';
+    statusRunner.classList.remove('running');
+    status.textContent = '—';
+    status.style.color = '#808080';
+  }
+}
+
+// ── Problems Panel ────────────────────────────────────────────
+function updateProblems(errors) {
+  const list = document.getElementById('problemsList');
+  const badgeErr = document.getElementById('badgeErr');
+  const badgeWarn = document.getElementById('badgeWarn');
+
+  const errCount = errors.filter(e => e.severity === 'error').length;
+  const warnCount = errors.filter(e => e.severity === 'warning').length;
+
+  if (errors.length === 0) {
+    list.innerHTML = `<div class="problems-empty"><span>✓</span><span>暂无问题</span></div>`;
+    badgeErr.classList.add('hidden');
+    badgeWarn.classList.add('hidden');
+    return;
+  }
+
+  if (errCount > 0) badgeErr.textContent = errCount, badgeErr.classList.remove('hidden');
+  else badgeErr.classList.add('hidden');
+
+  if (warnCount > 0) badgeWarn.textContent = warnCount, badgeWarn.classList.remove('hidden');
+  else badgeWarn.classList.add('hidden');
+
+  list.innerHTML = errors.map(e => `
+    <div class="prob-item ${e.severity}" onclick="jumpToLine(${e.line || 1})">
+      <span class="prob-icon ${e.severity === 'error' ? 'err' : 'warn'}">${e.severity === 'error' ? '⛔' : '⚠️'}</span>
+      <div class="prob-msg">
+        <span>${e.message}</span>
+        ${e.file ? `<span class="prob-file">${e.file}</span>` : ''}
+        ${e.line ? `<span class="prob-line">:${e.line}</span>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function jumpToLine(line) {
+  if (monacoEditor) {
+    monacoEditor.revealLineInCenter(line);
+    monacoEditor.setPosition({ lineNumber: line, column: 1 });
+    monacoEditor.focus();
+  }
+}
+
+// ── Results Panel ────────────────────────────────────────────
+function updateResults(result) {
+  if (result.accuracy !== undefined) {
+    const acc = parseFloat(result.accuracy);
+    const accEl = document.getElementById('resultAccuracy');
+    accEl.textContent = (acc * 100).toFixed(2) + '%';
+    accEl.className = 'run-info-value ' + (acc > 0.8 ? 'good' : acc > 0.6 ? 'warn' : 'bad');
+  }
+  if (result.f1 !== undefined) {
+    const f1 = parseFloat(result.f1);
+    const f1El = document.getElementById('resultF1');
+    f1El.textContent = f1.toFixed(4);
+    f1El.className = 'run-info-value ' + (f1 > 0.8 ? 'good' : f1 > 0.6 ? 'warn' : 'bad');
+  }
+  if (result.time !== undefined) {
+    document.getElementById('resultTime').textContent = result.time + 's';
+  }
+  if (result.rank !== undefined) {
+    document.getElementById('resultRank').textContent = `#${result.rank}`;
+  }
+  if (result.submitted_at) {
+    document.getElementById('resultLastSubmit').textContent = result.submitted_at;
+  }
+}
+
+// ── Exit Editor ──────────────────────────────────────────────
+function exitEditor() {
+  // 检查是否有未保存的更改
+  if (unsavedChanges.size > 0) {
+    const proceed = confirm(`您有 ${unsavedChanges.size} 个文件尚未保存。\n确定要退出吗？未保存的更改将丢失。`);
+    if (!proceed) return;
+  }
+  // 返回首页
+  window.location.href = '/';
+}
+
+// ── Save / Submit ─────────────────────────────────────────────
+async function saveCode() {
+  const code = monacoEditor.getValue();
+  try {
+    const resp = await fetch('/editor/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code,
+        filename: activeTabPath,
+        course: EDITOR_CONFIG.course,
+        template: currentTemplate
+      })
+    });
+    const data = await resp.json();
+    if (data.success) {
+      unsavedChanges.delete(activeTabPath);
+      renderEditorTabs();
+      appendTerminal('sys', `💾 已保存: ${activeTabPath}`);
+    } else {
+      appendTerminal('sys', `⚠️ 保存失败: ${data.error}`);
+    }
+  } catch (e) {
+    appendTerminal('sys', `⚠️ 保存失败: ${e.message}`);
+  }
+}
+
+async function submitCode() {
+  const code = monacoEditor.getValue();
+
+  // 弹出模型名称对话框
+  const modelName = prompt('🏆 提交成绩\n\n请输入您的模型名称（将保存在模型库中）:\n留空将使用默认名称 "我的模型_v1"', '我的模型_v1');
+
+  appendTerminal('sys', '🏆 正在提交成绩...');
+  appendTerminal('sys', '📦 正在保存模型到模型库...');
+
+  try {
+    const resp = await fetch('/editor/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code,
+        course: EDITOR_CONFIG.course,
+        template: currentTemplate,
+        model_name: modelName || '我的模型_v1',
+        save_model: true,
+        auto_submit: true
+      })
+    });
+    const data = await resp.json();
+    if (data.success) {
+      let message = `🏆 提交成功！排名: #${data.rank || '?'}，准确率: ${(data.accuracy*100).toFixed(2)}%`;
+      appendTerminal('sys', message);
+
+      // 显示模型保存信息
+      if (data.model) {
+        appendTerminal('sys', `📦 模型已保存: ${data.model.model_name}`);
+        appendTerminal('sys', `📊 模型准确率: ${(data.model.accuracy*100).toFixed(2)}%`);
+      }
+
+      // 显示排行榜信息
+      if (data.leaderboard) {
+        const lb = data.leaderboard;
+        appendTerminal('sys', `🏅 综合得分: ${lb.composite_score || '?'}`);
+        if (lb.is_new_record) {
+          appendTerminal('sys', '🎉 恭喜！打破个人最佳成绩！');
+        }
+      }
+
+      if (data.rank !== undefined) {
+        const rankEl = document.getElementById('resultRank');
+        rankEl.textContent = `#${data.rank}`;
+      }
+      document.getElementById('resultLastSubmit').textContent = new Date().toLocaleString();
+      loadEditorLeaderboard();
+    } else {
+      appendTerminal('sys', `⚠️ 提交失败: ${data.error}`);
+    }
+  } catch (e) {
+    appendTerminal('sys', `⚠️ 提交失败: ${e.message}`);
+  }
+}
+
+// ── Template Management ───────────────────────────────────────
+let selectedTemplateCard = null;
+
+function showTemplateModal() {
+  document.getElementById('templateModal').classList.remove('hidden');
+  document.querySelectorAll('#templateModal .template-card').forEach((c) => {
+    c.classList.toggle('selected', c.dataset.template === currentTemplate);
+  });
+  selectedTemplateCard = document.querySelector('#templateModal .template-card.selected');
+}
+
+function hideTemplateModal() {
+  document.getElementById('templateModal').classList.add('hidden');
+}
+
+function selectTemplate(card) {
+  if (selectedTemplateCard) selectedTemplateCard.classList.remove('selected');
+  card.classList.add('selected');
+  selectedTemplateCard = card;
+}
+
+function loadSelectedTemplate() {
+  if (!selectedTemplateCard) return;
+  const templateName = selectedTemplateCard.dataset.template;
+  const label = selectedTemplateCard.querySelector('.template-name').textContent;
+  applyTemplateBundle(templateName, { terminalMessage: `📁 已加载模板: ${label}` });
+  if (monacoEditor) monacoEditor.focus();
+  hideTemplateModal();
+}
+
+function resetCode() {
+  if (!TEMPLATE_FILES[currentTemplate]) return;
+  const defaultCode = TEMPLATE_FILES[currentTemplate][activeTabPath] || TEMPLATE_FILES[currentTemplate]['train.py'] || '';
+  if (monacoEditor) monacoEditor.setValue(defaultCode);
+  appendTerminal('sys', '↺ 已重置为模板默认代码');
+}
+
+// ── Bottom Panel ─────────────────────────────────────────────
+function showBottomTab(name) {
+  document.querySelectorAll('.bottom-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.output-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('btTab' + capitalize(name)).classList.add('active');
+  document.getElementById('panel' + capitalize(name)).classList.add('active');
+}
+
+function toggleRightPanel() {
+  const panel = document.getElementById('editorRight');
+  const handle = document.getElementById('rightResizeHandle');
+  const btn = document.getElementById('statusToggleRight');
+  if (panel.classList.contains('hidden')) {
+    panel.classList.remove('hidden');
+    if (handle) handle.classList.remove('hidden');
+    if (btn) btn.textContent = '📈';
+  } else {
+    panel.classList.add('hidden');
+    if (handle) handle.classList.add('hidden');
+    if (btn) btn.textContent = '📈📌';
+  }
+  if (monacoEditor) setTimeout(() => monacoEditor.layout(), 0);
+}
+
+function toggleBottomPanel() {
+  const bottom = document.getElementById('editorBottom');
+  const handle = document.getElementById('editorResizeHandle');
+  const btn = document.getElementById('btnToggleBottom');
+  const statusBtn = document.getElementById('statusToggleBottom');
+  if (bottom.style.display === 'none') {
+    bottom.style.display = '';
+    if (handle) handle.style.display = '';
+    if (btn) btn.textContent = '─';
+    if (statusBtn) statusBtn.textContent = '🔷';
+  } else {
+    bottom.style.display = 'none';
+    if (handle) handle.style.display = 'none';
+    if (btn) btn.textContent = '▲';
+    if (statusBtn) statusBtn.textContent = '🔷📌';
+  }
+  if (monacoEditor) setTimeout(() => monacoEditor.layout(), 0);
+}
+
+// ── Sidebar ──────────────────────────────────────────────────
+function showSidebarTab(name) {
+  document.getElementById('tabFiles').classList.toggle('active', name === 'files');
+  document.getElementById('tabDataset').classList.toggle('active', name === 'dataset');
+  document.getElementById('sidebarFiles').style.display = name === 'files' ? '' : 'none';
+  document.getElementById('sidebarDataset').style.display = name === 'dataset' ? '' : 'none';
+
+  // 切换到数据集面板时，加载小组数据信息
+  if (name === 'dataset') {
+    loadGroupDataInfo();
+    loadAudioDataInfo();
+    loadFacePreprocessedDataInfo();
+    loadAudioPreprocessedDataInfo();
+  }
+}
+
+// ── 小组数据同步 ──────────────────────────────────────────────
+async function loadGroupDataInfo() {
+  const infoEl = document.getElementById('groupDataInfo');
+  if (!infoEl) return;
+
+  try {
+    const resp = await fetch('/editor/group_data_info');
+    const data = await resp.json();
+
+    const rawData = data.raw_data || {};
+    const totalImages = rawData.total_images || 0;
+    const byEmotion = rawData.by_emotion || {};
+
+    if (totalImages > 0) {
+      let html = `<div style="color:#4ec9b0">✓ 已采集 ${totalImages} 张标注图片</div>`;
+      html += '<div style="margin-top:4px;font-size:0.72rem">';
+      const emotionEmojis = {
+        happy: '😊', sad: '😢', angry: '😠', surprise: '😮',
+        fear: '😨', disgust: '🤢', neutral: '😐'
+      };
+      for (const [emotion, count] of Object.entries(byEmotion)) {
+        const emoji = emotionEmojis[emotion] || '❓';
+        html += `${emoji}${count} `;
+      }
+      html += '</div>';
+      infoEl.innerHTML = html;
+    } else {
+      infoEl.innerHTML = `<div style="color:#f48771">✗ 暂无标注数据</div>
+        <div style="font-size:0.72rem;margin-top:4px">请先在「数据采集」模块采集并标注表情图片</div>`;
+    }
+  } catch (err) {
+    infoEl.innerHTML = `<div style="color:#f48771">加载失败</div>`;
+  }
+}
+
+async function syncGroupData() {
+  const infoEl = document.getElementById('groupDataInfo');
+  if (infoEl) infoEl.innerHTML = '<div style="color:#F59E0B">🔄 正在同步数据...</div>';
+
+  try {
+    const resp = await fetch('/editor/sync_group_data', { method: 'POST' });
+    const data = await resp.json();
+
+    if (data.success) {
+      if (infoEl) {
+        infoEl.innerHTML = `<div style="color:#4ec9b0">✓ 同步成功！</div>
+          <div style="font-size:0.72rem;margin-top:4px">
+            已复制 ${data.images_copied} 张图片<br>
+            ${data.total_images > 0 ? '✓ train_labels.csv 已生成' : ''}
+          </div>`;
+      }
+      // 刷新文件树
+      renderFileTree();
+    } else {
+      if (infoEl) infoEl.innerHTML = `<div style="color:#f48771">同步失败: ${data.error || '未知错误'}</div>`;
+    }
+  } catch (err) {
+    if (infoEl) infoEl.innerHTML = `<div style="color:#f48771">同步失败: ${err.message}</div>`;
+  }
+}
+
+// 加载表情预处理数据信息
+async function loadFacePreprocessedDataInfo() {
+  const infoEl = document.getElementById('facePreprocessInfo');
+  if (!infoEl) return;
+
+  try {
+    const resp = await fetch('/editor/face_preprocessed_info');
+    const data = await resp.json();
+
+    if (data.total_images > 0) {
+      infoEl.innerHTML = `<div style="color:#4ec9b0">✓ 预处理数据: ${data.total_images} 张增强图片</div>`;
+    } else {
+      infoEl.innerHTML = `<div style="color:#F59E0B">⚠️ 暂无预处理数据</div>
+        <div style="font-size:0.7rem;margin-top:4px">请先在「数据预处理」模块处理</div>`;
+    }
+  } catch (err) {
+    infoEl.innerHTML = `<div style="color:#808080">请先进行数据预处理</div>`;
+  }
+}
+
+// 加载音频预处理数据信息
+async function loadAudioPreprocessedDataInfo() {
+  const infoEl = document.getElementById('audioPreprocessInfo');
+  if (!infoEl) return;
+
+  try {
+    const resp = await fetch('/editor/audio_preprocessed_info');
+    const data = await resp.json();
+
+    if (data.total_files > 0) {
+      infoEl.innerHTML = `<div style="color:#4ec9b0">✓ 预处理数据: ${data.total_files} 个音频特征</div>`;
+    } else {
+      infoEl.innerHTML = `<div style="color:#F59E0B">⚠️ 暂无音频预处理数据</div>
+        <div style="font-size:0.7rem;margin-top:4px">请先在「数据预处理」模块提取特征</div>`;
+    }
+  } catch (err) {
+    infoEl.innerHTML = `<div style="color:#808080">请先进行音频预处理</div>`;
+  }
+}
+
+// ── 音频数据同步 ──────────────────────────────────────────────
+async function syncAudioData() {
+  const infoEl = document.getElementById('audioDataInfo');
+  if (infoEl) infoEl.innerHTML = '<div style="color:#F59E0B">🔄 正在同步音频数据...</div>';
+
+  try {
+    const resp = await fetch('/editor/sync_audio_data', { method: 'POST' });
+    const data = await resp.json();
+
+    if (data.success) {
+      if (infoEl) {
+        infoEl.innerHTML = `<div style="color:#4ec9b0">✓ 音频同步成功！</div>
+          <div style="font-size:0.72rem;margin-top:4px">
+            已复制 ${data.audios_copied} 个音频文件<br>
+            ${data.total_files > 0 ? '✓ train_labels.csv 已生成' : ''}
+          </div>`;
+      }
+      // 刷新文件树
+      renderFileTree();
+    } else {
+      if (infoEl) infoEl.innerHTML = `<div style="color:#f48771">同步失败: ${data.error || '未知错误'}</div>`;
+    }
+  } catch (err) {
+    if (infoEl) infoEl.innerHTML = `<div style="color:#f48771">同步失败: ${err.message}</div>`;
+  }
+}
+
+async function loadAudioDataInfo() {
+  const infoEl = document.getElementById('audioDataInfo');
+  if (!infoEl) return;
+
+  try {
+    const resp = await fetch('/editor/audio_data_info');
+    const data = await resp.json();
+
+    if (data.raw_data) {
+      const total = data.raw_data.total_files || 0;
+      const byEmotion = data.raw_data.by_emotion || {};
+      let statsHtml = '';
+      for (const [emotion, count] of Object.entries(byEmotion)) {
+        const emoji = { anger: '😠', fear: '😨', happy: '😊', neutral: '😐', sad: '😢', surprise: '😮' }[emotion] || '❓';
+        statsHtml += `${emoji}${count} `;
+      }
+      infoEl.innerHTML = `<div>📊 共 ${total} 个音频文件</div>
+        <div style="font-size:0.72rem;margin-top:4px">${statsHtml || '暂无标注'}</div>`;
+    } else {
+      infoEl.innerHTML = '<div style="color:#808080">暂无音频数据</div>';
+    }
+  } catch (err) {
+    infoEl.innerHTML = '<div style="color:#808080">加载失败</div>';
+  }
+}
+
+// ── 表情预处理数据同步 ──────────────────────────────────────
+async function syncFacePreprocessedData() {
+  const infoEl = document.getElementById('facePreprocessInfo');
+  if (infoEl) infoEl.innerHTML = '<div style="color:#F59E0B">🔄 正在同步预处理数据...</div>';
+
+  try {
+    const resp = await fetch('/editor/sync_face_preprocessed', { method: 'POST' });
+    const data = await resp.json();
+
+    if (data.success) {
+      if (infoEl) {
+        infoEl.innerHTML = `<div style="color:#4ec9b0">✓ 预处理数据同步成功！</div>
+          <div style="font-size:0.72rem;margin-top:4px">
+            已复制 ${data.images_copied} 张增强图片<br>
+            ${data.csv_generated ? '✓ train_labels.csv 已生成' : ''}
+          </div>`;
+      }
+      renderFileTree();
+    } else {
+      if (infoEl) infoEl.innerHTML = `<div style="color:#f48771">同步失败: ${data.error || '请先进行数据预处理'}</div>`;
+    }
+  } catch (err) {
+    if (infoEl) infoEl.innerHTML = `<div style="color:#f48771">同步失败: ${err.message}</div>`;
+  }
+}
+
+// ── 音频预处理数据同步 ──────────────────────────────────────
+async function syncAudioPreprocessedData() {
+  const infoEl = document.getElementById('audioPreprocessInfo');
+  if (infoEl) infoEl.innerHTML = '<div style="color:#F59E0B">🔄 正在同步音频预处理数据...</div>';
+
+  try {
+    const resp = await fetch('/editor/sync_audio_preprocessed', { method: 'POST' });
+    const data = await resp.json();
+
+    if (data.success) {
+      if (infoEl) {
+        infoEl.innerHTML = `<div style="color:#4ec9b0">✓ 音频预处理数据同步成功！</div>
+          <div style="font-size:0.72rem;margin-top:4px">
+            已提取 ${data.features_copied || data.files_copied} 个音频特征<br>
+            ${data.csv_generated ? '✓ train_labels.csv 已生成' : ''}
+          </div>`;
+      }
+      renderFileTree();
+    } else {
+      if (infoEl) infoEl.innerHTML = `<div style="color:#f48771">同步失败: ${data.error || '请先进行数据预处理'}</div>`;
+    }
+  } catch (err) {
+    if (infoEl) infoEl.innerHTML = `<div style="color:#f48771">同步失败: ${err.message}</div>`;
+  }
+}
+
+// ── Leaderboard ──────────────────────────────────────────────
+async function loadEditorLeaderboard() {
+  try {
+    const course = EDITOR_CONFIG.course;
+    const resp = await fetch('/leaderboard/' + course);
+    const data = await resp.json();
+    const records = (data.records || []).slice(0, 5);
+    const lbDiv = document.getElementById('editorLeaderboard');
+
+    if (records.length === 0) {
+      lbDiv.innerHTML = '<div style="font-size:0.78rem;color:#808080;text-align:center;padding:8px">暂无数据</div>';
+      return;
+    }
+
+    lbDiv.innerHTML = records.map((r, i) => {
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
+      const score = typeof r.accuracy === 'number' ? (r.accuracy * 100).toFixed(1) + '%' : r.accuracy;
+      return `<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:4px;font-size:0.8rem">
+        <span style="width:20px;text-align:center;font-weight:700">${medal}</span>
+        <span style="flex:1;color:#d4d4d4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.group_name || r.group_id}</span>
+        <span style="color:#569cd6;font-weight:600">${score}</span>
+      </div>`;
+    }).join('');
+  } catch (e) {}
+}
+
+// ── Dataset Info ─────────────────────────────────────────────
+async function loadDatasetInfo() {
+  try {
+    const resp = await fetch('/editor/dataset_info?course=' + EDITOR_CONFIG.course);
+    const data = await resp.json();
+    const u1 = data.train_samples_unit || '张';
+    const u2 = data.train_labels_unit || '条';
+    if (data.train_samples !== undefined) {
+      document.getElementById('trainSize').textContent = data.train_samples + ' ' + u1;
+    }
+    if (data.train_labels !== undefined) {
+      document.getElementById('trainLabelsSize').textContent = data.train_labels + ' ' + u2;
+    }
+  } catch (e) {}
+}
+
+async function insertDatasetPath(type) {
+  // 使用工作空间中的相对路径（小组标注数据同步后在这里）
+  // face 课程：data/editor_workspaces/{group_id}/face/
+  // eco 课程：data/editor_workspaces/{group_id}/eco/
+  const course = EDITOR_CONFIG.course || 'face';
+  let path;
+  if (type === 'images') {
+    path = `./face/images/`;  // 原始标注图片
+  } else if (type === 'train_labels') {
+    path = `./${course}/train_labels.csv`;
+  } else if (type === 'models') {
+    path = './models/';
+  } else if (type === 'train') {
+    path = `./${course}/train/`;
+  } else if (type === 'preprocessed_images') {
+    path = './face/preprocessed/images/';  // 预处理后的图片
+  } else if (type === 'audio_preprocessed') {
+    path = './audio/preprocessed/';  // 预处理后的音频特征
+  } else {
+    path = `./${course}/`;
+  }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(path);
+    }
+  } catch (err) {
+    /* 非安全上下文或无权限时忽略，仍插入编辑器 */
+  }
+  if (monacoEditor) {
+    const pos = monacoEditor.getPosition();
+    monacoEditor.executeEdits('insert', [{
+      range: new monaco.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column),
+      text: path
+    }]);
+  }
+}
+
+function insertModelPath() {
+  // 小组工作目录下的预训练模型目录（可上传 .h5/.pth 等模型文件）
+  if (monacoEditor) {
+    const pos = monacoEditor.getPosition();
+    monacoEditor.executeEdits('insert', [{
+      range: new monaco.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column),
+      text: './models/'
+    }]);
+  }
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// Upload dataset
+document.addEventListener('DOMContentLoaded', () => {
+  initSidebarResize();
+  initRightPanelResize();
+  const uploadInput = document.getElementById('uploadTrain');
+  if (uploadInput) {
+    uploadInput.addEventListener('change', async (e) => {
+      const files = e.target.files;
+      if (!files.length) return;
+      appendTerminal('sys', `📤 正在上传 ${files.length} 个文件...`);
+      const formData = new FormData();
+      for (const f of files) formData.append('files', f);
+      formData.append('course', EDITOR_CONFIG.course);
+      try {
+        const resp = await fetch('/editor/upload_dataset', { method: 'POST', body: formData });
+        const data = await resp.json();
+        if (data.success) {
+          appendTerminal('sys', `✅ 上传成功！共 ${data.count} 个文件`);
+          loadDatasetInfo();
+        } else {
+          appendTerminal('sys', `⚠️ 上传失败: ${data.error}`);
+        }
+      } catch (err) {
+        appendTerminal('sys', `⚠️ 上传失败: ${err.message}`);
+      }
+    });
+  }
+});
+</script>
+</body>
+</html>

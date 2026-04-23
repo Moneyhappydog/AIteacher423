@@ -1,0 +1,21 @@
+{
+  "task_id": "e7636ec5-ecb",
+  "model_id": "6f28deed-823",
+  "model_name": "face_cnn_model_h5_0135",
+  "model_framework": "tensorflow",
+  "model_path": "/home/pub/code/eduplatform/data/uploaded_models/G06/6f28deed-823.h5",
+  "testset_id": "face_20260420_013233",
+  "testset_name": "model_face_0420_0132",
+  "course": "face",
+  "group_id": "G06",
+  "status": "failed",
+  "created_at": "2026-04-20T01:56:57.000640",
+  "started_at": "2026-04-20T01:56:57.371668",
+  "completed_at": "2026-04-20T01:57:00.589947",
+  "progress": 100,
+  "total_samples": 41,
+  "processed_samples": 41,
+  "metrics": null,
+  "predictions": [],
+  "error": "ModelEvalService._calculate_metrics() takes 4 positional arguments but 5 were given"
+}

@@ -1,0 +1,655 @@
+{% extends "base.html" %}
+{% block title %}表情数据采集 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<style>
+  .emotion-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+  }
+  .emotion-tag:hover { transform: scale(1.05); }
+  .emotion-tag.selected { border-color: #7C3AED; transform: scale(1.1); box-shadow: 0 0 12px rgba(124,58,237,0.3); }
+  .collect-thumb {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 3px solid #e0e0e0;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .collect-thumb.selected { border-color: #7C3AED; box-shadow: 0 0 10px rgba(124,58,237,0.3); }
+  .collect-thumb.qualified { border-color: #10B981; }
+  .collect-thumb.pending { border-color: #F59E0B; }
+  .collect-thumb.confirmed { border-color: #3B82F6; }
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 0.5rem;
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .camera-container-collect {
+    position: relative;
+    background: #0D0D1A;
+    border-radius: 16px;
+    overflow: hidden;
+    aspect-ratio: 4/3;
+  }
+  #collectVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+  }
+  #collectCanvas { display: none; }
+  .flash-overlay {
+    position: absolute;
+    inset: 0;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.1s;
+  }
+  .flash-overlay.active { opacity: 0.8; }
+  .auto-label-card {
+    background: white;
+    border-radius: 12px;
+    padding: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    border: 2px solid #e0e0e0;
+  }
+  .auto-label-card.confirmed { border-color: #10B981; background: #F0FDF4; }
+  .mini-thumb {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid #e0e0e0;
+  }
+  .confidence-badge {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 10px;
+    background: #FEF3C7;
+    color: #D97706;
+  }
+  .auto-label-list {
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+  <div class="page-header-icon">📷</div>
+  <h1 class="page-title">表情数据采集站</h1>
+  <p class="page-subtitle">采集课堂表情数据，体验AI自动标注的乐趣！</p>
+</div>
+
+<!-- Tab 切换导航 -->
+<div class="container">
+  <ul class="nav nav-tabs mb-4" style="border-bottom:2px solid #e0e0e0">
+    <li class="nav-item">
+      <a class="nav-link active" href="/data/collect/" style="font-weight:700;color:#7C3AED;border-bottom:3px solid #7C3AED;background:#EDE9FE;border-radius:8px 8px 0 0">
+        <i class="bi bi-camera"></i> 数据采集
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/data/annotation/" style="font-weight:700;color:#6b7280;border-radius:8px 8px 0 0">
+        <i class="bi bi-pen"></i> 数据标注
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/data/annotated/" style="font-weight:700;color:#6b7280;border-radius:8px 8px 0 0">
+        <i class="bi bi-check2-square"></i> 已标注数据
+      </a>
+    </li>
+  </ul>
+</div>
+
+<div class="container pb-5">
+  <!-- 小组（当前登录账号）与成员选择 -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4 col-lg-4">
+      <label class="form-label fw-bold">小组</label>
+      <div class="form-select form-select-fun d-flex align-items-center flex-wrap gap-2" style="background:#f3f4f6;cursor:default;min-height:42px">
+        <span class="fw-semibold">{{ session.get('username', '—') }}</span>
+        {% if session.get('group_id') %}
+        <span class="badge bg-secondary">{{ session.get('group_id') }}</span>
+        {% endif %}
+      </div>
+      <input type="hidden" id="sessionGroupId" value="{{ session.get('group_id', '')|e }}">
+      {% if not session.get('group_id') %}
+      <div class="form-text text-warning small mt-1">当前账号未绑定小组编码，请使用小组账号登录后再采集。</div>
+      {% endif %}
+    </div>
+    <div class="col-md-3 col-lg-3">
+      <label class="form-label fw-bold">成员</label>
+      <select class="form-select form-select-fun" id="memberSelect">
+        {% set mc = member_count|default(6)|int %}
+        {% for i in range(1, mc + 1) %}
+        <option value="M{{ '%02d' % i }}">成员{{ i }}</option>
+        {% endfor %}
+      </select>
+      <div class="form-text small text-muted">成员人数来自后台为该小组账号配置的「成员数」</div>
+    </div>
+    <div class="col-md-5 col-lg-5">
+      <div class="alert-cute" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);border-left:4px solid #F59E0B;">
+        <strong>采集进度</strong>：已采集 <span id="collectCount">0</span> 张
+        <div class="progress mt-1" style="height:8px">
+          <div class="progress-bar bg-warning" id="collectProgress" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 主采集区域 -->
+  <div class="row g-4 mb-4">
+    <!-- 左侧：摄像头 -->
+    <div class="col-lg-6">
+      <div class="content-card">
+        <div class="content-card-header"><i class="bi bi-camera-video-fill"></i> 摄像头画面</div>
+        <div class="camera-container-collect" id="cameraContainer">
+          <video id="collectVideo" autoplay playsinline muted></video>
+          <canvas id="collectCanvas"></canvas>
+          <div class="flash-overlay" id="flashOverlay"></div>
+          <div class="camera-overlay" id="cameraOverlay">
+            <div class="text-center text-white">
+              <div style="font-size:3rem">📷</div>
+              <p class="mb-0">点击下方按钮开始摄像头</p>
+            </div>
+          </div>
+        </div>
+        <div class="text-center mt-3">
+          <button class="btn-fun btn-green" id="startCameraBtn" onclick="startCollectCamera()">
+            <i class="bi bi-camera-video-fill"></i> 开启摄像头
+          </button>
+          <button class="btn-fun btn-red d-none" id="stopCameraBtn" onclick="stopCollectCamera()">
+            <i class="bi bi-stop-circle-fill"></i> 关闭
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：采集控制 -->
+    <div class="col-lg-6">
+      <div class="content-card">
+        <div class="content-card-header"><i class="bi bi-camera"></i> 采集控制面板</div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">选择情绪：</label>
+          <div class="d-flex flex-wrap gap-2" id="emotionTags">
+            <span class="emotion-tag emotion-tag-happy" data-emotion="happy" onclick="selectEmotion('happy')">😊 开心</span>
+            <span class="emotion-tag emotion-tag-sad" data-emotion="sad" onclick="selectEmotion('sad')">😢 难过</span>
+            <span class="emotion-tag emotion-tag-angry" data-emotion="angry" onclick="selectEmotion('angry')">😠 生气</span>
+            <span class="emotion-tag emotion-tag-surprise" data-emotion="surprise" onclick="selectEmotion('surprise')">😮 惊讶</span>
+            <span class="emotion-tag emotion-tag-fear" data-emotion="fear" onclick="selectEmotion('fear')">😨 害怕</span>
+            <span class="emotion-tag emotion-tag-disgust" data-emotion="disgust" onclick="selectEmotion('disgust')">🤢 厌恶</span>
+            <span class="emotion-tag emotion-tag-neutral" data-emotion="neutral" onclick="selectEmotion('neutral')">😐 平静</span>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <button class="btn-fun btn-purple w-100 mb-2" onclick="captureOne()">
+            <i class="bi bi-camera-fill"></i> 采集一张
+          </button>
+        </div>
+
+        <div class="row g-2 mb-3">
+          <div class="col-4">
+            <button class="btn-fun btn-outline w-100" onclick="captureBatch(5)">5张连拍</button>
+          </div>
+          <div class="col-4">
+            <button class="btn-fun btn-outline w-100" onclick="captureBatch(8)">8张连拍</button>
+          </div>
+          <div class="col-4">
+            <button class="btn-fun btn-outline w-100" onclick="captureBatch(10)">10张连拍</button>
+          </div>
+        </div>
+
+        <div class="alert-cute" style="background:#EFF6FF;border-left:4px solid #3B82F6;font-size:0.85rem">
+          <strong>新流程说明：</strong>
+          <ul class="mb-0 ps-3">
+            <li>采集图片暂存在浏览器中，<strong>不会自动保存</strong></li>
+            <li>采集完成后，在下方列表中点击情绪按钮进行标注</li>
+            <li>点击"确认全部并保存"后才真正保存到服务器</li>
+            <li>也可以切换到"数据标注"页面进行更精细的标注</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 已采集预览区 -->
+  <div class="content-card mb-4">
+    <div class="content-card-header d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-images"></i> 已采集数据预览</span>
+      <div>
+        <button class="btn-fun btn-small btn-outline me-2" onclick="clearCollectedImages()" id="clearBtn" style="display:none">
+          <i class="bi bi-trash"></i> 清空
+        </button>
+        <button class="btn-fun btn-small btn-purple me-2" onclick="confirmAndSaveAll()" id="saveAllBtn" style="display:none">
+          <i class="bi bi-check-circle"></i> 确认全部并保存
+        </button>
+      </div>
+    </div>
+    <div class="preview-grid mt-3" id="previewGrid">
+      <div class="text-center text-muted py-5 w-100">
+        <div style="font-size:3rem">📷</div>
+        <p>还没有采集数据，快去拍摄吧！</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 标注预览与保存 -->
+  <div class="content-card">
+    <div class="content-card-header"><i class="bi bi-pen"></i> 标注预览与保存</div>
+    <p class="text-muted small mb-3">采集图片后，点击下方情绪按钮进行标注，然后点击「确认全部并保存」</p>
+    <div class="auto-label-list" id="autoLabelList">
+      <div class="text-center text-muted py-3">采集数据后，下方会出现标注列表</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let collectStream = null;
+let selectedEmotion = 'happy';
+let collectedImages = [];
+
+function getCollectGroupId() {
+  const el = document.getElementById('sessionGroupId');
+  return el && el.value ? String(el.value).trim() : '';
+}
+function getMemberId() {
+  const el = document.getElementById('memberSelect');
+  return el ? el.value : 'M01';
+}
+
+async function startCollectCamera() {
+  try {
+    collectStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    document.getElementById('collectVideo').srcObject = collectStream;
+    document.getElementById('cameraOverlay').style.display = 'none';
+    document.getElementById('startCameraBtn').classList.add('d-none');
+    document.getElementById('stopCameraBtn').classList.remove('d-none');
+  } catch (err) {
+    alert('无法访问摄像头: ' + err.message);
+  }
+}
+
+function stopCollectCamera() {
+  if (collectStream) {
+    collectStream.getTracks().forEach(t => t.stop());
+    collectStream = null;
+  }
+  document.getElementById('collectVideo').srcObject = null;
+  document.getElementById('cameraOverlay').style.display = 'flex';
+  document.getElementById('startCameraBtn').classList.remove('d-none');
+  document.getElementById('stopCameraBtn').classList.add('d-none');
+}
+
+function selectEmotion(emotion) {
+  selectedEmotion = emotion;
+  document.querySelectorAll('.emotion-tag').forEach(t => t.classList.remove('selected'));
+  document.querySelector(`.emotion-tag[data-emotion="${emotion}"]`).classList.add('selected');
+}
+
+function flashCapture() {
+  const overlay = document.getElementById('flashOverlay');
+  overlay.classList.add('active');
+  setTimeout(() => overlay.classList.remove('active'), 150);
+}
+
+function captureOne() {
+  if (!collectStream) { alert('请先开启摄像头'); return; }
+  const video = document.getElementById('collectVideo');
+  const canvas = document.getElementById('collectCanvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  flashCapture();
+  uploadImage(dataUrl);
+}
+
+async function captureBatch(count) {
+  if (!collectStream) { alert('请先开启摄像头'); return; }
+  for (let i = 0; i < count; i++) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    captureOne();
+  }
+}
+
+async function uploadImage(dataUrl) {
+  if (!getCollectGroupId()) {
+    showMsg('❌ 请使用小组账号登录后再采集', 'danger');
+    return;
+  }
+  const memberId = getMemberId();
+  try {
+    // 上传到后端pending目录（小组以 session 为准；成员由选择器指定）
+    const resp = await fetch('/data/collect/upload_to_pending', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        member_id: memberId,
+        image: dataUrl,
+        emotion: selectedEmotion
+      })
+    });
+    const result = await resp.json();
+    if (!result.error) {
+      collectedImages.push(result);
+      updatePreview();
+      updateProgress();
+      updateAutoLabelList();
+      showMsg('📷 已添加到待标注列表', 'success');
+    } else {
+      showMsg('❌ ' + result.error, 'danger');
+    }
+  } catch (err) {
+    console.error('上传失败:', err);
+    showMsg('❌ 上传失败', 'danger');
+  }
+}
+
+function updatePreview() {
+  const grid = document.getElementById('previewGrid');
+  const clearBtn = document.getElementById('clearBtn');
+  const saveAllBtn = document.getElementById('saveAllBtn');
+  
+  if (collectedImages.length === 0) {
+    grid.innerHTML = `<div class="text-center text-muted py-5 w-100"><div style="font-size:3rem">📷</div><p>还没有采集数据</p></div>`;
+    if (clearBtn) clearBtn.style.display = 'none';
+    if (saveAllBtn) saveAllBtn.style.display = 'none';
+    return;
+  }
+  
+  // 显示操作按钮
+  if (clearBtn) clearBtn.style.display = '';
+  if (saveAllBtn) saveAllBtn.style.display = '';
+  
+  grid.innerHTML = collectedImages.map((img, i) => {
+    // 显示状态：pending=黄色边框，labeled=绿色边框
+    const statusClass = img.status === 'labeled' ? 'qualified' : 'pending';
+    const labelCn = img.emotion && img.emotion !== 'pending' ? getEmotionCn(img.emotion) : '待标注';
+    // 优先使用服务器路径
+    const imgSrc = img.file_path || img.data_url || '';
+    return `
+    <div class="text-center" onclick="selectImage(${i})">
+      <img src="${imgSrc}" class="collect-thumb ${statusClass}" id="thumb_${i}" 
+           onerror="this.src='${img.data_url || ''}'">
+      <div class="small mt-1">
+        <span class="badge bg-secondary">${labelCn}</span>
+      </div>
+    </div>
+  `}).join('');
+}
+
+function getEmotionCn(emotion) {
+  const map = {
+    'happy': '😊开心', 'sad': '😢难过', 'angry': '😠愤怒',
+    'surprise': '😮惊讶', 'fear': '😨恐惧', 'disgust': '🤢厌恶',
+    'neutral': '😐平静', 'unknown': '❓未知'
+  };
+  return map[emotion] || '❓未知';
+}
+
+function updateProgress() {
+  document.getElementById('collectCount').textContent = collectedImages.length;
+  document.getElementById('collectProgress').style.width = Math.min(100, collectedImages.length / 8 * 100) + '%';
+}
+
+async function autoLabelImages(images) {
+  // 已经在上传时自动标注了，这里更新显示
+  updateAutoLabelList();
+}
+
+function updateAutoLabelList() {
+  const container = document.getElementById('autoLabelList');
+  if (collectedImages.length === 0) {
+    container.innerHTML = '<div class="text-center text-muted py-3">采集数据后，点击下方按钮进行标注确认</div>';
+    return;
+  }
+  
+  // 添加批量操作按钮
+  let html = `
+    <div class="mb-3 d-flex gap-2 flex-wrap">
+      <button class="btn btn-sm btn-outline-primary" onclick="quickLabelAll('happy')" title="开心">
+        😊 全部标为开心
+      </button>
+      <button class="btn btn-sm btn-outline-primary" onclick="quickLabelAll('sad')" title="难过">
+        😢 全部标为难过
+      </button>
+      <button class="btn btn-sm btn-outline-primary" onclick="quickLabelAll('angry')" title="愤怒">
+        😠 全部标为愤怒
+      </button>
+      <button class="btn btn-sm btn-outline-primary" onclick="quickLabelAll('surprise')" title="惊讶">
+        😮 全部标为惊讶
+      </button>
+      <button class="btn btn-sm btn-outline-primary" onclick="quickLabelAll('fear')" title="恐惧">
+        😨 全部标为恐惧
+      </button>
+      <button class="btn btn-sm btn-outline-primary" onclick="quickLabelAll('disgust')" title="厌恶">
+        🤢 全部标为厌恶
+      </button>
+      <button class="btn btn-sm btn-outline-primary" onclick="quickLabelAll('neutral')" title="平静">
+        😐 全部标为平静
+      </button>
+      <button class="btn btn-sm btn-success" onclick="confirmAndSaveAll()">
+        <i class="bi bi-check-circle"></i> 确认全部并保存
+      </button>
+    </div>
+  `;
+  
+  html += collectedImages.map((img, i) => {
+    const statusIcon = img.status === 'saved' ? '✅' : (img.status === 'labeled' ? '📝' : '⏳');
+    const labelCn = img.emotion && img.emotion !== 'pending' ? getEmotionCn(img.emotion) : '待标注';
+    const imgSrc = img.file_path || img.data_url || '';
+    return `
+    <div class="auto-label-card mb-2 ${img.status === 'saved' ? 'confirmed' : ''}" id="labelCard_${i}">
+      <img src="${imgSrc}" class="mini-thumb" style="border-radius:8px;object-fit:cover"
+           onerror="this.src='${img.data_url || ''}'">
+      <div class="flex-grow-1">
+        <div class="fw-bold">${statusIcon} ${labelCn}</div>
+        <div class="small text-muted">${img.member_id || 'M01'}</div>
+      </div>
+      <div class="d-flex gap-1 flex-wrap">
+        <button class="btn btn-sm btn-outline-success" onclick="quickLabel(${i}, 'happy')" title="开心">😊</button>
+        <button class="btn btn-sm btn-outline-success" onclick="quickLabel(${i}, 'sad')" title="难过">😢</button>
+        <button class="btn btn-sm btn-outline-success" onclick="quickLabel(${i}, 'angry')" title="愤怒">😠</button>
+        <button class="btn btn-sm btn-outline-success" onclick="quickLabel(${i}, 'surprise')" title="惊讶">😮</button>
+        <button class="btn btn-sm btn-outline-success" onclick="quickLabel(${i}, 'fear')" title="恐惧">😨</button>
+        <button class="btn btn-sm btn-outline-success" onclick="quickLabel(${i}, 'disgust')" title="厌恶">🤢</button>
+        <button class="btn btn-sm btn-outline-success" onclick="quickLabel(${i}, 'neutral')" title="平静">😐</button>
+        <button class="btn btn-sm btn-success ${img.status === 'labeled' && !img.status === 'saved' ? '' : 'd-none'}" onclick="saveSingle(${i})" title="保存到正式目录">
+          <i class="bi bi-download"></i>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+  
+  container.innerHTML = html;
+}
+
+function quickLabel(index, emotion) {
+  collectedImages[index].emotion = emotion;
+  collectedImages[index].status = 'labeled';
+  updateAutoLabelList();
+  updatePreview();
+}
+
+function quickLabelAll(emotion) {
+  collectedImages.forEach((img, i) => {
+    img.emotion = emotion;
+    img.status = 'labeled';
+  });
+  updateAutoLabelList();
+  updatePreview();
+}
+
+async function saveSingle(index) {
+  const img = collectedImages[index];
+  if (!img || !img.file_name) {
+    showMsg('❌ 图片信息不完整', 'danger');
+    return;
+  }
+  
+  try {
+    const resp = await fetch('/data/annotation/save', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        group_id: getCollectGroupId() || img.group_id || 'G01',
+        member_id: img.member_id || getMemberId(),
+        file_name: img.file_name,
+        label: img.emotion
+      })
+    });
+    const result = await resp.json();
+    if (result.success) {
+      // 保存成功后，从列表中移除（因为已经移到正式目录了）
+      collectedImages.splice(index, 1);
+      updateAutoLabelList();
+      updatePreview();
+      updateProgress();
+      showMsg('✅ 已保存到正式目录', 'success');
+    } else {
+      showMsg('❌ ' + (result.error || '保存失败'), 'danger');
+    }
+  } catch (err) {
+    showMsg('❌ 保存失败', 'danger');
+  }
+}
+
+async function confirmAndSaveAll() {
+  if (collectedImages.length === 0) { alert('没有可保存的数据'); return; }
+  if (!getCollectGroupId()) {
+    alert('当前账号无小组编码，请使用小组账号登录');
+    return;
+  }
+
+  // 找出未标注的图片
+  const unlabeled = collectedImages.filter(img => !img.emotion || img.emotion === 'pending');
+  if (unlabeled.length > 0) {
+    alert(`还有 ${unlabeled.length} 张图片未标注，请先完成标注`);
+    return;
+  }
+  
+  let saved = 0;
+  // 从后往前遍历，避免索引变化问题
+  for (let i = collectedImages.length - 1; i >= 0; i--) {
+    if (collectedImages[i].status === 'labeled' || collectedImages[i].emotion) {
+      const resp = await fetch('/data/annotation/save', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          group_id: getCollectGroupId() || collectedImages[i].group_id || 'G01',
+          member_id: collectedImages[i].member_id || getMemberId(),
+          file_name: collectedImages[i].file_name,
+          label: collectedImages[i].emotion
+        })
+      });
+      const result = await resp.json();
+      if (result.success) {
+        // 保存成功后移除
+        collectedImages.splice(i, 1);
+        saved++;
+      }
+    }
+  }
+  
+  updateAutoLabelList();
+  updatePreview();
+  updateProgress();
+  showMsg(`✅ 成功保存 ${saved} 张图片到正式目录`, 'success');
+}
+
+function selectImage(index) {
+  document.querySelectorAll('.collect-thumb').forEach(t => t.classList.remove('selected'));
+  document.getElementById('thumb_' + index).classList.add('selected');
+}
+
+async function loadGroupData() {
+  const groupId = getCollectGroupId();
+  if (!groupId) {
+    collectedImages = [];
+    updatePreview();
+    updateProgress();
+    updateAutoLabelList();
+    return;
+  }
+  try {
+    const resp = await fetch(`/data/collect/pending_list/${groupId}`);
+    const data = await resp.json();
+    collectedImages = data.images || [];
+    updatePreview();
+    updateProgress();
+    updateAutoLabelList();
+  } catch (err) {
+    console.error('加载失败:', err);
+  }
+}
+
+async function autoLabelAll() {
+  // 现在改为快速标注功能，用户可以选择情绪后批量标注
+  alert('💡 提示：在下方列表中点击对应情绪按钮进行标注，然后点击"确认全部并保存"');
+  updateAutoLabelList();
+}
+
+function exportGroupData() {
+  const groupId = getCollectGroupId();
+  if (!groupId) { alert('当前账号无小组编码'); return; }
+  window.open(`/data/collect/list/${groupId}`, '_blank');
+}
+
+async function contributeToTestSet() {
+  if (collectedImages.length === 0) { alert('没有可贡献的数据'); return; }
+  alert('数据贡献功能已启用！');
+}
+
+function showMsg(text, type) {
+  const existing = document.getElementById('collectMsg');
+  if (existing) existing.remove();
+  const div = document.createElement('div');
+  div.id = 'collectMsg';
+  div.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;padding:0.7rem 1.2rem;border-radius:10px;font-size:0.9rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:opacity 0.3s;background:' +
+    (type === 'success' ? '#10B981' : type === 'danger' ? '#EF4444' : '#F59E0B') + ';color:white';
+  div.textContent = text;
+  document.body.appendChild(div);
+  setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 300); }, 2500);
+}
+
+function clearCollectedImages() {
+  if (collectedImages.length === 0) return;
+  if (confirm(`确定要清空 ${collectedImages.length} 张待保存的图片吗？`)) {
+    collectedImages = [];
+    updatePreview();
+    updateProgress();
+    updateAutoLabelList();
+    showMsg('🗑️ 已清空所有待保存图片', 'warning');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadGroupData();
+});
+</script>
+{% endblock %}

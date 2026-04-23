@@ -1,0 +1,21 @@
+{
+  "task_id": "2406d933-5d1",
+  "model_id": "c3fd3c45-58d",
+  "model_name": "face_cnn_model",
+  "model_framework": "tensorflow",
+  "model_path": "/home/pub/code/eduplatform/data/uploaded_models/G07/c3fd3c45-58d.h5",
+  "testset_id": "face_20260421_135441",
+  "testset_name": "4.21人脸测试",
+  "course": "face",
+  "group_id": "G07",
+  "status": "running",
+  "created_at": "2026-04-22T09:55:25.086487",
+  "started_at": "2026-04-22T09:55:25.399112",
+  "completed_at": null,
+  "progress": 38,
+  "total_samples": 933,
+  "processed_samples": 358,
+  "metrics": null,
+  "predictions": [],
+  "error": null
+}

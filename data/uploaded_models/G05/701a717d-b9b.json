@@ -1,0 +1,19 @@
+{
+  "model_id": "701a717d-b9b",
+  "group_id": "G05",
+  "course": "face",
+  "model_name": "face_cnn_fp32",
+  "description": "",
+  "filename": "701a717d-b9b.onnx",
+  "original_filename": "face_cnn_fp32.onnx",
+  "file_path": "G05/701a717d-b9b.onnx",
+  "file_size": 3938376,
+  "file_hash": "81b22ed95c5f9d9db31f9492572fcf5a",
+  "framework": "onnx",
+  "file_ext": ".onnx",
+  "uploaded_at": "2026-04-21T13:50:57.649594",
+  "is_active": true,
+  "accuracy": 0.05466237942122187,
+  "eval_count": 1,
+  "last_eval_at": "2026-04-21T13:56:18.006989"
+}

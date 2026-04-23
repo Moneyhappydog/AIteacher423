@@ -1,0 +1,524 @@
+{% extends "base.html" %}
+{% block title %}表情已标注数据 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<style>
+  .annot-stat-card {
+    background: linear-gradient(135deg, #EDE9FE, #F5F3FF);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    border: 1px solid #DDD6FE;
+  }
+  .annot-stat-card .num { font-size: 1.75rem; font-weight: 800; color: #7C3AED; }
+  .annot-img-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+    gap: 0.6rem;
+    max-height: 560px;
+    overflow-y: auto;
+  }
+  .annot-img-cell {
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    padding: 0.35rem;
+    text-align: center;
+    background: #fafafa;
+  }
+  .annot-img-cell img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+  /* 图片预览增强样式 */
+  .annot-img-wrapper {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    background: #fafafa;
+  }
+  .annot-img-wrapper .img-container {
+    aspect-ratio: 1;
+  }
+  .annot-img-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+    display: block;
+  }
+  .annot-img-wrapper:hover .annot-img-overlay {
+    opacity: 1;
+  }
+  .annot-img-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 10;
+  }
+  .annot-img-overlay .btn-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff; cursor: pointer; transition: all 0.2s; font-size: 12px;
+  }
+  .annot-img-overlay .btn-icon:hover { transform: scale(1.1); }
+  .annot-img-overlay .btn-view { background: rgba(255,255,255,0.9); color: #333; }
+  .annot-img-overlay .btn-delete { background: rgba(220,53,69,0.9); color: #fff; }
+  .annot-img-overlay .btn-view:hover { background: #fff; }
+  .annot-img-overlay .btn-delete:hover { background: #dc3545; }
+  /* 大图预览模态框样式 */
+  .image-preview-modal .modal-body { text-align: center; background: #1a1a2e; padding: 20px; }
+  .image-preview-modal .preview-image { max-width: 100%; max-height: 70vh; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+  .image-preview-modal .preview-info { color: #fff; text-align: center; margin-top: 15px; }
+  .image-preview-modal .preview-info .badge { font-size: 0.9rem; padding: 6px 12px; }
+  .image-preview-modal .preview-filename { font-size: 1.1rem; margin-top: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+  <div class="page-header-icon">📂</div>
+  <h1 class="page-title">表情已标注数据</h1>
+  <p class="page-subtitle">查看本组已保存的人脸图片及标签，可导出图片与标签 CSV。</p>
+</div>
+
+<div class="container">
+  <ul class="nav nav-tabs mb-4" style="border-bottom:2px solid #e0e0e0">
+    <li class="nav-item">
+      <a class="nav-link" href="/data/collect/" style="font-weight:700;color:#6b7280;border-radius:8px 8px 0 0">
+        <i class="bi bi-camera"></i> 数据采集
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/data/annotation/" style="font-weight:700;color:#6b7280;border-radius:8px 8px 0 0">
+        <i class="bi bi-pen"></i> 数据标注
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link active" href="/data/annotated/" style="font-weight:700;color:#7C3AED;border-bottom:3px solid #7C3AED;background:#EDE9FE;border-radius:8px 8px 0 0">
+        <i class="bi bi-check2-square"></i> 已标注数据
+      </a>
+    </li>
+  </ul>
+</div>
+
+<div class="container pb-5">
+  <div class="content-card mb-4">
+    <div class="content-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <span><i class="bi bi-people"></i> 小组与操作</span>
+      <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="loadAnnotatedImages()">
+          <i class="bi bi-arrow-clockwise"></i> 刷新
+        </button>
+        <button type="button" class="btn btn-sm btn-success" onclick="exportAnnotated(['face_images'])">
+          <i class="bi bi-images"></i> 导出图片
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-success" onclick="exportAnnotated(['face_labels'])">
+          <i class="bi bi-filetype-csv"></i> 导出标签
+        </button>
+        <button type="button" class="btn btn-sm btn-primary" onclick="exportAnnotated(['face_images','face_labels'])">
+          <i class="bi bi-download"></i> 导出图片+标签（请勿重复点击）
+        </button>
+      </div>
+      
+      <!-- 导出进度显示 -->
+      <div id="exportProgressContainer" style="display:none; margin-top: 1rem;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span id="exportProgressText">准备中...</span>
+          <span id="exportProgressPercent" class="badge bg-primary">0%</span>
+        </div>
+        <div class="progress" style="height: 20px;">
+          <div id="exportProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+               role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+      </div>
+    </div>
+    <div class="p-3">
+      {% if session.get('role') == 'group' %}
+      <label class="form-label small fw-bold mb-1">小组（当前账号）</label>
+      <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
+        <span class="fw-semibold">{{ session.get('username', '—') }}</span>
+        {% if session.get('group_id') %}
+        <span class="badge bg-secondary">{{ session.get('group_id') }}</span>
+        {% endif %}
+      </div>
+      <input type="hidden" id="sessionGroupId" value="{{ session.get('group_id', '')|e }}">
+      {% else %}
+      <label class="form-label small fw-bold mb-1">选择小组</label>
+      <select class="form-select form-select-sm mb-3" id="groupSelect" style="max-width:280px" onchange="loadAnnotatedImages()">
+        <option value="G01">第1组 (G01)</option>
+        <option value="G02">第2组 (G02)</option>
+        <option value="G03">第3组 (G03)</option>
+        <option value="G04">第4组 (G04)</option>
+        <option value="G05">第5组 (G05)</option>
+        <option value="G06">第6组 (G06)</option>
+        <option value="G07">第7组 (G07)</option>
+        <option value="G08">第8组 (G08)</option>
+        <option value="G09">第9组 (G09)</option>
+        <option value="G10">第10组 (G10)</option>
+      </select>
+      {% endif %}
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="annot-stat-card">
+            <div class="text-muted small">已标注张数</div>
+            <div class="num" id="annotCount">—</div>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <p class="text-muted small mb-0">
+            数据来自正式目录中的 jpg 文件；标签由文件名中的情绪字段解析。待标注内容请在「数据标注」页查看。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-card">
+    <div class="content-card-header"><i class="bi bi-grid"></i> 缩略图</div>
+    <div class="p-3">
+      <div class="text-center text-muted py-3" id="annotPlaceholder">请选择小组或刷新</div>
+      <div class="annot-img-grid" id="annotGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 大图预览模态框 -->
+<div class="modal fade image-preview-modal" id="imagePreviewModal" tabindex="-1">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-image"></i> 图片预览</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <img id="previewLargeImage" class="preview-image" src="" alt="">
+        <div class="preview-info">
+          <span class="badge bg-primary me-2" id="previewEmotionBadge"></span>
+          <span class="badge bg-secondary me-2" id="previewMemberBadge"></span>
+          <div class="preview-filename" id="previewFilename"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger" id="deleteImageBtn" onclick="deleteCurrentImage()">
+          <i class="bi bi-trash me-2"></i>删除此数据
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const EMOTION_MAP = {
+  happy: '😊开心', sad: '😢难过', angry: '😠生气',
+  surprise: '😮惊讶', fear: '😨害怕', disgust: '🤢厌恶', neutral: '😐平静', unknown: '未知'
+};
+
+// 当前预览图片信息
+let currentPreviewImage = null;
+// 原始图片数据列表
+let annotatedImages = [];
+
+function getViewGroupId() {
+  const h = document.getElementById('sessionGroupId');
+  if (h && h.value && h.value.trim()) return h.value.trim();
+  const s = document.getElementById('groupSelect');
+  return s ? s.value : '';
+}
+
+async function loadAnnotatedImages() {
+  const gid = getViewGroupId();
+  const grid = document.getElementById('annotGrid');
+  const ph = document.getElementById('annotPlaceholder');
+  if (!gid) {
+    if (ph) { ph.style.display = ''; ph.textContent = '请使用小组账号登录'; }
+    grid.innerHTML = '';
+    document.getElementById('annotCount').textContent = '—';
+    return;
+  }
+  if (ph) ph.style.display = 'none';
+  grid.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-sm"></span> 加载中...</div>';
+  document.getElementById('annotCount').textContent = '…';
+  try {
+    const resp = await fetch(`/data/collect/list/${gid}`);
+    const data = await resp.json();
+    const images = data.images || [];
+    annotatedImages = images;
+    document.getElementById('annotCount').textContent = String(images.length);
+    if (images.length === 0) {
+      if (ph) { ph.style.display = ''; ph.textContent = '暂无已标注图片'; }
+      return;
+    }
+    renderAnnotatedGrid(images);
+  } catch (e) {
+    if (ph) { ph.style.display = ''; ph.textContent = '加载失败'; }
+  }
+}
+
+function renderAnnotatedGrid(images) {
+  const grid = document.getElementById('annotGrid');
+  const ph = document.getElementById('annotPlaceholder');
+  if (ph) ph.style.display = 'none';
+
+  grid.innerHTML = images.map((img, idx) => {
+    const lab = EMOTION_MAP[img.emotion] || img.emotion || '未知';
+    const src = (img.file_path || '').replace(/"/g, '&quot;');
+    return `<div class="annot-img-wrapper">
+      <div class="img-container">
+        <img src="${src}" alt="" loading="lazy" onerror="this.style.opacity=0.3" onclick="showImagePreview('${src}', '${img.emotion || 'unknown'}', '${img.member_id || '—'}', '${img.filename || ''}')">
+        <div class="annot-img-overlay">
+          <button class="btn-icon btn-view" onclick="showImagePreview('${src}', '${img.emotion || 'unknown'}', '${img.member_id || '—'}', '${img.filename || ''}')" title="查看大图">
+            <i class="bi bi-zoom-in"></i>
+          </button>
+          <button class="btn-icon btn-delete" onclick="deleteAnnotatedImage(${idx})" title="删除">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </div>
+      <div class="small fw-semibold text-center py-1">${lab}</div>
+    </div>`;
+  }).join('');
+}
+
+function showImagePreview(src, emotion, memberId, filename) {
+  currentPreviewImage = { src, emotion, memberId, filename };
+  document.getElementById('previewLargeImage').src = src;
+  document.getElementById('previewEmotionBadge').textContent = EMOTION_MAP[emotion] || emotion || '未知';
+  document.getElementById('previewMemberBadge').textContent = memberId || '—';
+  document.getElementById('previewFilename').textContent = filename || '';
+  new bootstrap.Modal(document.getElementById('imagePreviewModal')).show();
+}
+
+async function deleteAnnotatedImage(idx) {
+  event.stopPropagation();
+  const img = annotatedImages[idx];
+  if (!img) return;
+
+  if (!confirm(`确定要删除图片 "${img.filename || img.file_path}" 吗？\n\n这将同时删除图片文件和标签记录，且不可恢复！`)) {
+    return;
+  }
+
+  try {
+    const resp = await fetch('/data/collect/delete-sample', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        type: 'face',
+        group_id: getViewGroupId(),
+        filename: img.filename || img.file_path
+      })
+    });
+    const data = await resp.json();
+    if (data.success) {
+      alert(data.message || '数据已删除');
+      loadAnnotatedImages();
+    } else {
+      alert(data.message || '删除失败');
+    }
+  } catch (e) {
+    alert('删除请求失败');
+  }
+}
+
+async function deleteCurrentImage() {
+  if (!currentPreviewImage) {
+    alert('无法获取文件信息');
+    return;
+  }
+  // 优先使用 filename，否则从 src 提取
+  let filename = currentPreviewImage.filename;
+  if (!filename && currentPreviewImage.src) {
+    // 从路径中提取文件名
+    filename = currentPreviewImage.src.split('/').pop() || '';
+  }
+  if (!filename) {
+    alert('无法获取文件名');
+    return;
+  }
+  await deleteAnnotatedImageByFilename(filename);
+}
+
+async function deleteAnnotatedImageByFilename(filename) {
+  if (!confirm(`确定要删除图片 "${filename}" 吗？\n\n这将同时删除图片文件和标签记录，且不可恢复！`)) {
+    return;
+  }
+
+  try {
+    const resp = await fetch('/data/collect/delete-sample', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        type: 'face',
+        group_id: getViewGroupId(),
+        filename: filename
+      })
+    });
+    const data = await resp.json();
+    if (data.success) {
+      alert(data.message || '数据已删除');
+      bootstrap.Modal.getInstance(document.getElementById('imagePreviewModal')).hide();
+      loadAnnotatedImages();
+    } else {
+      alert(data.message || '删除失败');
+    }
+  } catch (e) {
+    alert('删除请求失败');
+  }
+}
+
+// 导出数据
+let pollInterval;
+
+function startExportProgressPoll() {
+  const progressBar = document.getElementById('exportProgressBar');
+  const progressPercent = document.getElementById('exportProgressPercent');
+  const progressText = document.getElementById('exportProgressText');
+  
+  progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+  
+  pollInterval = setInterval(async () => {
+    try {
+      const resp = await fetch('/export/progress', {
+        credentials: 'include'
+      });
+      const data = await resp.json();
+      
+      if (data.status !== 'idle' && data.status !== 'error') {
+        const percent = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
+        progressBar.style.width = percent + '%';
+        progressText.textContent = data.message || '正在打包...';
+        progressPercent.textContent = percent + '%';
+        
+        if (data.status === 'completed') {
+          clearInterval(pollInterval);
+        }
+      } else if (data.status === 'error') {
+        clearInterval(pollInterval);
+        progressText.textContent = data.message || '导出失败';
+        progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+        progressBar.classList.add('bg-danger');
+      }
+    } catch (e) {
+      // 忽略轮询错误
+    }
+  }, 200); // 每200ms轮询一次
+}
+
+async function exportAnnotated(types) {
+  const gid = getViewGroupId();
+  if (!gid) { alert('请先选择或登录小组账号'); return; }
+  
+  const progressContainer = document.getElementById('exportProgressContainer');
+  const progressBar = document.getElementById('exportProgressBar');
+  const progressPercent = document.getElementById('exportProgressPercent');
+  const progressText = document.getElementById('exportProgressText');
+
+  // 显示进度条
+  progressContainer.style.display = 'block';
+  progressBar.style.width = '0%';
+  progressBar.classList.remove('bg-success', 'bg-danger');
+  progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+  progressText.textContent = '正在连接服务器...';
+  progressPercent.textContent = '0%';
+
+  // 启动进度轮询
+  let pollStarted = false;
+  function startExportProgressPollOnce() {
+    if (pollStarted) return;
+    pollStarted = true;
+    progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+    
+    pollInterval = setInterval(async () => {
+      try {
+        const resp = await fetch('/export/progress', {
+          credentials: 'include'
+        });
+        const data = await resp.json();
+        
+        if (data.status !== 'idle' && data.status !== 'error') {
+          const percent = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
+          progressBar.style.width = percent + '%';
+          progressText.textContent = data.message || '正在打包...';
+          progressPercent.textContent = percent + '%';
+          
+          if (data.status === 'completed') {
+            clearInterval(pollInterval);
+          }
+        } else if (data.status === 'error') {
+          clearInterval(pollInterval);
+          progressText.textContent = data.message || '导出失败';
+          progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+          progressBar.classList.add('bg-danger');
+        }
+      } catch (e) {
+        // 忽略轮询错误
+      }
+    }, 200);
+  }
+
+  try {
+    // 启动进度轮询
+    startExportProgressPollOnce();
+    
+    const resp = await fetch('/export/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ groups: [gid], types })
+    });
+    
+    // 停止轮询
+    if (pollInterval) {
+      clearInterval(pollInterval);
+    }
+    
+    if (!resp.ok) {
+      const t = await resp.text();
+      throw new Error(t || resp.status);
+    }
+    
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `face_export_${gid}_${Date.now()}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    // 显示成功
+    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    progressBar.classList.add('bg-success');
+    progressBar.style.width = '100%';
+    progressText.textContent = '导出成功！';
+    progressPercent.textContent = '100%';
+    
+    setTimeout(() => {
+      progressContainer.style.display = 'none';
+    }, 3000);
+  } catch (err) {
+    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    progressBar.classList.add('bg-danger');
+    progressText.textContent = '导出失败: ' + err.message;
+    alert('导出失败：' + err.message);
+  } finally {
+    if (pollInterval) {
+      clearInterval(pollInterval);
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnnotatedImages();
+});
+</script>
+{% endblock %}

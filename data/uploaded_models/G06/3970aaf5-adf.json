@@ -1,0 +1,19 @@
+{
+  "model_id": "3970aaf5-adf",
+  "group_id": "G06",
+  "course": "audio",
+  "model_name": "audio_cnn_fp16",
+  "description": "",
+  "filename": "3970aaf5-adf.onnx",
+  "original_filename": "audio_cnn_fp16.onnx",
+  "file_path": "G06/3970aaf5-adf.onnx",
+  "file_size": 922279,
+  "file_hash": "d849cc90d3da863ba513f533496d4566",
+  "framework": "onnx",
+  "file_ext": ".onnx",
+  "uploaded_at": "2026-04-22T14:46:47.879829",
+  "is_active": true,
+  "accuracy": 0.15879828326180256,
+  "eval_count": 1,
+  "last_eval_at": "2026-04-22T14:53:19.000719"
+}

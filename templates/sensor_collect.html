@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+{% block title %}传感器数据采集 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+<style>
+  .sensor-card-collect { border-radius: 16px; padding: 1rem; color: white; text-align: center; }
+  .quick-btn { border-radius: 12px; padding: 0.5rem 1rem; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .quick-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .sensor-value-large { font-size: 2.2rem; font-weight: 800; }
+  .trend-arrow { font-size: 1.2rem; margin-left: 0.5rem; }
+  .mini-chart { height: 60px; }
+  .data-table-compact { font-size: 0.85rem; }
+  .data-table-compact th { background: var(--primary); color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+  <div class="page-header-icon">🌱</div>
+  <h1 class="page-title">智能生态瓶数据采集站</h1>
+  <p class="page-subtitle">模拟传感器数据，体验数据采集的完整流程！</p>
+</div>
+
+<div class="container pb-5">
+  <!-- 小组选择 -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <label class="form-label fw-bold">小组</label>
+      <select class="form-select form-select-fun" id="sensorGroup" onchange="loadSensorHistory()">
+        <option value="G01">第1组</option>
+        <option value="G02">第2组</option>
+        <option value="G03">第3组</option>
+        <option value="G04">第4组</option>
+        <option value="G05">第5组</option>
+        <option value="G06">第6组</option>
+        <option value="G07">第7组</option>
+        <option value="G08">第8组</option>
+        <option value="G09">第9组</option>
+        <option value="G10">第10组</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label fw-bold">采集模式</label>
+      <div class="mt-2">
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="collectMode" id="modeManual" value="manual" checked>
+          <label class="form-check-label" for="modeManual">手动模拟</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="collectMode" id="modeCsv" value="csv">
+          <label class="form-check-label" for="modeCsv">CSV导入</label>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="alert-cute" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);border-left:4px solid #F59E0B;">
+        <strong>采集进度：</strong>
+        已采集 <span id="recordCount">0</span> 条记录
+        <button class="btn-fun btn-small btn-purple ms-2" onclick="startAutoCollect()">开始采集</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5通道传感器仪表 -->
+  <div class="row g-3 mb-4" id="sensorCards">
+    <div class="col-md-2">
+      <div class="sensor-card-collect" style="background:linear-gradient(135deg,#FF6B6B,#e03e3e)">
+        <div style="font-size:1.5rem">🌡️</div>
+        <div class="sensor-value-large" id="valTemp">25.0</div>
+        <div style="font-size:0.85rem">温度 °C</div>
+        <div class="trend-arrow" id="trendTemp">➡️</div>
+        <div class="mini-chart" id="chartTemp"></div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="sensor-card-collect" style="background:linear-gradient(135deg,#60A5FA,#3B82F6)">
+        <div style="font-size:1.5rem">💧</div>
+        <div class="sensor-value-large" id="valHumid">65</div>
+        <div style="font-size:0.85rem">湿度 %</div>
+        <div class="trend-arrow" id="trendHumid">➡️</div>
+        <div class="mini-chart" id="chartHumid"></div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="sensor-card-collect" style="background:linear-gradient(135deg,#FFD166,#f4a823)">
+        <div style="font-size:1.5rem">☀️</div>
+        <div class="sensor-value-large" id="valLight">120</div>
+        <div style="font-size:0.85rem">光照 lux</div>
+        <div class="trend-arrow" id="trendLight">➡️</div>
+        <div class="mini-chart" id="chartLight"></div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="sensor-card-collect" style="background:linear-gradient(135deg,#6BCB77,#4aa054)">
+        <div style="font-size:1.5rem">🌬️</div>
+        <div class="sensor-value-large" id="valOxygen">20.5</div>
+        <div style="font-size:0.85rem">氧气 %</div>
+        <div class="trend-arrow" id="trendOxygen">➡️</div>
+        <div class="mini-chart" id="chartOxygen"></div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="sensor-card-collect" style="background:linear-gradient(135deg,#A78BFA,#7C3AED)">
+        <div style="font-size:1.5rem">🔋</div>
+        <div class="sensor-value-large" id="valPower">0.0</div>
+        <div style="font-size:0.85rem">发电 mW</div>
+        <div class="trend-arrow" id="trendPower">➡️</div>
+        <div class="mini-chart" id="chartPower"></div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="sensor-card-collect" style="background:linear-gradient(135deg,#F472B6,#EC4899)">
+        <div style="font-size:1.5rem">📊</div>
+        <div class="sensor-value-large" id="valStatus">正常</div>
+        <div style="font-size:0.85rem">状态</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 快捷操作 + 手动输入 -->
+  <div class="row g-4 mb-4">
+    <div class="col-lg-4">
+      <div class="content-card">
+        <div class="content-card-header"><i class="bi bi-lightning-fill"></i> 快捷操作</div>
+        <div class="row g-2 mt-2">
+          <div class="col-4"><button class="quick-btn btn-warning w-100" onclick="quickAction('light_on')">💡 开灯</button></div>
+          <div class="col-4"><button class="quick-btn btn-dark w-100" onclick="quickAction('light_off')">🌑 遮光</button></div>
+          <div class="col-4"><button class="quick-btn btn-info w-100" onclick="quickAction('fan')">💨 风扇</button></div>
+          <div class="col-4"><button class="quick-btn btn-primary w-100" onclick="quickAction('heat')">🔥 加热</button></div>
+          <div class="col-4"><button class="quick-btn btn-success w-100" onclick="quickAction('humid')">💧 加湿</button></div>
+          <div class="col-4"><button class="quick-btn btn-secondary w-100" onclick="quickAction('solar')">☀️ 晒太阳</button></div>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between">
+          <button class="btn-fun btn-green flex-grow-1 me-1" onclick="addCurrentData()">
+            <i class="bi bi-plus-circle-fill"></i> 添加数据点
+          </button>
+          <button class="btn-fun btn-outline flex-grow-1 ms-1" onclick="clearSensors()">🗑️ 清空</button>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="content-card">
+        <div class="content-card-header"><i class="bi bi-sliders"></i> 手动微调</div>
+        <div class="row g-2 mt-2">
+          <div class="col-6">
+            <label class="form-label small">温度 (°C)</label>
+            <input type="number" class="form-control form-control-sm" id="inputTemp" value="25" min="-10" max="60" step="0.5">
+          </div>
+          <div class="col-6">
+            <label class="form-label small">湿度 (%)</label>
+            <input type="number" class="form-control form-control-sm" id="inputHumid" value="65" min="0" max="100">
+          </div>
+          <div class="col-6">
+            <label class="form-label small">光照 (lux)</label>
+            <input type="number" class="form-control form-control-sm" id="inputLight" value="120" min="0" max="2000">
+          </div>
+          <div class="col-6">
+            <label class="form-label small">发电量 (mW)</label>
+            <input type="number" class="form-control form-control-sm" id="inputPower" value="0" min="0" max="500" step="0.1">
+          </div>
+          <div class="col-12 mt-2">
+            <button class="btn-fun btn-purple w-100" onclick="applyManualValues()">
+              <i class="bi bi-check-circle"></i> 应用数值
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="content-card">
+        <div class="content-card-header"><i class="bi bi-upload"></i> CSV导入</div>
+        <div class="mt-2">
+          <input type="file" class="form-control mb-2" id="csvFile" accept=".csv">
+          <button class="btn-fun btn-outline w-100" onclick="importCsvFile()">
+            <i class="bi bi-file-arrow-up"></i> 上传并导入
+          </button>
+          <div class="small text-muted mt-2">
+            CSV格式: timestamp,temperature,humidity,light,oxygen,solar_power
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between">
+            <button class="btn-fun btn-sm btn-outline" onclick="exportCsvFile()">
+              <i class="bi bi-download"></i> 导出CSV
+            </button>
+            <button class="btn-fun btn-sm btn-outline-danger" onclick="clearAllData()">
+              <i class="bi bi-trash"></i> 清空数据
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 实时数据流 -->
+  <div class="content-card mb-4">
+    <div class="content-card-header d-flex justify-content-between align-items-center">
+      <span><i class="bi bi-table"></i> 实时数据流</span>
+      <span class="badge bg-primary" id="dataCountBadge">0 条记录</span>
+    </div>
+    <div style="max-height:250px;overflow-y:auto">
+      <table class="table table-sm data-table-compact mb-0">
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>🌡️ 温度 °C</th>
+            <th>💧 湿度 %</th>
+            <th>☀️ 光照 lux</th>
+            <th>🌬️ 氧气 %</th>
+            <th>🔋 发电 mW</th>
+            <th>状态</th>
+          </tr>
+        </thead>
+        <tbody id="sensorTableBody">
+          <tr><td colspan="7" class="text-center text-muted py-3">还没有数据，快添加吧！🌱</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 全班数据可视化 -->
+  <div class="content-card">
+    <div class="content-card-header"><i class="bi bi-graph-up"></i> 全班数据可视化</div>
+    <div class="row g-3 mt-2">
+      <div class="col-md-6">
+        <div class="text-center fw-bold mb-2">各组数据采集量</div>
+        <canvas id="collectBarChart" style="max-height:200px"></canvas>
+      </div>
+      <div class="col-md-6">
+        <div class="text-center fw-bold mb-2">光照趋势（最新10条）</div>
+        <canvas id="lightTrendChart" style="max-height:200px"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// 当前传感器值
+let currentValues = {
+  temperature: 25.0,
+  humidity: 65.0,
+  light: 120.0,
+  oxygen: 20.5,
+  solar_power: 0.0
+};
+let sensorRecords = [];
+let autoCollectInterval = null;
+let miniCharts = {};
+
+async function addCurrentData() {
+  const groupId = document.getElementById('sensorGroup').value;
+  try {
+    const resp = await fetch('/sensor/add', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        group_id: groupId,
+        temperature: currentValues.temperature,
+        humidity: currentValues.humidity,
+        light: currentValues.light,
+        oxygen: currentValues.oxygen,
+        solar_power: currentValues.solar_power
+      })
+    });
+    const result = await resp.json();
+    sensorRecords.push(result);
+    updateTable();
+    updateStatus();
+    updateMiniCharts();
+  } catch (err) {
+    alert('添加失败: ' + err.message);
+  }
+}
+
+function updateTable() {
+  const tbody = document.getElementById('sensorTableBody');
+  document.getElementById('dataCountBadge').textContent = sensorRecords.length + ' 条记录';
+  document.getElementById('recordCount').textContent = sensorRecords.length;
+
+  if (sensorRecords.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">还没有数据</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = sensorRecords.slice(-20).reverse().map(r => `
+    <tr class="${r.status === 'normal' ? '' : 'table-danger'}">
+      <td>${r.timestamp.split(' ')[1] || r.timestamp}</td>
+      <td>${r.temperature}</td>
+      <td>${r.humidity}</td>
+      <td>${r.light}</td>
+      <td>${r.oxygen}</td>
+      <td>${r.solar_power}</td>
+      <td><span class="badge bg-${r.status === 'normal' ? 'success' : 'danger'}">${r.status === 'normal' ? '正常' : '异常'}</span></td>
+    </tr>
+  `).join('');
+}
+
+function updateStatus() {
+  const temp = currentValues.temperature;
+  const light = currentValues.light;
+  let status = '正常';
+  if (temp < 22 || temp > 28 || light < 100 || light > 500) status = '注意';
+  if (temp < 15 || temp > 35 || light < 50 || light > 800) status = '警告';
+  document.getElementById('valStatus').textContent = status;
+  document.getElementById('valStatus').style.color = status === '正常' ? '#10B981' : status === '注意' ? '#F59E0B' : '#EF4444';
+}
+
+function updateDisplayValues() {
+  document.getElementById('valTemp').textContent = currentValues.temperature.toFixed(1);
+  document.getElementById('valHumid').textContent = currentValues.humidity.toFixed(0);
+  document.getElementById('valLight').textContent = currentValues.light.toFixed(0);
+  document.getElementById('valOxygen').textContent = currentValues.oxygen.toFixed(1);
+  document.getElementById('valPower').textContent = currentValues.solar_power.toFixed(1);
+  updateStatus();
+}
+
+function applyManualValues() {
+  currentValues.temperature = parseFloat(document.getElementById('inputTemp').value) || 25;
+  currentValues.humidity = parseFloat(document.getElementById('inputHumid').value) || 65;
+  currentValues.light = parseFloat(document.getElementById('inputLight').value) || 120;
+  currentValues.solar_power = parseFloat(document.getElementById('inputPower').value) || 0;
+  updateDisplayValues();
+}
+
+function quickAction(action) {
+  switch (action) {
+    case 'light_on': currentValues.light = 400; break;
+    case 'light_off': currentValues.light = 10; break;
+    case 'fan': currentValues.temperature -= 2; break;
+    case 'heat': currentValues.temperature += 2; break;
+    case 'humid': currentValues.humidity += 10; break;
+    case 'solar':
+      currentValues.light = 800;
+      currentValues.solar_power = 150;
+      break;
+  }
+  // 确保值在合理范围内
+  currentValues.temperature = Math.max(-10, Math.min(60, currentValues.temperature));
+  currentValues.humidity = Math.max(0, Math.min(100, currentValues.humidity));
+  currentValues.light = Math.max(0, Math.min(2000, currentValues.light));
+  currentValues.solar_power = Math.max(0, Math.min(500, currentValues.solar_power));
+  updateDisplayValues();
+}
+
+function clearSensors() {
+  currentValues = { temperature: 25.0, humidity: 65.0, light: 120.0, oxygen: 20.5, solar_power: 0.0 };
+  updateDisplayValues();
+}
+
+async function loadSensorHistory() {
+  const groupId = document.getElementById('sensorGroup').value;
+  try {
+    const resp = await fetch(`/sensor/history/${groupId}`);
+    const data = await resp.json();
+    sensorRecords = data.records || [];
+    updateTable();
+    updateMiniCharts();
+  } catch (err) {
+    console.error('加载历史数据失败:', err);
+  }
+}
+
+async function importCsvFile() {
+  const file = document.getElementById('csvFile').files[0];
+  if (!file) { alert('请先选择CSV文件'); return; }
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('group_id', document.getElementById('sensorGroup').value);
+  try {
+    const resp = await fetch('/sensor/upload', { method: 'POST', body: formData });
+    const result = await resp.json();
+    alert(`成功导入 ${result.imported || 0} 条记录`);
+    loadSensorHistory();
+  } catch (err) {
+    alert('导入失败: ' + err.message);
+  }
+}
+
+function exportCsvFile() {
+  const groupId = document.getElementById('sensorGroup').value;
+  window.open(`/sensor/export/${groupId}`, '_blank');
+}
+
+async function clearAllData() {
+  if (!confirm('确定要清空所有数据吗？')) return;
+  const groupId = document.getElementById('sensorGroup').value;
+  try {
+    await fetch(`/sensor/clear/${groupId}`, { method: 'POST' });
+    sensorRecords = [];
+    updateTable();
+    alert('已清空');
+  } catch (err) {
+    alert('清空失败: ' + err.message);
+  }
+}
+
+function updateMiniCharts() {
+  const recent = sensorRecords.slice(-10);
+  const labels = recent.map((_, i) => i + 1);
+
+  ['temperature', 'humidity', 'light', 'oxygen', 'solar_power'].forEach(ch => {
+    const values = recent.map(r => r[ch] || 0);
+    if (miniCharts[ch]) {
+      miniCharts[ch].data.labels = labels;
+      miniCharts[ch].data.datasets[0].data = values;
+      miniCharts[ch].update('none');
+    } else if (typeof Chart !== 'undefined' && labels.length > 0) {
+      const colors = {
+        temperature: '#FF6B6B', humidity: '#60A5FA',
+        light: '#FFD166', oxygen: '#6BCB77', solar_power: '#A78BFA'
+      };
+      const ctx = document.getElementById('chart' + ch.charAt(0).toUpperCase() + ch.slice(1)).getContext('2d');
+      miniCharts[ch] = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets: [{ data: values, borderColor: colors[ch], backgroundColor: colors[ch] + '33', tension: 0.3, fill: true, pointRadius: 2 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+      });
+    }
+  });
+}
+
+// 初始化
+loadSensorHistory();
+updateDisplayValues();
+</script>
+{% endblock %}

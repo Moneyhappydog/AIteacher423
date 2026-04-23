@@ -1,0 +1,19 @@
+{
+  "model_id": "c3fd3c45-58d",
+  "group_id": "G07",
+  "course": "face",
+  "model_name": "face_cnn_model",
+  "description": "",
+  "filename": "c3fd3c45-58d.h5",
+  "original_filename": "face_cnn_model.h5",
+  "file_path": "G07/c3fd3c45-58d.h5",
+  "file_size": 11888144,
+  "file_hash": "b2220d33574e82376a248b60e052ae72",
+  "framework": "tensorflow",
+  "file_ext": ".h5",
+  "uploaded_at": "2026-04-19T13:24:02.245710",
+  "is_active": true,
+  "accuracy": 0.2829581993569132,
+  "eval_count": 3,
+  "last_eval_at": "2026-04-22T09:56:35.206881"
+}

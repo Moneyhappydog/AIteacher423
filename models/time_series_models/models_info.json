@@ -1,0 +1,28 @@
+{
+  "available_models": [
+    {
+      "name": "多项式回归",
+      "id": "polyfit",
+      "description": "基础多项式拟合，适合初学者",
+      "size": "0KB"
+    },
+    {
+      "name": "Prophet",
+      "id": "prophet",
+      "description": "Facebook 时序预测模型，适合有周期性数据",
+      "size": "0KB (Python库)"
+    },
+    {
+      "name": "ARIMA",
+      "id": "arima",
+      "description": "经典时序分析方法",
+      "size": "0KB (Python库)"
+    },
+    {
+      "name": "LightGBM时序",
+      "id": "lightgbm",
+      "description": "基于梯度提升的时序预测",
+      "size": "0KB (Python库)"
+    }
+  ]
+}

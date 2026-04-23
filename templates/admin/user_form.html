@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+{% block title %}{{ '编辑' if is_edit else '创建' }}用户 - 管理后台{% endblock %}
+
+{% block extra_head %}
+<style>
+  .form-container {
+    max-width: 600px;
+    margin: 2rem auto;
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+  .form-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #f0f0f0;
+  }
+  .form-header h2 {
+    color: #333;
+    font-weight: 600;
+  }
+  .form-header .subtitle {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+  .form-label {
+    font-weight: 500;
+    color: #444;
+    margin-bottom: 0.5rem;
+  }
+  .form-control-custom {
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    border: 1.5px solid #e0e0e0;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+  }
+  .form-control-custom:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+  }
+  .form-select-custom {
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    border: 1.5px solid #e0e0e0;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+  .form-select-custom:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+  }
+  .btn-submit {
+    width: 100%;
+    border-radius: 10px;
+    padding: 0.85rem;
+    font-size: 1rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+  .btn-cancel {
+    width: 100%;
+    border-radius: 10px;
+    padding: 0.85rem;
+    font-size: 1rem;
+    margin-top: 1rem;
+    background: #f5f5f5;
+    color: #666;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-cancel:hover {
+    background: #e8e8e8;
+  }
+  .role-indicator {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+  .role-teacher {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+  }
+  .role-group {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: white;
+  }
+  .alert-message {
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    display: none;
+  }
+  .alert-error {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #DC2626;
+  }
+  .alert-success {
+    background: #F0FDF4;
+    border: 1px solid #BBF7D0;
+    color: #16A34A;
+  }
+  .info-box {
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    color: #2563EB;
+  }
+  .info-box i {
+    margin-right: 0.5rem;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    color: #667eea;
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+  .back-link:hover {
+    text-decoration: underline;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="form-container">
+    <a href="{{ url_for('admin.dashboard') }}" class="back-link">
+      <i class="bi bi-arrow-left"></i> 返回管理后台
+    </a>
+
+    <div class="form-header">
+      <h2>
+        <i class="bi bi-{{ 'pencil' if is_edit else 'plus-circle' }}"></i>
+        {{ '编辑' if is_edit else '创建' }}用户
+      </h2>
+      <div class="subtitle">
+        {% if is_edit %}
+          编辑用户信息
+        {% else %}
+          {% if session.get('role') == 'super_admin' %}
+            超级管理员可创建教师或小组账号
+          {% else %}
+            教师可创建小组账号
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+    <div id="alertError" class="alert-message alert-error">
+      <i class="bi bi-exclamation-circle-fill"></i>
+      <span id="errorText"></span>
+    </div>
+
+    <div id="alertSuccess" class="alert-message alert-success">
+      <i class="bi bi-check-circle-fill"></i>
+      <span id="successText"></span>
+    </div>
+
+    <div class="info-box">
+      <i class="bi bi-info-circle-fill"></i>
+      {% if session.get('role') == 'super_admin' %}
+        <strong>超级管理员权限：</strong>可以创建和编辑教师账号和小组账号
+      {% else %}
+        <strong>教师权限：</strong>只能创建和编辑小组账号
+      {% endif %}
+    </div>
+
+    <form id="userForm">
+      <!-- 用户名 -->
+      <div class="mb-3">
+        <label class="form-label">
+          用户名 <span class="text-danger">*</span>
+          {% if is_edit %}
+            <small class="text-muted fw-normal">(用户名不可修改)</small>
+          {% endif %}
+        </label>
+        {% if is_edit %}
+          <input type="text" class="form-control form-control-custom" value="{{ user.username }}" disabled>
+          <input type="hidden" id="username" value="{{ user.username }}">
+        {% else %}
+          <input type="text" class="form-control form-control-custom" id="username" 
+                 placeholder="请输入用户名" required minlength="2">
+        {% endif %}
+      </div>
+
+      <!-- 显示名称 -->
+      <div class="mb-3">
+        <label class="form-label">显示名称 <span class="text-danger">*</span></label>
+        <input type="text" class="form-control form-control-custom" id="displayName" 
+               placeholder="请输入显示名称" required
+               value="{{ user.display_name if is_edit else '' }}">
+      </div>
+
+      <!-- 角色（创建时选择） -->
+      {% if not is_edit %}
+      <div class="mb-3">
+        <label class="form-label">角色 <span class="text-danger">*</span></label>
+        <select class="form-select form-select-custom" id="role" required>
+          <option value="">请选择角色</option>
+          {% if 'teacher' in available_roles %}
+          <option value="teacher">👨‍🏫 教师</option>
+          {% endif %}
+          {% if 'group' in available_roles %}
+          <option value="group" selected>🧑‍🤝‍🧑 小组</option>
+          {% endif %}
+        </select>
+      </div>
+      {% else %}
+      <div class="mb-3">
+        <label class="form-label">角色</label>
+        <div>
+          {% if user.role == 'teacher' %}
+            <span class="role-indicator role-teacher">👨‍🏫 教师</span>
+          {% elif user.role == 'group' %}
+            <span class="role-indicator role-group">🧑‍🤝‍🧑 小组</span>
+          {% else %}
+            <span class="role-indicator" style="background: #FFD700; color: #333;">👑 {{ user.role }}</span>
+          {% endif %}
+        </div>
+        <input type="hidden" id="role" value="{{ user.role }}">
+      </div>
+      {% endif %}
+
+      <!-- 小组编号（仅小组账号） -->
+      <div class="mb-3" id="groupCodeContainer" style="{{ 'display:block' if (is_edit and user.role == 'group') or (not is_edit) else 'display:none' }}">
+        <label class="form-label">
+          小组编号
+          <small class="text-muted fw-normal">(仅小组账号)</small>
+        </label>
+        <input type="text" class="form-control form-control-custom" id="groupCode" 
+               placeholder="例如：G11"
+               value="{{ user.group.group_code if is_edit and user.group else '' }}">
+        <small class="text-muted">建议格式：G + 数字，如 G11、G12</small>
+      </div>
+
+      <!-- 小组人数（仅小组账号） -->
+      <div class="mb-3" id="memberCountContainer" style="{{ 'display:block' if (is_edit and user.role == 'group') or (not is_edit) else 'display:none' }}">
+        <label class="form-label">
+          小组成员人数
+          <small class="text-muted fw-normal">(仅小组账号)</small>
+        </label>
+        <input type="number" class="form-control form-control-custom" id="memberCount" 
+               placeholder="请输入小组成员人数" min="1" max="20"
+               value="{{ user.group.member_count if is_edit and user.group else '6' }}">
+        <small class="text-muted">小组可使用平台所有课程模块（表情识别、声音情绪、情感计算、生态预测等）</small>
+      </div>
+
+      <!-- 密码 -->
+      <div class="mb-3">
+        <label class="form-label">
+          {% if is_edit %}新密码{% else %}密码{% endif %}
+          <span class="text-danger">*</span>
+          {% if is_edit %}
+            <small class="text-muted fw-normal"></small>
+          {% endif %}
+        </label>
+        <input type="password" class="form-control form-control-custom" id="password" 
+               placeholder="{{ '请输入新密码' if is_edit else '请输入密码（至少6位）' }}"
+               {{ '' if is_edit else 'required minlength="6"' }}>
+      </div>
+
+      <!-- 确认密码 -->
+      <div class="mb-4">
+        <label class="form-label">
+          {% if is_edit %}确认新密码{% else %}确认密码{% endif %}
+          <span class="text-danger">*</span>
+        </label>
+        <input type="password" class="form-control form-control-custom" id="confirmPassword" 
+               placeholder="请再次输入密码" required>
+      </div>
+
+      <button type="submit" class="btn btn-submit" id="submitBtn">
+        <i class="bi bi-{{ 'check-lg' if is_edit else 'plus-lg' }}"></i>
+        {{ '保存修改' if is_edit else '创建用户' }}
+      </button>
+
+      <button type="button" class="btn btn-cancel" onclick="history.back()">
+        取消
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// 判断是创建还是编辑
+const isEdit = {{ 'true' if is_edit else 'false' }};
+const userId = {{ user.id if is_edit else 'null' }};
+const defaultRole = '{{ available_roles[0] if available_roles else "group" }}';
+
+document.addEventListener('DOMContentLoaded', function() {
+  // 根据角色显示/隐藏小组相关字段
+  function toggleGroupFields() {
+    const role = document.getElementById('role').value;
+    const showGroupFields = (isEdit && role === 'group') || (!isEdit && role === 'group');
+
+    document.getElementById('groupCodeContainer').style.display = showGroupFields ? 'block' : 'none';
+    document.getElementById('memberCountContainer').style.display = showGroupFields ? 'block' : 'none';
+  }
+
+  // 角色选择变化时
+  if (!isEdit) {
+    document.getElementById('role').addEventListener('change', toggleGroupFields);
+  }
+
+  // 表单提交
+  document.getElementById('userForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const alertError = document.getElementById('alertError');
+    const alertSuccess = document.getElementById('alertSuccess');
+    const errorText = document.getElementById('errorText');
+    const successText = document.getElementById('successText');
+    const submitBtn = document.getElementById('submitBtn');
+
+    alertError.style.display = 'none';
+    alertSuccess.style.display = 'none';
+
+    const username = document.getElementById('username').value.trim();
+    const displayName = document.getElementById('displayName').value.trim();
+    const role = document.getElementById('role').value;
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    // 校验
+    if (!username) {
+      errorText.textContent = '请输入用户名';
+      alertError.style.display = 'block';
+      return;
+    }
+    if (!displayName) {
+      errorText.textContent = '请输入显示名称';
+      alertError.style.display = 'block';
+      return;
+    }
+    if (!role) {
+      errorText.textContent = '请选择角色';
+      alertError.style.display = 'block';
+      return;
+    }
+    if (!isEdit && password.length < 6) {
+      errorText.textContent = '密码至少需要6个字符';
+      alertError.style.display = 'block';
+      return;
+    }
+    if (password !== confirmPassword) {
+      errorText.textContent = '两次输入的密码不一致';
+      alertError.style.display = 'block';
+      return;
+    }
+
+    // 构建请求数据
+    const data = {
+      username: username,
+      display_name: displayName,
+      role: role
+    };
+
+    // 只有在填写了新密码时才包含密码字段
+    if (password) {
+      data.password = password;
+    }
+
+    // 小组相关字段（小组可使用所有课程模块）
+    if (role === 'group') {
+      const groupCode = document.getElementById('groupCode').value.trim();
+      const memberCount = parseInt(document.getElementById('memberCount').value) || 6;
+
+      if (!isEdit && !groupCode) {
+        // 自动生成小组编号
+        data.group_code = username.toUpperCase().startsWith('G') ? username.toUpperCase() : 'G' + username.toUpperCase();
+      } else if (groupCode) {
+        data.group_code = groupCode.toUpperCase();
+      }
+      data.member_count = memberCount;
+      data.group_info = { member_count: memberCount };
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>处理中...';
+
+    try {
+      let url, method;
+      if (isEdit) {
+        url = `/admin/api/users/${userId}`;
+        method = 'PUT';
+      } else {
+        url = '/admin/api/users';
+        method = 'POST';
+      }
+
+      const resp = await fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await resp.json();
+
+      if (!resp.ok) {
+        errorText.textContent = result.error || '操作失败';
+        alertError.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-{{ "check-lg" if is_edit else "plus-lg" }}"></i> {{ "保存修改" if is_edit else "创建用户" }}';
+        return;
+      }
+
+      successText.textContent = result.message || (isEdit ? '用户信息已更新' : '用户创建成功');
+      alertSuccess.style.display = 'block';
+
+      // 延迟跳转
+      setTimeout(() => {
+        window.location.href = '{{ url_for("admin.dashboard") }}';
+      }, 1500);
+
+    } catch (e) {
+      errorText.textContent = '网络错误：' + e.message;
+      alertError.style.display = 'block';
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="bi bi-{{ "check-lg" if is_edit else "plus-lg" }}"></i> {{ "保存修改" if is_edit else "创建用户" }}';
+    }
+  });
+});
+</script>
+{% endblock %}

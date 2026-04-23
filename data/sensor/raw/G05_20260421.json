@@ -1,0 +1,268 @@
+{
+  "group_id": "G05",
+  "group_name": "G05",
+  "device_id": "ESP32_G05",
+  "records": [
+    {
+      "timestamp": "2026-04-21 10:51:12",
+      "temperature": 40,
+      "humidity": 100,
+      "light": 400,
+      "oxygen": 20.5,
+      "solar_power": 150,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-21 10:51:16",
+      "temperature": 40,
+      "humidity": 100,
+      "light": 400,
+      "oxygen": 20.5,
+      "solar_power": 150,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-21 10:53:28",
+      "temperature": 19,
+      "humidity": 85,
+      "light": 10,
+      "oxygen": 21,
+      "solar_power": 150,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-21 10:53:29",
+      "temperature": 19,
+      "humidity": 85,
+      "light": 10,
+      "oxygen": 21,
+      "solar_power": 150,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-21 10:53:30",
+      "temperature": 19,
+      "humidity": 85,
+      "light": 10,
+      "oxygen": 21,
+      "solar_power": 150,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-21 10:53:31",
+      "temperature": 19,
+      "humidity": 85,
+      "light": 10,
+      "oxygen": 21,
+      "solar_power": 150,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-21 10:53:31",
+      "temperature": 19,
+      "humidity": 85,
+      "light": 10,
+      "oxygen": 21,
+      "solar_power": 150,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-21 10:53:31",
+      "temperature": 19,
+      "humidity": 85,
+      "light": 10,
+      "oxygen": 21,
+      "solar_power": 150,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-21 10:53:31",
+      "temperature": 19,
+      "humidity": 85,
+      "light": 10,
+      "oxygen": 21,
+      "solar_power": 150,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-21 10:53:31",
+      "temperature": 19,
+      "humidity": 85,
+      "light": 10,
+      "oxygen": 21,
+      "solar_power": 150,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-21 10:56:06",
+      "temperature": 877,
+      "humidity": 65,
+      "light": 10,
+      "oxygen": 999,
+      "solar_power": 99999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 10:56:15",
+      "temperature": 60,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 9999999999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 10:56:15",
+      "temperature": 60,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 9999999999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 10:56:15",
+      "temperature": 60,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 9999999999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 10:56:15",
+      "temperature": 60,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 9999999999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 10:56:15",
+      "temperature": 60,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 9999999999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 10:56:15",
+      "temperature": 60,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 9999999999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 10:56:18",
+      "temperature": 60,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 9999999999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 10:56:18",
+      "temperature": 60,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 9999999999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 10:56:18",
+      "temperature": 60,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 9999999999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 11:01:53",
+      "temperature": 25,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 20.5,
+      "solar_power": 0,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-21 11:01:53",
+      "temperature": 25,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 20.5,
+      "solar_power": 0,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-21 11:01:53",
+      "temperature": 25,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 20.5,
+      "solar_power": 0,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-21 11:24:19",
+      "temperature": 24,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 99999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 11:24:37",
+      "temperature": 60,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 99999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 11:25:08",
+      "temperature": 240,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 99999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 11:25:46",
+      "temperature": 2400,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 99999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 11:25:46",
+      "temperature": 2400,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 99999,
+      "status": "abnormal"
+    },
+    {
+      "timestamp": "2026-04-21 11:28:09",
+      "temperature": 25,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 21,
+      "solar_power": 99999,
+      "status": "abnormal"
+    }
+  ]
+}

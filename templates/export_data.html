@@ -1,0 +1,404 @@
+{% extends "base.html" %}
+{% block title %}数据导出 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<style>
+  .export-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+  }
+  .export-type-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    margin-bottom: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .export-type-item:hover {
+    border-color: #7C3AED;
+    transform: translateY(-2px);
+  }
+  .export-type-item.selected {
+    border-color: #7C3AED;
+    background: #EDE9FE;
+  }
+  .export-type-item .icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-right: 1rem;
+  }
+  .export-type-item .info { flex-grow: 1; }
+  .export-type-item .info .title { font-weight: 600; font-size: 1rem; }
+  .export-type-item .info .desc { font-size: 0.85rem; color: #6b7280; }
+  .export-type-item .checkbox {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #d1d5db;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .export-type-item.selected .checkbox {
+    background: #7C3AED;
+    border-color: #7C3AED;
+    color: white;
+  }
+  .group-item {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+  }
+  .group-item:hover { background: #f9fafb; }
+  .group-item.selected { background: #EDE9FE; border-color: #7C3AED; }
+  .stat-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+  }
+  .stat-badge.blue { background: #DBEAFE; color: #2563EB; }
+  .stat-badge.green { background: #D1FAE5; color: #059669; }
+  .stat-badge.purple { background: #EDE9FE; color: #7C3AED; }
+  .export-btn {
+    background: linear-gradient(135deg, #7C3AED, #EC4899);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+  }
+  .export-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 20px rgba(124,58,237,0.3);
+  }
+  .export-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+  <div class="page-header-icon">📦</div>
+  <h1 class="page-title">数据导出中心</h1>
+  <p class="page-subtitle">导出您的学习成果：图片、音频、模型文件</p>
+</div>
+
+<div class="container pb-5">
+  <!-- 数据类型选择 -->
+  <div class="export-card">
+    <h5 class="mb-3"><i class="bi bi-check-square"></i> 选择导出内容（全选/部分）</h5>
+    <div id="exportTypes">
+      <div class="export-type-item" data-type="face_images" onclick="toggleExportType(this)">
+        <div class="icon" style="background:#DBEAFE">📷</div>
+        <div class="info">
+          <div class="title">人脸采集图片 <span class="stat-badge blue" id="faceImagesCount">0</span></div>
+          <div class="desc">导出为 .zip 压缩包（包含所有已标注的人脸图片）</div>
+        </div>
+        <div class="checkbox"><i class="bi bi-check"></i></div>
+      </div>
+      <div class="export-type-item" data-type="face_labels" onclick="toggleExportType(this)">
+        <div class="icon" style="background:#D1FAE5">📄</div>
+        <div class="info">
+          <div class="title">人脸数据标签 <span class="stat-badge green" id="faceLabelsCount">-</span></div>
+          <div class="desc">导出为 .csv 文件（包含文件名和对应的情绪标签）</div>
+        </div>
+        <div class="checkbox"><i class="bi bi-check"></i></div>
+      </div>
+      <div class="export-type-item" data-type="audio_files" onclick="toggleExportType(this)">
+        <div class="icon" style="background:#FEF3C7">🎤</div>
+        <div class="info">
+          <div class="title">声音文件 <span class="stat-badge blue" id="audioFilesCount">0</span></div>
+          <div class="desc">导出为 .zip 压缩包（包含所有已标注的音频文件）</div>
+        </div>
+        <div class="checkbox"><i class="bi bi-check"></i></div>
+      </div>
+      <div class="export-type-item" data-type="audio_labels" onclick="toggleExportType(this)">
+        <div class="icon" style="background:#EDE9FE">📄</div>
+        <div class="info">
+          <div class="title">声音标签文件 <span class="stat-badge purple" id="audioLabelsCount">-</span></div>
+          <div class="desc">导出为 .csv 文件（包含文件名和对应的情绪标签）</div>
+        </div>
+        <div class="checkbox"><i class="bi bi-check"></i></div>
+      </div>
+      <div class="export-type-item" data-type="models" onclick="toggleExportType(this)">
+        <div class="icon" style="background:#FEE2E2">🤖</div>
+        <div class="info">
+          <div class="title">训练模型文件 <span class="stat-badge blue" id="modelsCount">0</span></div>
+          <div class="desc">导出为 .zip 压缩包（包含模型权重和配置文件）</div>
+        </div>
+        <div class="checkbox"><i class="bi bi-check"></i></div>
+      </div>
+    </div>
+    <div class="mt-3">
+      <button class="btn btn-sm btn-outline-primary me-2" onclick="selectAll()">全选</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="selectNone()">全不选</button>
+    </div>
+  </div>
+
+  <!-- 小组选择（仅管理员/教师可见） -->
+  <div class="export-card" id="groupSelectCard" style="display:none">
+    <h5 class="mb-3"><i class="bi bi-people"></i> 选择要导出的数据所有者</h5>
+    <div class="mb-2">
+      <button class="btn btn-sm btn-outline-primary me-2" onclick="selectAllGroups()">全选</button>
+      <button class="btn btn-sm btn-outline-secondary" onclick="selectNoGroups()">全不选</button>
+    </div>
+    <div id="groupList">
+      <!-- 动态加载 -->
+    </div>
+  </div>
+
+  <!-- 导出预览 -->
+  <div class="export-card">
+    <h5 class="mb-3"><i class="bi bi-info-circle"></i> 导出预览</h5>
+    <div id="exportPreview">
+      <div class="text-muted text-center py-3">请选择要导出的数据类型</div>
+    </div>
+  </div>
+
+  <!-- 导出按钮 -->
+  <div class="export-card">
+    <button class="export-btn" id="exportBtn" onclick="doExport()" disabled>
+      <i class="bi bi-download"></i> 导出选中数据
+    </button>
+    <p class="text-muted text-center small mt-2">
+      导出的文件将打包为一个 .zip 文件
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let selectedTypes = new Set();
+let selectedGroups = new Set();
+let isAdmin = false;
+let userGroupId = null;
+
+async function init() {
+  // 检查权限
+  const resp = await fetch('/export/check_permissions');
+  const data = await resp.json();
+  
+  isAdmin = data.is_admin;
+  userGroupId = data.group_id;
+  
+  // 更新统计数据
+  updateCounts(data.exportable);
+  
+  // 如果是管理员，加载所有小组
+  if (isAdmin) {
+    document.getElementById('groupSelectCard').style.display = '';
+    await loadGroups();
+  } else {
+    // 普通用户只能导出自己的
+    selectedGroups.add(userGroupId);
+  }
+  
+  updatePreview();
+}
+
+function updateCounts(exportable) {
+  document.getElementById('faceImagesCount').textContent = exportable.face_images || 0;
+  document.getElementById('audioFilesCount').textContent = exportable.audio_files || 0;
+  document.getElementById('modelsCount').textContent = exportable.models || 0;
+  document.getElementById('faceLabelsCount').textContent = exportable.face_labels ? '✓' : '-';
+  document.getElementById('audioLabelsCount').textContent = exportable.audio_labels ? '✓' : '-';
+}
+
+async function loadGroups() {
+  const resp = await fetch('/export/list_groups');
+  const data = await resp.json();
+  
+  const container = document.getElementById('groupList');
+  container.innerHTML = data.groups.map(g => `
+    <div class="group-item" data-group="${g.group_id}" onclick="toggleGroup(this)">
+      <div class="checkbox me-3"><i class="bi bi-check"></i></div>
+      <div class="flex-grow-1">
+        <div class="fw-bold">${g.group_id}</div>
+        <div class="small text-muted">
+          📷 ${g.face_images} 张图片 | 🎤 ${g.audio_files} 个音频
+        </div>
+      </div>
+    </div>
+  `).join('');
+  
+  // 默认选中所有小组
+  data.groups.forEach(g => selectedGroups.add(g.group_id));
+  updateGroupSelection();
+}
+
+function toggleExportType(el) {
+  const type = el.dataset.type;
+  el.classList.toggle('selected');
+  
+  if (selectedTypes.has(type)) {
+    selectedTypes.delete(type);
+  } else {
+    selectedTypes.add(type);
+  }
+  
+  updateExportButton();
+  updatePreview();
+}
+
+function toggleGroup(el) {
+  const groupId = el.dataset.group;
+  el.classList.toggle('selected');
+  
+  if (selectedGroups.has(groupId)) {
+    selectedGroups.delete(groupId);
+  } else {
+    selectedGroups.add(groupId);
+  }
+  
+  updatePreview();
+}
+
+function updateGroupSelection() {
+  document.querySelectorAll('.group-item').forEach(el => {
+    const groupId = el.dataset.group;
+    el.classList.toggle('selected', selectedGroups.has(groupId));
+  });
+}
+
+function selectAll() {
+  document.querySelectorAll('.export-type-item').forEach(el => {
+    el.classList.add('selected');
+    selectedTypes.add(el.dataset.type);
+  });
+  updateExportButton();
+  updatePreview();
+}
+
+function selectNone() {
+  document.querySelectorAll('.export-type-item').forEach(el => {
+    el.classList.remove('selected');
+  });
+  selectedTypes.clear();
+  updateExportButton();
+  updatePreview();
+}
+
+function selectAllGroups() {
+  document.querySelectorAll('.group-item').forEach(el => {
+    el.classList.add('selected');
+    selectedGroups.add(el.dataset.group);
+  });
+  updatePreview();
+}
+
+function selectNoGroups() {
+  document.querySelectorAll('.group-item').forEach(el => {
+    el.classList.remove('selected');
+  });
+  selectedGroups.clear();
+  updatePreview();
+}
+
+function updateExportButton() {
+  const btn = document.getElementById('exportBtn');
+  const hasSelection = selectedTypes.size > 0 && selectedGroups.size > 0;
+  btn.disabled = !hasSelection;
+  
+  if (hasSelection) {
+    btn.innerHTML = '<i class="bi bi-download"></i> 导出选中数据';
+  } else {
+    btn.innerHTML = '<i class="bi bi-download"></i> 请先选择导出内容';
+  }
+}
+
+function updatePreview() {
+  const preview = document.getElementById('exportPreview');
+  const types = Array.from(selectedTypes).join('、') || '未选择';
+  const groups = isAdmin 
+    ? (selectedGroups.size > 0 ? Array.from(selectedGroups).join('、') : '未选择') 
+    : userGroupId;
+  
+  preview.innerHTML = `
+    <div class="alert alert-light">
+      <div><strong>将导出：</strong>${types}</div>
+      <div class="mt-2"><strong>数据所有者：</strong>${groups}</div>
+    </div>
+  `;
+  
+  updateExportButton();
+}
+
+async function doExport() {
+  if (selectedTypes.size === 0 || selectedGroups.size === 0) {
+    alert('请选择要导出的数据类型和数据所有者');
+    return;
+  }
+  
+  const btn = document.getElementById('exportBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> 正在打包...';
+  
+  try {
+    const resp = await fetch('/export/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        types: Array.from(selectedTypes),
+        groups: isAdmin ? Array.from(selectedGroups) : [userGroupId]
+      })
+    });
+    
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.error || '导出失败');
+    }
+    
+    // 下载文件
+    const blob = await resp.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `export_${new Date().toISOString().slice(0,10)}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
+    
+    btn.innerHTML = '<i class="bi bi-check-circle"></i> 导出成功！';
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-download"></i> 导出选中数据';
+    }, 2000);
+    
+  } catch (err) {
+    alert('导出失败: ' + err.message);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-download"></i> 导出选中数据';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+{% endblock %}

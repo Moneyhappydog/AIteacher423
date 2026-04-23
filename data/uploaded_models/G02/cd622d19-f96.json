@@ -1,0 +1,19 @@
+{
+  "model_id": "cd622d19-f96",
+  "group_id": "G02",
+  "course": "face",
+  "model_name": "face_cnn_fp32 11",
+  "description": "",
+  "filename": "cd622d19-f96.onnx",
+  "original_filename": "face_cnn_fp32.onnx",
+  "file_path": "G02/cd622d19-f96.onnx",
+  "file_size": 3938376,
+  "file_hash": "49f1da956dd8fd7d366d9f54218f72b0",
+  "framework": "onnx",
+  "file_ext": ".onnx",
+  "uploaded_at": "2026-04-22T09:55:06.741088",
+  "is_active": true,
+  "accuracy": 0.18435155412647375,
+  "eval_count": 1,
+  "last_eval_at": "2026-04-22T09:56:07.893441"
+}

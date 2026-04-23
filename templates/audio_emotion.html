@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}声音情绪 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<style>
+  .waveform-canvas { width: 100%; height: 80px; border-radius: 12px; background: #1a1a2e; }
+  .record-btn { width: 70px; height: 70px; border-radius: 50%; font-size: 1.8rem; border: none; cursor: pointer; transition: all 0.2s; }
+  .record-btn:active { transform: scale(0.92); }
+  .gallery-item { border-radius: 14px; overflow: hidden; }
+  .score-bar { height: 22px; border-radius: 8px; transition: width 0.6s ease; min-width: 4px; }
+  .emotion-tab.active { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+  .recording-pulse { animation: pulse-red 1s infinite; }
+  @keyframes pulse-red { 0%,100%{box-shadow:0 0 0 0 rgba(255,80,80,0.5)} 50%{box-shadow:0 0 0 12px rgba(255,80,80,0)} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+  <div class="page-header-icon">🎤</div>
+  <h1 class="page-title">声音情绪实验室</h1>
+  <p class="page-subtitle">用不同情绪读出同一句话，看 AI 能不能猜到你的心情！</p>
+</div>
+
+<div class="container pb-5">
+  <!-- 自定义模型选择器 -->
+  <div class="model-selector" id="modelSelector">
+    <div class="model-selector-label">
+      <i class="bi bi-cpu"></i> 选择 AI 模型
+      <span style="margin-left: auto; font-weight: 400; color: #64748b; font-size: 0.7rem;">切换模型实时生效</span>
+    </div>
+    <select id="modelSelect" onchange="switchModel()">
+      <option value="">加载中...</option>
+    </select>
+    <div class="model-info" id="modelInfo">
+      <span class="badge">加载中</span>
+    </div>
+  </div>
+
+  <!-- 全局消息提示 -->
+  <div id="audioMsg" class="d-none position-fixed top-0 start-50 translate-middle-x mt-3"
+       style="z-index:9999;padding:8px 20px;border-radius:10px;font-size:0.9rem;transition:opacity 0.3s;opacity:1">
+  </div>
+
+  <!-- Target Sentence -->
+  <div class="target-sentence-card text-center mb-4">
+    <div class="sentence-label">🗣️ 请用不同情绪朗读这句话：</div>
+    <div class="target-sentence">"明天我们要考试"</div>
+    <div class="sentence-hint">同一句话，四种情绪，声音会有什么不同呢？</div>
+  </div>
+
+  <!-- Recording Tabs -->
+  <div class="row g-3 mb-4" id="recordingArea">
+    {% set emotions_list = [
+      ('happy',   '开心', '😊', '#FFD166', 'btn-yellow'),
+      ('sad',     '难过', '😢', '#4D9DE0', 'btn-blue'),
+      ('angry',   '生气', '😠', '#FF6B6B', 'btn-red'),
+      ('neutral', '平静', '😐', '#A8DADC', 'btn-teal')
+    ] %}
+    {% for key, label, emoji, color, btn_class in emotions_list %}
+    <div class="col-md-6 col-lg-3">
+      <div class="emotion-tab" id="tab_{{ key }}" style="border-top: 4px solid {{ color }}">
+        <div class="emotion-tab-header text-center">
+          <div class="tab-emoji">{{ emoji }}</div>
+          <div class="tab-label">{{ label }}</div>
+        </div>
+        <canvas class="waveform-canvas mb-2" id="wave_{{ key }}"></canvas>
+        <div class="text-center mb-2">
+          <button class="record-btn" id="recBtn_{{ key }}" style="background:{{ color }}20; color:{{ color }}"
+                  onclick="toggleRecord('{{ key }}', '{{ label }}', '{{ color }}')" title="录音">
+            🎙️
+          </button>
+          <div id="recStatus_{{ key }}" class="rec-status mt-1">点击录音</div>
+          <div id="recTimer_{{ key }}" class="rec-timer d-none">⏱ <span>0</span>s</div>
+        </div>
+        <div id="playArea_{{ key }}" class="d-none">
+          <audio id="audio_{{ key }}" controls class="w-100" style="border-radius:8px"></audio>
+          <div class="d-flex gap-2 mt-2">
+            <button class="btn-fun btn-small flex-fill" onclick="analyzeRecording('{{ key }}', '{{ label }}')">
+              🔍 识别情绪
+            </button>
+            <button class="btn-fun btn-small btn-outline" onclick="clearRecording('{{ key }}')">
+              🗑️ 重录
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Results Section -->
+  <div class="row g-4">
+    <!-- Gallery -->
+    <div class="col-lg-5">
+      <div class="content-card h-100">
+        <div class="content-card-header"><i class="bi bi-collection-play-fill"></i> 声音画廊</div>
+        <div id="galleryList" class="gallery-list">
+          <div class="empty-gallery text-center py-4">
+            <div style="font-size:3rem">🎵</div>
+            <p class="text-muted">录音后会在这里显示</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recognition Result -->
+    <div class="col-lg-7">
+      <div class="content-card h-100">
+        <div class="content-card-header"><i class="bi bi-cpu-fill"></i> AI 识别结果</div>
+        <div id="resultArea">
+          <div class="result-placeholder text-center py-5">
+            <div style="font-size:4rem">🤖</div>
+            <p>点击「识别情绪」按钮，让 AI 分析你的声音吧！</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison Section -->
+  <div class="content-card mt-4" id="comparisonArea" style="display:none">
+    <div class="content-card-header"><i class="bi bi-bar-chart-steps"></i> 四种情绪对比</div>
+    <div id="comparisonChart" class="row g-2 mt-1"></div>
+  </div>
+
+  <!-- Knowledge Card -->
+  <div class="knowledge-card mt-4">
+    <div class="knowledge-icon">🎵</div>
+    <div>
+      <strong>声音为什么能体现情绪？</strong><br>
+      <span>
+        开心时音调高、语速快；难过时语速慢、音量低；生气时响度大、语气急促。
+        AI 通过分析声音的音调（频率）、响度（振幅）、语速等特征来判断情绪，
+        就像我们用耳朵辨别朋友情绪一样！
+      </span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/audio_emotion.js') }}"></script>
+<script>
+// ── 自定义模型选择器 ─────────────────────────────────────────────────────────
+let customModels = [];
+let currentModelId = null;
+
+function loadCustomModels() {
+  fetch('/api/models/list?course=audio')
+    .then(r => r.json())
+    .then(data => {
+      customModels = data.models || [];
+      renderModelSelector();
+    })
+    .catch(err => {
+      console.log('加载自定义模型失败:', err);
+    });
+}
+
+function renderModelSelector() {
+  const select = document.getElementById('modelSelect');
+  const modelInfo = document.getElementById('modelInfo');
+  if (!select) return;
+
+  select.innerHTML = '';
+
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = '';
+  defaultOpt.textContent = '🤖 系统默认模型';
+  select.appendChild(defaultOpt);
+
+  if (customModels.length > 0) {
+    customModels.forEach(model => {
+      const opt = document.createElement('option');
+      opt.value = model.id;
+      opt.textContent = `📦 ${model.model_name} (${(model.accuracy * 100).toFixed(1)}%)`;
+      if (model.is_default) opt.textContent += ' ⭐';
+      select.appendChild(opt);
+    });
+  }
+
+  if (currentModelId) select.value = currentModelId;
+  updateModelInfo();
+}
+
+function updateModelInfo() {
+  const select = document.getElementById('modelSelect');
+  const modelInfo = document.getElementById('modelInfo');
+  if (!select || !modelInfo) return;
+
+  const selectedId = select.value;
+  if (!selectedId) {
+    modelInfo.innerHTML = '<span class="badge">系统默认</span><span>使用平台语音情绪识别模型</span>';
+    currentModelId = null;
+  } else {
+    const model = customModels.find(m => m.id === selectedId);
+    if (model) {
+      modelInfo.innerHTML = `
+        <span class="badge">${model.framework || 'tensorflow'}</span>
+        <span class="accuracy">准确率: ${(model.accuracy * 100).toFixed(1)}%</span>
+        <span style="color: ${model.is_active ? '#10b981' : '#ef4444'}">
+          ${model.is_active ? '● 启用' : '○ 停用'}
+        </span>
+      `;
+      currentModelId = selectedId;
+    }
+  }
+}
+
+function switchModel() {
+  updateModelInfo();
+}
+
+function getCurrentModelId() {
+  return currentModelId;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadCustomModels();
+});
+</script>
+{% endblock %}

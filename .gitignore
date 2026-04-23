@@ -1,0 +1,33 @@
+﻿# 大模型文件（>100MB）
+models/hubert-base-ch-speech-emotion-recognition/pytorch_model.bin
+models/speech_emotion_models/wav2vec2_base/pytorch_model.bin
+models/shape_predictor_68_face_landmarks/shape_predictor_68_face_landmarks.dat
+*.bin
+*.pt
+*.pth
+*.onnx
+*.h5
+*.ckpt
+*.safetensors
+*.dat
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+*.egg-info/
+
+# IDE / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 日志 / 数据库 / 敏感信息
+*.log
+*.db
+*.sqlite
+*.sqlite3
+.env

@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+{% block title %}声音已标注数据 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<style>
+  .annot-stat-card {
+    background: linear-gradient(135deg, #EDE9FE, #F5F3FF);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    border: 1px solid #DDD6FE;
+  }
+  .annot-stat-card .num { font-size: 1.75rem; font-weight: 800; color: #7C3AED; }
+  .annot-audio-row {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.6rem 0.75rem; border-radius: 10px;
+    background: #f9fafb; margin-bottom: 0.4rem; border: 1px solid #e5e7eb;
+  }
+  .annot-audio-row .play-mini {
+    width: 38px; height: 38px; border-radius: 50%; border: none;
+    background: #7C3AED; color: white; cursor: pointer; font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .annot-timeline {
+    flex: 1; display: flex; flex-direction: column; gap: 0.2rem; min-width: 0;
+  }
+  .annot-time-row {
+    display: flex; justify-content: space-between;
+    font-size: 0.72rem; color: #9ca3af;
+  }
+  .annot-progress {
+    width: 100%; height: 4px; background: #e5e7eb; border-radius: 4px; overflow: hidden;
+  }
+  .annot-progress-fill {
+    height: 100%; background: #7C3AED; border-radius: 4px;
+    width: 0%; transition: width 0.15s linear;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+  <div class="page-header-icon">📂</div>
+  <h1 class="page-title">声音已标注数据</h1>
+  <p class="page-subtitle">查看本组已写入正式目录的录音及标签，可导出音频与标签文件。</p>
+</div>
+
+<div class="container">
+  <ul class="nav nav-tabs mb-4" style="border-bottom:2px solid #e0e0e0">
+    <li class="nav-item">
+      <a class="nav-link" href="/audio_data/collect/" style="font-weight:700;color:#6b7280;border-radius:8px 8px 0 0">
+        <i class="bi bi-mic"></i> 数据采集
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/audio_data/annotation/" style="font-weight:700;color:#6b7280;border-radius:8px 8px 0 0">
+        <i class="bi bi-pen"></i> 数据标注
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link active" href="/audio_data/annotated/" style="font-weight:700;color:#7C3AED;border-bottom:3px solid #7C3AED;background:#EDE9FE;border-radius:8px 8px 0 0">
+        <i class="bi bi-check2-square"></i> 已标注数据
+      </a>
+    </li>
+  </ul>
+</div>
+
+<div class="container pb-5">
+  <div class="content-card mb-4">
+    <div class="content-card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <span><i class="bi bi-people"></i> 小组与操作</span>
+      <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="loadAnnotatedAudios()">
+          <i class="bi bi-arrow-clockwise"></i> 刷新
+        </button>
+        <button type="button" class="btn btn-sm btn-success" onclick="exportAnnotated(['audio_files'])">
+          <i class="bi bi-file-earmark-music"></i> 导出音频
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-success" onclick="exportAnnotated(['audio_labels'])">
+          <i class="bi bi-filetype-csv"></i> 导出标签
+        </button>
+        <button type="button" class="btn btn-sm btn-primary" onclick="exportAnnotated(['audio_files','audio_labels'])">
+          <i class="bi bi-download"></i> 导出音频+标签（请勿重复点击）
+        </button>
+      </div>
+      
+      <!-- 导出进度显示 -->
+      <div id="exportProgressContainer" style="display:none; margin-top: 1rem;">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span id="exportProgressText">准备中...</span>
+          <span id="exportProgressPercent" class="badge bg-primary">0%</span>
+        </div>
+        <div class="progress" style="height: 20px;">
+          <div id="exportProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+               role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+      </div>
+    </div>
+    <div class="p-3">
+      {% if session.get('role') == 'group' %}
+      <label class="form-label small fw-bold mb-1">小组（当前账号）</label>
+      <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
+        <span class="fw-semibold">{{ session.get('username', '—') }}</span>
+        {% if session.get('group_id') %}
+        <span class="badge bg-secondary">{{ session.get('group_id') }}</span>
+        {% endif %}
+      </div>
+      <input type="hidden" id="sessionGroupId" value="{{ session.get('group_id', '')|e }}">
+      {% else %}
+      <label class="form-label small fw-bold mb-1">选择小组</label>
+      <select class="form-select form-select-sm mb-3" id="groupSelect" style="max-width:280px" onchange="loadAnnotatedAudios()">
+        <option value="G01">第1组 (G01)</option>
+        <option value="G02">第2组 (G02)</option>
+        <option value="G03">第3组 (G03)</option>
+        <option value="G04">第4组 (G04)</option>
+        <option value="G05">第5组 (G05)</option>
+        <option value="G06">第6组 (G06)</option>
+        <option value="G07">第7组 (G07)</option>
+        <option value="G08">第8组 (G08)</option>
+        <option value="G09">第9组 (G09)</option>
+        <option value="G10">第10组 (G10)</option>
+      </select>
+      {% endif %}
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="annot-stat-card">
+            <div class="text-muted small">已标注条数</div>
+            <div class="num" id="annotCount">—</div>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <p class="text-muted small mb-0">
+            此处列出的是已保存到服务器正式目录（各小组子目录 <code>data/audio_data/Gxx</code>）的 wav 及解析出的情绪标签。
+            待标注队列请在「数据标注」页处理。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-card">
+    <div class="content-card-header"><i class="bi bi-list-ul"></i> 列表</div>
+    <div class="p-3" id="annotListWrap">
+      <div class="text-center text-muted py-5" id="annotPlaceholder">请选择小组或刷新</div>
+      <div id="annotList" style="max-height:520px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteAudioModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> 确认删除</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>确定要删除音频 <strong id="deleteAudioName"></strong> 吗？</p>
+        <p class="text-danger small mb-0">这将同时删除音频文件和标签记录，且不可恢复！</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteAudioBtn" onclick="confirmDeleteAudio()">
+          <i class="bi bi-trash"></i> 确认删除
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+/* 文件名中「生气」存为 anger（与训练标签一致），前端选情绪用 angry */
+const EMOTION_MAP = {
+  happy: '😊开心', sad: '😢难过', angry: '😠生气', anger: '😠生气',
+  neutral: '😐平静', fear: '😨害怕', surprise: '😮惊讶', unknown: '未知'
+};
+
+function getViewGroupId() {
+  const h = document.getElementById('sessionGroupId');
+  if (h && h.value && h.value.trim()) return h.value.trim();
+  const s = document.getElementById('groupSelect');
+  return s ? s.value : '';
+}
+
+let playing = null;       // 当前 Audio 对象
+let playingId = null;     // 正在播放的 file_path（用于区分不同行）
+let playingBtn = null;    // 正在播放的按钮 DOM
+let annotatedAudios = [];  // 原始音频数据列表
+let pendingDeleteAudio = null;  // 待删除的音频信息
+
+function _fmt(s) {
+  const m = Math.floor(s / 60), ss = Math.floor(s % 60);
+  return `${m}:${ss.toString().padStart(2, '0')}`;
+}
+
+function togglePlay(url, rowId, btn) {
+  // 已在播放本行 → 停止
+  if (playing && playingId === rowId) {
+    playing.pause();
+    playing = null;
+    playingId = null;
+    btn.textContent = '▶';
+    // 重置进度
+    const fill = btn.closest('.annot-audio-row').querySelector('.annot-progress-fill');
+    const curEl = btn.closest('.annot-audio-row').querySelector('.cur-time');
+    if (fill) fill.style.width = '0%';
+    if (curEl) curEl.textContent = '0:00';
+    playingBtn = null;
+    return;
+  }
+  // 停止上一行
+  if (playing) {
+    playing.pause();
+    if (playingBtn) {
+      playingBtn.textContent = '▶';
+      const prevRow = playingBtn.closest('.annot-audio-row');
+      const pf = prevRow && prevRow.querySelector('.annot-progress-fill');
+      const pc = prevRow && prevRow.querySelector('.cur-time');
+      if (pf) pf.style.width = '0%';
+      if (pc) pc.textContent = '0:00';
+    }
+  }
+  playing = new Audio(url);
+  playingId = rowId;
+  playingBtn = btn;
+  btn.textContent = '■';
+
+  playing.addEventListener('loadedmetadata', () => {
+    const dur = playing.duration || 0;
+    const row = btn.closest('.annot-audio-row');
+    if (row) {
+      const totEl = row.querySelector('.tot-time');
+      if (totEl) totEl.textContent = _fmt(dur);
+    }
+  });
+
+  playing.addEventListener('timeupdate', () => {
+    if (!playing) return;
+    const cur = playing.currentTime, dur = playing.duration || 0;
+    const pct = dur > 0 ? (cur / dur * 100) : 0;
+    const row = btn.closest('.annot-audio-row');
+    if (row) {
+      const fill = row.querySelector('.annot-progress-fill');
+      const curEl = row.querySelector('.cur-time');
+      if (fill) fill.style.width = pct + '%';
+      if (curEl) curEl.textContent = _fmt(cur);
+    }
+  });
+
+  playing.addEventListener('ended', () => {
+    if (playingBtn) {
+      playingBtn.textContent = '▶';
+      const row = playingBtn.closest('.annot-audio-row');
+      const fill = row && row.querySelector('.annot-progress-fill');
+      const curEl = row && row.querySelector('.cur-time');
+      if (fill) fill.style.width = '0%';
+      if (curEl) curEl.textContent = '0:00';
+    }
+    playing = null;
+    playingId = null;
+    playingBtn = null;
+  });
+
+  playing.play().catch(err => { console.error('播放失败', err); });
+}
+
+async function loadAnnotatedAudios() {
+  const gid = getViewGroupId();
+  const list = document.getElementById('annotList');
+  const ph = document.getElementById('annotPlaceholder');
+  if (!gid) {
+    if (ph) ph.style.display = '';
+    list.innerHTML = '';
+    document.getElementById('annotCount').textContent = '—';
+    return;
+  }
+  if (ph) ph.style.display = 'none';
+  list.innerHTML = '<div class="text-muted small py-3">加载中…</div>';
+  try {
+    const resp = await fetch(`/audio_data/collect/list/${gid}`);
+    const data = await resp.json();
+    const audios = data.audios || [];
+    annotatedAudios = audios;
+    document.getElementById('annotCount').textContent = String(audios.length);
+    if (audios.length === 0) {
+      list.innerHTML = '<div class="text-center text-muted py-4">暂无已标注音频</div>';
+      return;
+    }
+    renderAudioList(audios);
+  } catch (e) {
+    list.innerHTML = '<div class="text-danger small">加载失败</div>';
+  }
+}
+
+function renderAudioList(audios) {
+  const list = document.getElementById('annotList');
+  list.innerHTML = audios.map((a, idx) => {
+    const lab = EMOTION_MAP[a.emotion] || a.emotion || '未知';
+    const safePath = (a.file_path || '').replace(/'/g, "\\'");
+    const rowId = 'r_' + (a.file_path || a.file_name || '').replace(/[^a-zA-Z0-9]/g, '_');
+    return `<div class="annot-audio-row">
+      <button type="button" class="play-mini" onclick="togglePlay('${safePath}', '${rowId}', this)">▶</button>
+      <div class="annot-timeline">
+        <div class="small fw-semibold text-truncate" title="${a.file_name || ''}">${a.file_name || ''}</div>
+        <div class="annot-time-row">
+          <span class="cur-time">0:00</span>
+          <span class="tot-time">—</span>
+        </div>
+        <div class="annot-progress"><div class="annot-progress-fill"></div></div>
+      </div>
+      <div class="text-muted text-nowrap" style="font-size:0.78rem">${a.member_id || '—'}</div>
+      <span class="badge bg-success">${lab}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="showDeleteAudioConfirm(${idx})" title="删除">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function showDeleteAudioConfirm(idx) {
+  const a = annotatedAudios[idx];
+  if (!a) return;
+  pendingDeleteAudio = { ...a, idx };
+  document.getElementById('deleteAudioName').textContent = a.file_name || '';
+  new bootstrap.Modal(document.getElementById('deleteAudioModal')).show();
+}
+
+async function confirmDeleteAudio() {
+  if (!pendingDeleteAudio) return;
+  const a = pendingDeleteAudio;
+  const gid = getViewGroupId();
+
+  try {
+    const resp = await fetch('/audio_data/collect/delete-sample', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        type: 'audio',
+        group_id: gid,
+        filename: a.file_name || a.filename
+      })
+    });
+    const data = await resp.json();
+    if (data.success) {
+      alert(data.message || '数据已删除');
+      bootstrap.Modal.getInstance(document.getElementById('deleteAudioModal')).hide();
+      loadAnnotatedAudios();
+    } else {
+      alert(data.message || '删除失败');
+    }
+  } catch (e) {
+    alert('删除请求失败');
+  }
+  pendingDeleteAudio = null;
+}
+
+// 导出数据
+let pollInterval;
+
+function startExportProgressPoll() {
+  const progressBar = document.getElementById('exportProgressBar');
+  const progressPercent = document.getElementById('exportProgressPercent');
+  const progressText = document.getElementById('exportProgressText');
+  
+  progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+  
+  pollInterval = setInterval(async () => {
+    try {
+      const resp = await fetch('/export/progress', {
+        credentials: 'include'
+      });
+      const data = await resp.json();
+      
+      if (data.status !== 'idle' && data.status !== 'error') {
+        const percent = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
+        progressBar.style.width = percent + '%';
+        progressText.textContent = data.message || '正在打包...';
+        progressPercent.textContent = percent + '%';
+        
+        if (data.status === 'completed') {
+          clearInterval(pollInterval);
+        }
+      } else if (data.status === 'error') {
+        clearInterval(pollInterval);
+        progressText.textContent = data.message || '导出失败';
+        progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+        progressBar.classList.add('bg-danger');
+      }
+    } catch (e) {
+      // 忽略轮询错误
+    }
+  }, 200); // 每200ms轮询一次
+}
+
+async function exportAnnotated(types) {
+  const gid = getViewGroupId();
+  if (!gid) { alert('请先选择或登录小组账号'); return; }
+  
+  const progressContainer = document.getElementById('exportProgressContainer');
+  const progressBar = document.getElementById('exportProgressBar');
+  const progressPercent = document.getElementById('exportProgressPercent');
+  const progressText = document.getElementById('exportProgressText');
+
+  // 显示进度条
+  progressContainer.style.display = 'block';
+  progressBar.style.width = '0%';
+  progressBar.classList.remove('bg-success', 'bg-danger');
+  progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+  progressText.textContent = '正在连接服务器...';
+  progressPercent.textContent = '0%';
+
+  // 启动进度轮询
+  let pollStarted = false;
+  function startExportProgressPollOnce() {
+    if (pollStarted) return;
+    pollStarted = true;
+    progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+    
+    pollInterval = setInterval(async () => {
+      try {
+        const resp = await fetch('/export/progress', {
+          credentials: 'include'
+        });
+        const data = await resp.json();
+        
+        if (data.status !== 'idle' && data.status !== 'error') {
+          const percent = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
+          progressBar.style.width = percent + '%';
+          progressText.textContent = data.message || '正在打包...';
+          progressPercent.textContent = percent + '%';
+          
+          if (data.status === 'completed') {
+            clearInterval(pollInterval);
+          }
+        } else if (data.status === 'error') {
+          clearInterval(pollInterval);
+          progressText.textContent = data.message || '导出失败';
+          progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+          progressBar.classList.add('bg-danger');
+        }
+      } catch (e) {
+        // 忽略轮询错误
+      }
+    }, 200);
+  }
+
+  try {
+    // 启动进度轮询
+    startExportProgressPollOnce();
+    
+    const resp = await fetch('/export/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ groups: [gid], types })
+    });
+    
+    // 停止轮询
+    if (pollInterval) {
+      clearInterval(pollInterval);
+    }
+    
+    if (!resp.ok) {
+      const t = await resp.text();
+      throw new Error(t || resp.status);
+    }
+    
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audio_export_${gid}_${Date.now()}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    // 显示成功
+    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    progressBar.classList.add('bg-success');
+    progressBar.style.width = '100%';
+    progressText.textContent = '导出成功！';
+    progressPercent.textContent = '100%';
+    
+    setTimeout(() => {
+      progressContainer.style.display = 'none';
+    }, 3000);
+  } catch (err) {
+    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    progressBar.classList.add('bg-danger');
+    progressText.textContent = '导出失败: ' + err.message;
+    alert('导出失败：' + err.message);
+  } finally {
+    if (pollInterval) {
+      clearInterval(pollInterval);
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadAnnotatedAudios();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,21 @@
+{
+  "task_id": "16ccbd5d-e90",
+  "model_id": "36d1ada3-380",
+  "model_name": "face_cnn_fp32_0420_0048",
+  "model_framework": "onnx",
+  "model_path": "/home/pub/code/eduplatform/data/uploaded_models/G06/36d1ada3-380.onnx",
+  "testset_id": "face_20260420_013233",
+  "testset_name": "model_face_0420_0132",
+  "course": "face",
+  "group_id": "G06",
+  "status": "failed",
+  "created_at": "2026-04-20T01:57:16.823243",
+  "started_at": "2026-04-20T01:57:17.189517",
+  "completed_at": "2026-04-20T01:57:17.899688",
+  "progress": 100,
+  "total_samples": 41,
+  "processed_samples": 41,
+  "metrics": null,
+  "predictions": [],
+  "error": "ModelEvalService._calculate_metrics() takes 4 positional arguments but 5 were given"
+}

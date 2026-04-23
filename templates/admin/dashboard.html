@@ -1,0 +1,1244 @@
+{% extends "base.html" %}
+{% block title %}管理后台 - 联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<style>
+  .dashboard-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    transition: transform 0.2s;
+  }
+  .stat-card:hover {
+    transform: translateY(-4px);
+  }
+  .stat-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+  }
+  .stat-label {
+    color: #666;
+    font-size: 0.9rem;
+  }
+  .section-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+  }
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .table thead th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #555;
+  }
+  .badge-role {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge-admin {
+    background: linear-gradient(135deg, #FFD700, #FFA500);
+    color: #333;
+  }
+  .badge-teacher {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+  }
+  .badge-group {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+    color: white;
+  }
+  .btn-action {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+  }
+  .tab-nav {
+    border-bottom: 2px solid #eee;
+    margin-bottom: 1rem;
+  }
+  .tab-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    background: none;
+    color: #666;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+  }
+  .tab-btn:hover {
+    color: #667eea;
+  }
+  .tab-btn.active {
+    color: #667eea;
+  }
+  .tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #667eea;
+  }
+  .tab-content {
+    display: none;
+  }
+  .tab-content.active {
+    display: block;
+  }
+  .log-item {
+    padding: 0.75rem;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.85rem;
+  }
+  .log-item:last-child {
+    border-bottom: none;
+  }
+  .log-time {
+    color: #999;
+    font-size: 0.8rem;
+  }
+  .status-active {
+    color: #38ef7d;
+  }
+  .status-inactive {
+    color: #dc3545;
+  }
+  .accuracy-high {
+    color: #28a745;
+    font-weight: 600;
+  }
+  .accuracy-mid {
+    color: #ffc107;
+    font-weight: 600;
+  }
+  .accuracy-low {
+    color: #dc3545;
+  }
+  .dataset-overview-card {
+    transition: transform 0.2s;
+  }
+  .dataset-overview-card:hover {
+    transform: translateY(-2px);
+  }
+  .batch-action-bar {
+    background: #f8f9fa;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+  .batch-action-bar .btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+  }
+  .selected-count {
+    background: #e7f5ff;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #0c63e4;
+  }
+  .import-drop-zone {
+    border: 2px dashed #dee2e6;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .import-drop-zone:hover, .import-drop-zone.drag-over {
+    border-color: #667eea;
+    background: #f0f4ff;
+  }
+  .import-drop-zone input[type="file"] {
+    display: none;
+  }
+  /* 小组数据选择样式 */
+  .group-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .group-item:hover {
+    background: #e9ecef;
+  }
+  .group-item.selected {
+    background: #e7f5ff;
+    border: 1px solid #339af0;
+  }
+  .preview-item {
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f8f9fa;
+    text-align: center;
+  }
+  .preview-item img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+  }
+  .preview-item .emotion-tag {
+    padding: 6px;
+    font-size: 0.85rem;
+    background: #fff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <!-- 标题 -->
+  <div class="dashboard-header">
+    <h2 class="mb-2">
+      <i class="bi bi-gear-fill"></i> 管理后台
+    </h2>
+    <p class="mb-0 opacity-75">
+      欢迎回来，{{ session.get('username', '管理员') }}！
+      <span class="badge bg-light text-dark ms-2">
+        {% if session.get('role') == 'super_admin' %}👑 超级管理员{% else %}👨‍🏫 教师{% endif %}
+      </span>
+    </p>
+  </div>
+
+  <!-- 统计卡片 -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon">🧑‍🤝‍🧑</div>
+        <div class="stat-number">{{ total_users }}</div>
+        <div class="stat-label">总用户数</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon">🏆</div>
+        <div class="stat-number">{{ total_groups }}</div>
+        <div class="stat-label">学生小组</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon">👨‍🏫</div>
+        <div class="stat-number">{{ total_teachers }}</div>
+        <div class="stat-label">教师账号</div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-number">{{ total_submissions }}</div>
+        <div class="stat-label">排行榜提交</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 导航 -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('users')">
+      <i class="bi bi-people-fill"></i> 用户管理
+    </button>
+    <button class="tab-btn" onclick="switchTab('datasets')">
+      <i class="bi bi-database-fill"></i> 测试集管理
+    </button>
+    <button class="tab-btn" onclick="switchTab('logs')">
+      <i class="bi bi-clock-history"></i> 操作日志
+    </button>
+  </div>
+
+  <!-- Tab 内容 -->
+  <div id="tab-users" class="tab-content active">
+    <div class="section-card">
+      <div class="section-title">
+        <i class="bi bi-people-fill"></i> 用户管理
+        <div class="ms-auto d-flex gap-2">
+          <!-- CSV导入按钮 -->
+          <button class="btn btn-sm btn-outline-success" onclick="showImportModal()">
+            <i class="bi bi-file-earmark-arrow-up"></i> CSV导入
+          </button>
+          <!-- 导出按钮 -->
+          <button class="btn btn-sm btn-outline-info" onclick="exportUsersCSV()">
+            <i class="bi bi-download"></i> 导出CSV
+          </button>
+          <a href="{{ url_for('admin.create_user_page') }}" class="btn btn-sm btn-success">
+            <i class="bi bi-plus-circle"></i> 创建用户
+          </a>
+          <button class="btn btn-sm btn-outline-primary" onclick="loadUsers()">
+            <i class="bi bi-arrow-clockwise"></i> 刷新
+          </button>
+        </div>
+      </div>
+
+      <!-- 批量操作栏 -->
+      <div class="batch-action-bar d-flex align-items-center gap-2 mb-3" id="batchActionBar" style="display: none;">
+        <span class="selected-count" id="selectedCount">已选择 0 个用户</span>
+        <button class="btn btn-outline-danger" onclick="batchDeleteUsers()">
+          <i class="bi bi-trash"></i> 批量删除
+        </button>
+        <button class="btn btn-outline-warning" onclick="deselectAll()">
+          <i class="bi bi-x-circle"></i> 取消选择
+        </button>
+      </div>
+
+      <!-- 角色筛选 -->
+      <div class="d-flex gap-2 mb-3">
+        <button class="btn btn-sm btn-outline-secondary filter-role active" data-role="" onclick="filterByRole('')">全部</button>
+        <button class="btn btn-sm btn-outline-secondary filter-role" data-role="teacher" onclick="filterByRole('teacher')">教师</button>
+        <button class="btn btn-sm btn-outline-secondary filter-role" data-role="group" onclick="filterByRole('group')">小组</button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th style="width: 40px;">
+                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+              </th>
+              <th>ID</th>
+              <th>用户名</th>
+              <th>显示名称</th>
+              <th>角色</th>
+              <th>小组信息</th>
+              <th>状态</th>
+              <th>创建时间</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr>
+              <td colspan="9" class="text-center text-muted py-4">
+                <i class="bi bi-hourglass-split"></i> 加载中...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 测试集管理 Tab -->
+  <div id="tab-datasets" class="tab-content">
+    <div class="section-card">
+      <div class="section-title">
+        <i class="bi bi-database-fill"></i> 测试集管理
+        <a href="/testset/admin/" class="btn btn-sm btn-primary ms-auto">
+          <i class="bi bi-box-arrow-up-right me-1"></i>详细测试集管理入口
+        </a>
+      </div>
+      <p class="text-muted mb-4">
+        点击"详细管理入口"进入专业测试集管理页面，可以收集小组数据、创建草稿、发布测试集、外部导入等功能。
+      </p>
+
+      <!-- 数据类型切换 -->
+      <div class="btn-group mb-4" role="group">
+        <button type="button" class="btn btn-primary active" id="btn-face" onclick="switchDatasetType('face')">
+          <i class="bi bi-emoji-smile me-1"></i> 人脸表情
+        </button>
+        <button type="button" class="btn btn-outline-info" id="btn-audio" onclick="switchDatasetType('audio')">
+          <i class="bi bi-mic-fill me-1"></i> 声音情绪
+        </button>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-md-3">
+          <div class="border rounded p-3 text-center">
+            <h4 class="text-success mb-1"><i class="bi bi-check-circle"></i> 已发布测试集</h4>
+            <div class="stat-number" style="font-size: 2.5rem; font-weight: bold; color: #198754;" id="statPublishedCount">0</div>
+            <div class="mt-2"><small class="text-muted">共 <span id="statPublishedSamples">0</span> 个样本</small></div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="border rounded p-3 text-center">
+            <h4 class="text-warning mb-1"><i class="bi bi-pencil"></i> 草稿</h4>
+            <div class="stat-number" style="font-size: 2.5rem; font-weight: bold; color: #ffc107;" id="statDraftCount">0</div>
+            <div class="mt-2"><small class="text-muted">共 <span id="statDraftSamples">0</span> 个样本</small></div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="border rounded p-3 text-center">
+            <h4 class="text-primary mb-1"><i class="bi bi-folder2-open"></i> 可用源数据</h4>
+            <div class="stat-number" style="font-size: 2.5rem; font-weight: bold; color: #0d6efd;" id="statSourceTotal">0</div>
+            <div class="mt-2"><small class="text-muted">来自 <span id="statSourceGroups">0</span> 个小组</small></div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="border rounded p-3 text-center bg-light">
+            <h4 class="text-secondary mb-1"><i class="bi bi-question-circle"></i> 快速入口</h4>
+            <div class="mt-3">
+              <a href="/testset/admin/" class="btn btn-primary">
+                <i class="bi bi-box-arrow-up-right me-1"></i>进入测试集管理
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-logs" class="tab-content">
+    <div class="section-card">
+      <div class="section-title">
+        <i class="bi bi-clock-history"></i> 操作日志
+        <button class="btn btn-sm btn-primary ms-auto" onclick="loadAuditLogs()">
+          <i class="bi bi-arrow-clockwise"></i> 刷新
+        </button>
+      </div>
+      <div id="auditLogsList">
+        <div class="text-center text-muted py-4">
+          <i class="bi bi-hourglass-split"></i> 加载中...
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 预览模态框 -->
+<div class="modal fade" id="previewTestsetModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-eye"></i> 预览测试集
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="previewContent" style="max-height: 60vh; overflow-y: auto;">
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CSV导入模态框 -->
+<div class="modal fade" id="importModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-file-earmark-arrow-up"></i> CSV批量导入账号
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- 角色选择 -->
+        <div class="mb-3">
+          <label class="form-label">导入账号类型</label>
+          <div class="btn-group w-100" role="group">
+            <button type="button" class="btn btn-outline-primary active" id="importRoleGroup" onclick="setImportRole('group')">
+              <i class="bi bi-people"></i> 小组账号
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="importRoleTeacher" onclick="setImportRole('teacher')" {% if session.get('role') != 'super_admin' %}disabled{% endif %}>
+              <i class="bi bi-mortarboard"></i> 教师账号
+            </button>
+          </div>
+          {% if session.get('role') == 'teacher' %}
+          <small class="text-muted">教师只能导入小组账号</small>
+          {% endif %}
+        </div>
+
+        <!-- 下载模板 -->
+        <div class="mb-3">
+          <label class="form-label">下载模板</label>
+          <div class="d-flex gap-2">
+            <a href="/admin/api/users/csv/template/group" class="btn btn-sm btn-outline-success" download>
+              <i class="bi bi-download"></i> 小组账号模板
+            </a>
+            {% if session.get('role') == 'super_admin' %}
+            <a href="/admin/api/users/csv/template/teacher" class="btn btn-sm btn-outline-info" download>
+              <i class="bi bi-download"></i> 教师账号模板
+            </a>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- 文件上传区 -->
+        <div class="import-drop-zone" id="importDropZone" onclick="document.getElementById('csvFileInput').click()">
+          <input type="file" id="csvFileInput" accept=".csv,.txt" onchange="handleFileSelect(event)">
+          <i class="bi bi-cloud-arrow-up fs-1 text-primary mb-2"></i>
+          <p class="mb-1">点击选择CSV文件或将文件拖拽到此处</p>
+          <small class="text-muted">支持 .csv 和 .txt 格式，文件大小不超过2MB</small>
+          <p class="mb-0 mt-2 text-muted" id="selectedFileName"></p>
+        </div>
+
+        <!-- CSV内容预览 -->
+        <div class="mt-3" id="csvPreviewContainer" style="display: none;">
+          <label class="form-label">CSV内容预览（前5行）</label>
+          <div class="border rounded p-2 bg-light" style="max-height: 200px; overflow-y: auto;">
+            <pre class="mb-0" id="csvPreviewContent" style="font-size: 0.8rem;"></pre>
+          </div>
+        </div>
+
+        <!-- 导入结果 -->
+        <div class="mt-3" id="importResultContainer" style="display: none;">
+          <div class="alert mb-0" id="importResultAlert">
+            <i class="bi" id="importResultIcon"></i>
+            <span id="importResultText"></span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+        <button type="button" class="btn btn-primary" id="importBtn" onclick="doImportCSV()" disabled>
+          <i class="bi bi-upload"></i> 开始导入
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 确认删除模态框 -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle-fill"></i> 确认删除
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="deleteConfirmText">确定要删除选中的用户吗？</p>
+        <div class="alert alert-warning">
+          <i class="bi bi-info-circle"></i>
+          <strong>注意：</strong>删除用户将同时删除以下关联数据：
+          <ul class="mb-0 mt-2">
+            <li>该用户的所有数据集文件（表情、声音、生态瓶）</li>
+            <li>该用户的模型文件和代码笔记本</li>
+            <li>该用户的排行榜记录和技能树进度</li>
+            <li>该用户的编辑器工作区和代码目录</li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="doDeleteUsers()">
+          <i class="bi bi-trash"></i> 确认删除
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 单独删除确认模态框 -->
+<div class="modal fade" id="singleDeleteModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle-fill"></i> 确认删除用户
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p>确定要删除用户 <strong id="singleDeleteUsername"></strong> 吗？</p>
+        <div class="alert alert-warning">
+          <i class="bi bi-info-circle"></i>
+          <strong>注意：</strong>删除用户将同时删除该用户的所有关联数据。
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-danger" onclick="doSingleDelete()">
+          <i class="bi bi-trash"></i> 确认删除
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast 容器 -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// 页面加载时自动加载数据
+document.addEventListener('DOMContentLoaded', function() {
+  loadUsers();
+  initImportDropZone();
+});
+
+// 全局变量
+let allUsers = [];
+let selectedUserIds = new Set();
+let currentRoleFilter = '';
+let importRoleType = 'group';
+let pendingDeleteUserId = null;
+let selectedCSVFileName = '';
+let selectedCSVContent = '';
+
+// 切换 Tab
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+  document.querySelector(`.tab-btn[onclick="switchTab('${tabName}')"]`).classList.add('active');
+  document.getElementById(`tab-${tabName}`).classList.add('active');
+
+  if (tabName === 'users') loadUsers();
+  else if (tabName === 'logs') loadAuditLogs();
+  else if (tabName === 'datasets') loadDatasetOverview();
+}
+
+// 角色筛选
+function filterByRole(role) {
+  currentRoleFilter = role;
+  document.querySelectorAll('.filter-role').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.role === role);
+    btn.classList.toggle('btn-outline-secondary', btn.dataset.role !== role);
+    btn.classList.toggle('btn-primary', btn.dataset.role === role);
+  });
+  renderUsersTable();
+}
+
+// 加载用户列表
+async function loadUsers() {
+  const tbody = document.getElementById('usersTableBody');
+  tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4"><i class="bi bi-hourglass-split"></i> 加载中...</td></tr>';
+  try {
+    const resp = await fetch('/admin/api/users');
+    const data = await resp.json();
+    if (!data.success) throw new Error(data.error);
+
+    allUsers = data.users || [];
+    selectedUserIds.clear();
+    updateBatchActionBar();
+    renderUsersTable();
+  } catch (e) {
+    console.error('加载用户数据失败:', e);
+    document.getElementById('usersTableBody').innerHTML =
+      '<tr><td colspan="9" class="text-center text-danger py-4">加载失败: ' + e.message + '</td></tr>';
+  }
+}
+
+// 渲染用户表格
+function renderUsersTable() {
+  const tbody = document.getElementById('usersTableBody');
+
+  // 应用筛选
+  let filteredUsers = allUsers;
+  if (currentRoleFilter) {
+    filteredUsers = allUsers.filter(u => u.role === currentRoleFilter);
+  }
+
+  if (!filteredUsers || filteredUsers.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">暂无数据</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filteredUsers.map(u => {
+    const roleBadge = u.role === 'super_admin' ?
+      '<span class="badge badge-role badge-admin">👑 超级管理员</span>' :
+      u.role === 'teacher' ?
+      '<span class="badge badge-role badge-teacher">👨‍🏫 教师</span>' :
+      '<span class="badge badge-role badge-group">🧑‍🤝‍🧑 小组</span>';
+
+    const groupInfo = u.group_info ?
+      `<small class="text-muted">${u.group_info.group_code || ''}</small>` : '-';
+
+    const isSelected = selectedUserIds.has(u.id);
+    const canBatch = u.role !== 'super_admin' && u.id !== {{ session.get('user_id', 0) }};
+
+    return `
+      <tr class="${isSelected ? 'table-primary' : ''}">
+        <td>
+          ${canBatch ? `<input type="checkbox" value="${u.id}" ${isSelected ? 'checked' : ''} onchange="toggleUserSelect(${u.id})">` : ''}
+        </td>
+        <td>${u.id}</td>
+        <td><strong>${u.username}</strong></td>
+        <td>${u.display_name}</td>
+        <td>${roleBadge}</td>
+        <td>${groupInfo}</td>
+        <td>
+          <span class="${u.is_active ? 'status-active' : 'status-inactive'}">
+            <i class="bi bi-${u.is_active ? 'check-circle-fill' : 'x-circle-fill'}"></i>
+            ${u.is_active ? '正常' : '禁用'}
+          </span>
+        </td>
+        <td>${u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</td>
+        <td>
+          <a href="/admin/user/edit/${u.id}" class="btn btn-sm btn-outline-primary btn-action me-1">
+            <i class="bi bi-pencil"></i> 编辑
+          </a>
+          <button class="btn btn-sm btn-outline-warning btn-action me-1" onclick="resetUserPassword(${u.id}, '${u.username}')">
+            <i class="bi bi-key"></i> 重置密码
+          </button>
+          ${canBatch ? `
+          <button class="btn btn-sm btn-outline-danger btn-action" onclick="confirmDeleteUser(${u.id}, '${u.username}')">
+            <i class="bi bi-trash"></i> 删除
+          </button>
+          ` : ''}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // 更新全选框状态
+  updateSelectAllCheckbox();
+}
+
+// 切换用户选择
+function toggleUserSelect(userId) {
+  if (selectedUserIds.has(userId)) {
+    selectedUserIds.delete(userId);
+  } else {
+    selectedUserIds.add(userId);
+  }
+  updateBatchActionBar();
+  renderUsersTable();
+}
+
+// 全选/取消全选
+function toggleSelectAll() {
+  const checkbox = document.getElementById('selectAllCheckbox');
+  const checkboxes = document.querySelectorAll('#usersTableBody input[type="checkbox"]');
+
+  if (checkbox.checked) {
+    checkboxes.forEach(cb => {
+      const userId = parseInt(cb.value);
+      const user = allUsers.find(u => u.id === userId);
+      if (user && user.role !== 'super_admin' && user.id !== {{ session.get('user_id', 0) }}) {
+        selectedUserIds.add(userId);
+      }
+    });
+  } else {
+    selectedUserIds.clear();
+  }
+
+  updateBatchActionBar();
+  renderUsersTable();
+}
+
+// 更新全选框状态
+function updateSelectAllCheckbox() {
+  const checkbox = document.getElementById('selectAllCheckbox');
+  const selectableUsers = allUsers.filter(u => u.role !== 'super_admin' && u.id !== {{ session.get('user_id', 0) }});
+
+  if (selectableUsers.length === 0) {
+    checkbox.checked = false;
+    checkbox.indeterminate = false;
+    return;
+  }
+
+  const selectedCount = selectableUsers.filter(u => selectedUserIds.has(u.id)).length;
+  checkbox.checked = selectedCount === selectableUsers.length;
+  checkbox.indeterminate = selectedCount > 0 && selectedCount < selectableUsers.length;
+}
+
+// 更新批量操作栏
+function updateBatchActionBar() {
+  const batchBar = document.getElementById('batchActionBar');
+  const countEl = document.getElementById('selectedCount');
+
+  if (selectedUserIds.size > 0) {
+    batchBar.style.display = 'flex';
+    countEl.textContent = `已选择 ${selectedUserIds.size} 个用户`;
+  } else {
+    batchBar.style.display = 'none';
+  }
+}
+
+// 取消全选
+function deselectAll() {
+  selectedUserIds.clear();
+  updateBatchActionBar();
+  renderUsersTable();
+}
+
+// 确认删除单个用户
+function confirmDeleteUser(userId, username) {
+  pendingDeleteUserId = userId;
+  document.getElementById('singleDeleteUsername').textContent = username;
+  new bootstrap.Modal(document.getElementById('singleDeleteModal')).show();
+}
+
+// 执行单独删除
+async function doSingleDelete() {
+  if (!pendingDeleteUserId) return;
+
+  const btn = document.querySelector('#singleDeleteModal .btn-danger');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>删除中...';
+
+  try {
+    const resp = await fetch(`/admin/api/users/${pendingDeleteUserId}`, {
+      method: 'DELETE'
+    });
+    const data = await resp.json();
+
+    if (data.success) {
+      showToast(data.message, 'success');
+      bootstrap.Modal.getInstance(document.getElementById('singleDeleteModal')).hide();
+      loadUsers();
+    } else {
+      showToast(data.error || '删除失败', 'danger');
+    }
+  } catch (e) {
+    showToast('网络错误：' + e.message, 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-trash"></i> 确认删除';
+    pendingDeleteUserId = null;
+  }
+}
+
+// 批量删除
+function batchDeleteUsers() {
+  if (selectedUserIds.size === 0) {
+    showToast('请先选择要删除的用户', 'warning');
+    return;
+  }
+
+  document.getElementById('deleteConfirmText').textContent =
+    `确定要删除选中的 ${selectedUserIds.size} 个用户吗？此操作不可恢复！`;
+  new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+}
+
+// 执行批量删除
+async function doDeleteUsers() {
+  const btn = document.getElementById('confirmDeleteBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>删除中...';
+
+  try {
+    const resp = await fetch('/admin/api/users/batch-delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_ids: Array.from(selectedUserIds) })
+    });
+    const data = await resp.json();
+
+    if (data.success) {
+      showToast(data.message, 'success');
+      if (data.errors && data.errors.length > 0) {
+        console.warn('部分删除失败:', data.errors);
+      }
+      bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
+      selectedUserIds.clear();
+      loadUsers();
+    } else {
+      showToast(data.error || '删除失败', 'danger');
+    }
+  } catch (e) {
+    showToast('网络错误：' + e.message, 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-trash"></i> 确认删除';
+  }
+}
+
+// 重置密码
+async function resetUserPassword(userId, username) {
+  if (!confirm(`确定要重置用户 "${username}" 的密码吗？\n\n默认密码将重置为：Maogang@2026`)) {
+    return;
+  }
+
+  try {
+    const resp = await fetch(`/admin/api/users/${userId}/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ new_password: 'Maogang@2026' })
+    });
+    const data = await resp.json();
+
+    if (data.success) {
+      showToast(`用户 ${username} 的密码已重置为: Maogang@2026`, 'success');
+    } else {
+      showToast(data.error || '重置失败', 'danger');
+    }
+  } catch (e) {
+    showToast('网络错误：' + e.message, 'danger');
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// CSV导入功能
+// ──────────────────────────────────────────────────────────────────────────────
+
+function showImportModal() {
+  // 重置导入模态框状态
+  document.getElementById('selectedFileName').textContent = '';
+  document.getElementById('csvPreviewContainer').style.display = 'none';
+  document.getElementById('importResultContainer').style.display = 'none';
+  document.getElementById('importBtn').disabled = true;
+  document.getElementById('csvFileInput').value = '';
+  importRoleType = 'group';
+  selectedCSVFileName = '';
+  selectedCSVContent = '';
+
+  // 更新角色按钮状态
+  document.getElementById('importRoleGroup').classList.add('active');
+  document.getElementById('importRoleTeacher').classList.remove('active');
+
+  new bootstrap.Modal(document.getElementById('importModal')).show();
+}
+
+function setImportRole(role) {
+  if (role === 'teacher' && {{ 'true' if session.get('role') != 'super_admin' else 'false' }}) {
+    return;
+  }
+  importRoleType = role;
+  document.getElementById('importRoleGroup').classList.toggle('active', role === 'group');
+  document.getElementById('importRoleTeacher').classList.toggle('active', role === 'teacher');
+}
+
+function initImportDropZone() {
+  const dropZone = document.getElementById('importDropZone');
+
+  dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+  });
+
+  dropZone.addEventListener('dragleave', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+  });
+
+  dropZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFile(files[0]);
+    }
+  });
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) {
+    handleFile(file);
+  }
+}
+
+function handleFile(file) {
+  // 检查文件类型
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['csv', 'txt'].includes(ext)) {
+    showToast('请选择CSV或TXT格式的文件', 'warning');
+    return;
+  }
+
+  // 检查文件大小（2MB）
+  if (file.size > 2 * 1024 * 1024) {
+    showToast('文件大小不能超过2MB', 'warning');
+    return;
+  }
+
+  const csvPreviewContainer = document.getElementById('csvPreviewContainer');
+  const csvPreviewContent = document.getElementById('csvPreviewContent');
+
+  if (!csvPreviewContainer || !csvPreviewContent) {
+    showToast('预览组件未找到，请刷新页面重试', 'danger');
+    return;
+  }
+
+  document.getElementById('selectedFileName').textContent = `已选择: ${file.name} (${formatFileSize(file.size)})`;
+  csvPreviewContent.textContent = '正在解析文件编码，请稍候...';
+  csvPreviewContainer.style.display = 'block';
+
+  // 保存文件名
+  selectedCSVFileName = file.name;
+
+  // 使用 ArrayBuffer 读取原始数据，由后端处理编码
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const arrayBuffer = e.target.result;
+    // 发送到后端解析并返回预览
+    fetchPreview(file.name, arrayBuffer);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function fetchPreview(filename, arrayBuffer) {
+  const csvPreviewContent = document.getElementById('csvPreviewContent');
+
+  try {
+    const formData = new FormData();
+    formData.append('preview_file', new Blob([arrayBuffer]), filename);
+
+    const resp = await fetch('/admin/api/users/csv/preview', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await resp.json();
+
+    if (data.success) {
+      selectedCSVContent = data.csv_content;  // 保存已正确解码的内容
+      showCSVPreview(data.preview_text);
+      document.getElementById('importBtn').disabled = false;
+    } else {
+      if (csvPreviewContent) {
+        csvPreviewContent.textContent = '预览失败: ' + (data.error || '未知错误');
+      }
+    }
+  } catch (e) {
+    if (csvPreviewContent) {
+      csvPreviewContent.textContent = '预览请求失败: ' + e.message;
+    }
+  }
+}
+
+function showCSVPreview(content) {
+  const csvPreviewContent = document.getElementById('csvPreviewContent');
+  const csvPreviewContainer = document.getElementById('csvPreviewContainer');
+
+  if (!csvPreviewContent || !csvPreviewContainer) return;
+
+  const lines = content.split('\n').slice(0, 6);
+  const preview = lines.map(line => {
+    return line.split(',').map(cell => cell.trim()).join(' | ');
+  }).join('\n');
+
+  csvPreviewContent.textContent = preview;
+  csvPreviewContainer.style.display = 'block';
+}
+
+async function doImportCSV() {
+  // 检查是否有已保存的CSV内容
+  if (!selectedCSVContent) {
+    showToast('请先选择CSV文件', 'warning');
+    return;
+  }
+
+  const btn = document.getElementById('importBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>导入中...';
+
+  const formData = new FormData();
+  formData.append('csv_content', selectedCSVContent);
+  formData.append('csv_filename', selectedCSVFileName);
+  formData.append('role_type', importRoleType);
+
+  try {
+    const resp = await fetch('/admin/api/users/csv/import', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await resp.json();
+
+    const resultContainer = document.getElementById('importResultContainer');
+    const alert = document.getElementById('importResultAlert');
+    const icon = document.getElementById('importResultIcon');
+    const text = document.getElementById('importResultText');
+
+    resultContainer.style.display = 'block';
+
+    if (data.success) {
+      alert.className = 'alert alert-success';
+      icon.className = 'bi bi-check-circle-fill me-2';
+      text.innerHTML = `<strong>${data.message}</strong><br>` +
+        `成功导入: ${data.detail.imported_count} 个，跳跃: ${data.detail.skipped_count} 个`;
+      if (data.detail.errors && data.detail.errors.length > 0) {
+        text.innerHTML += `<br><small class="text-muted">错误详情: ${data.detail.errors.slice(0, 3).join('; ')}</small>`;
+      }
+      showToast(data.message, 'success');
+      loadUsers();
+    } else {
+      alert.className = 'alert alert-danger';
+      icon.className = 'bi bi-x-circle-fill me-2';
+      text.innerHTML = `<strong>导入失败</strong><br>${data.error}`;
+    }
+  } catch (e) {
+    showToast('网络错误：' + e.message, 'danger');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-upload"></i> 开始导入';
+  }
+}
+
+// 导出用户CSV
+function exportUsersCSV() {
+  const role = currentRoleFilter;
+  let url = '/admin/api/users/csv/export';
+  if (role) {
+    url += '?role=' + role;
+  }
+  window.location.href = url;
+}
+
+// 工具函数：格式化文件大小
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 审计日志
+// ──────────────────────────────────────────────────────────────────────────────
+
+async function loadAuditLogs() {
+  const container = document.getElementById('auditLogsList');
+  container.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-hourglass-split"></i> 加载中...</div>';
+  try {
+    const resp = await fetch('/admin/api/audit-logs');
+    const data = await resp.json();
+    if (!data.success) throw new Error(data.error);
+
+    if (!data.logs || data.logs.length === 0) {
+      container.innerHTML = '<div class="text-center text-muted py-4">暂无日志</div>';
+      return;
+    }
+
+    const actionNames = {
+      'LOGIN': '登录',
+      'LOGOUT': '登出',
+      'CREATE_USER': '创建用户',
+      'UPDATE_USER': '更新用户',
+      'DELETE_USER': '删除用户',
+      'BATCH_DELETE_USER': '批量删除用户',
+      'IMPORT_USERS_CSV': 'CSV导入用户',
+      'TOGGLE_USER_ACTIVE': '切换启用状态',
+      'RESET_PASSWORD': '重置密码',
+      'UPDATE_DATASET_STATUS': '更新数据集状态',
+      'BATCH_UPDATE_DATASET_STATUS': '批量更新数据集状态',
+      'DELETE_DATASET': '删除数据集'
+    };
+
+    container.innerHTML = data.logs.map(log => `
+      <div class="log-item">
+        <div class="d-flex justify-content-between">
+          <span>
+            <strong>${log.username}</strong>
+            <span class="badge bg-primary ms-1">${actionNames[log.action] || log.action}</span>
+            ${log.detail ? `<small class="text-muted ms-1">${typeof log.detail === 'object' ? JSON.stringify(log.detail) : log.detail}</small>` : ''}
+          </span>
+          <span class="log-time">${new Date(log.created_at).toLocaleString()}</span>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error('加载审计日志失败:', e);
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 数据集概览统计
+// ──────────────────────────────────────────────────────────────────────────────
+
+let currentDatasetType = 'face';
+
+// 切换数据集类型
+function switchDatasetType(type) {
+  currentDatasetType = type;
+  document.getElementById('btn-face').classList.toggle('active', type === 'face');
+  document.getElementById('btn-face').classList.toggle('btn-primary', type === 'face');
+  document.getElementById('btn-face').classList.toggle('btn-outline-info', type !== 'face');
+  document.getElementById('btn-audio').classList.toggle('active', type === 'audio');
+  document.getElementById('btn-audio').classList.toggle('btn-info', type === 'audio');
+  document.getElementById('btn-audio').classList.toggle('btn-outline-info', type !== 'audio');
+  loadTestsetOverview();
+}
+
+// 加载测试集概览统计
+async function loadTestsetOverview() {
+  const statIds = ['statPublishedCount', 'statPublishedSamples', 'statDraftCount', 'statDraftSamples', 'statSourceTotal', 'statSourceGroups'];
+  statIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '-';
+  });
+
+  try {
+    const resp = await fetch('/testset/admin/overview');
+    const data = await resp.json();
+    console.log('测试集概览 API 响应:', data);
+    if (!data.success) throw new Error(data.error);
+
+    const stats = data.data[currentDatasetType];
+    document.getElementById('statPublishedCount').textContent = stats.published_count || 0;
+    document.getElementById('statPublishedSamples').textContent = stats.published_samples || 0;
+    document.getElementById('statDraftCount').textContent = stats.draft_count || 0;
+    document.getElementById('statDraftSamples').textContent = stats.draft_samples || 0;
+    document.getElementById('statSourceTotal').textContent = stats.source_total || 0;
+    document.getElementById('statSourceGroups').textContent = stats.source_groups || 0;
+  } catch (e) {
+    console.error('加载测试集概览失败:', e);
+  }
+}
+
+// 加载数据集概览统计（兼容旧函数）
+async function loadDatasetOverview() {
+  loadTestsetOverview();
+}
+
+// 显示 Toast
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const id = 'toast-' + Date.now();
+  const colors = {
+    success: 'bg-success',
+    danger: 'bg-danger',
+    warning: 'bg-warning text-dark',
+    info: 'bg-info'
+  };
+  container.innerHTML += `
+    <div id="${id}" class="toast align-items-center text-white ${colors[type] || 'bg-info'}" role="alert">
+      <div class="d-flex">
+        <div class="toast-body">${message}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  `;
+  const toastEl = document.getElementById(id);
+  const toast = new bootstrap.Toast(toastEl);
+  toast.show();
+  toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+}
+
+// 从文件名提取情绪标签
+function extractEmotionFromFilename(filename) {
+  const emotions = ['angry', 'disgust', 'fear', 'happy', 'sad', 'surprise', 'neutral',
+                   'anger', 'fear', 'happy', 'neutral', 'sad', 'surprise'];
+  for (const e of emotions) {
+    if (filename.toLowerCase().includes(e)) {
+      return e;
+    }
+  }
+  return 'unknown';
+}</script>
+{% endblock %}

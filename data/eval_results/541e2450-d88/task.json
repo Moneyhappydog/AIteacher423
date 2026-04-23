@@ -1,0 +1,21 @@
+{
+  "task_id": "541e2450-d88",
+  "model_id": "7dada8ef-7cf",
+  "model_name": "audio_cnn_fp32_0420_0055",
+  "model_framework": "onnx",
+  "model_path": "/home/pub/code/eduplatform/data/uploaded_models/G06/7dada8ef-7cf.onnx",
+  "testset_id": "audio_20260420_013314",
+  "testset_name": "model_audio_0420_0133",
+  "course": "audio",
+  "group_id": "G06",
+  "status": "failed",
+  "created_at": "2026-04-20T01:56:45.642797",
+  "started_at": "2026-04-20T01:56:45.991444",
+  "completed_at": "2026-04-20T01:56:46.970684",
+  "progress": 100,
+  "total_samples": 3,
+  "processed_samples": 3,
+  "metrics": null,
+  "predictions": [],
+  "error": "ModelEvalService._calculate_metrics() takes 4 positional arguments but 5 were given"
+}

@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台 - 首页{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section text-center">
+  <div class="container">
+    <div class="hero-badge mb-3">✨ 欢迎来到 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台！✨</div>
+    <h1 class="hero-title">探索<span class="highlight-text">六大AI模块</span><br>开启智能之旅</h1>
+    <p class="hero-subtitle">
+      从情感识别到时序预测，从具身智能到自动驾驶，<br>
+      在这里，每个小朋友都能成为AI小专家！
+    </p>
+    <div class="hero-decoration">
+      <span class="float-emoji" style="animation-delay:0s">😊</span>
+      <span class="float-emoji" style="animation-delay:0.5s">🎤</span>
+      <span class="float-emoji" style="animation-delay:1s">💖</span>
+      <span class="float-emoji" style="animation-delay:1.5s">🤖</span>
+      <span class="float-emoji" style="animation-delay:2s">🚗</span>
+      <span class="float-emoji" style="animation-delay:2.5s">🌱</span>
+    </div>
+  </div>
+</section>
+
+<!-- Module Cards -->
+<section class="modules-section">
+  <div class="container">
+    <h2 class="section-title text-center mb-5">🚀 选择你的探索任务</h2>
+    <div class="row g-4 justify-content-center">
+
+      <!-- Module 1: 情感计算 (融合模块) -->
+      <div class="col-lg-4 col-md-6">
+        <a href="{{ url_for('emotion.index') }}" class="module-card-link">
+          <div class="module-card" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A); border: 2px solid #F59E0B;">
+            <div class="module-card-icon">💖</div>
+            <div class="module-card-badge">模块 1</div>
+            <h3 class="module-card-title">情感计算</h3>
+            <p class="module-card-desc">
+              融合表情识别、声音情绪判断，综合分析你的真实情感！当"人脸"和"声音"融合时，AI会如何判断？
+            </p>
+            <div class="module-card-tags">
+              <span class="tag">📷 表情识别</span>
+              <span class="tag">🎤 声音情绪</span>
+              <span class="tag">🔀 多模态融合</span>
+            </div>
+            <div class="module-card-btn">开始探索 →</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Module 2: 时序预测 (智能生态瓶) -->
+      <div class="col-lg-4 col-md-6">
+        <a href="{{ url_for('eco.index') }}" class="module-card-link">
+          <div class="module-card card-eco">
+            <div class="module-card-icon">🌿</div>
+            <div class="module-card-badge">模块 2</div>
+            <h3 class="module-card-title">时序预测</h3>
+            <p class="module-card-desc">
+              模拟生态瓶传感器数据，用AI预测未来的光照、温度和电量变化，最终实现智能闭环控制！
+            </p>
+            <div class="module-card-tags">
+              <span class="tag">🌡️ 温度传感器</span>
+              <span class="tag">☀️ 光照传感器</span>
+              <span class="tag">📈 时序预测</span>
+            </div>
+            <div class="module-card-btn">开始探索 →</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Module 3: 具身智能 -->
+      <div class="col-lg-4 col-md-6">
+        <a href="#" class="module-card-link" onclick="alert('具身智能模块即将上线，敬请期待！'); return false;">
+          <div class="module-card" style="background: linear-gradient(135deg, #DBEAFE, #BFDBFE); border: 2px solid #3B82F6;">
+            <div class="module-card-icon">🤖</div>
+            <div class="module-card-badge">模块 3</div>
+            <h3 class="module-card-title">具身智能</h3>
+            <p class="module-card-desc">
+              看AI如何通过"身体"与真实世界互动！机器人是如何学会抓取、行走和思考的？
+            </p>
+            <div class="module-card-tags">
+              <span class="tag">🦾 机器人控制</span>
+              <span class="tag">👀 环境感知</span>
+              <span class="tag">🧠 强化学习</span>
+            </div>
+            <div class="module-card-btn">即将上线 →</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Module 4: 自动驾驶 -->
+      <div class="col-lg-4 col-md-6">
+        <a href="#" class="module-card-link" onclick="alert('自动驾驶模块即将上线，敬请期待！'); return false;">
+          <div class="module-card" style="background: linear-gradient(135deg, #FCE7F3, #FBCFE8); border: 2px solid #EC4899;">
+            <div class="module-card-icon">🚗</div>
+            <div class="module-card-badge">模块 4</div>
+            <h3 class="module-card-title">自动驾驶</h3>
+            <p class="module-card-desc">
+              探索自动驾驶汽车是如何"看"清道路、识别行人和做出驾驶决策的！
+            </p>
+            <div class="module-card-tags">
+              <span class="tag">📡 雷达感知</span>
+              <span class="tag">🗺️ 路径规划</span>
+              <span class="tag">⚡ 实时决策</span>
+            </div>
+            <div class="module-card-btn">即将上线 →</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Module 5: 鹰眼系统 -->
+      <div class="col-lg-4 col-md-6">
+        <a href="#" class="module-card-link" onclick="alert('鹰眼系统模块即将上线，敬请期待！'); return false;">
+          <div class="module-card" style="background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border: 2px solid #10B981;">
+            <div class="module-card-icon">🦅</div>
+            <div class="module-card-badge">模块 5</div>
+            <h3 class="module-card-title">鹰眼系统</h3>
+            <p class="module-card-desc">
+              像老鹰一样从高空俯瞰世界！探索目标检测、图像分割和遥感影像分析的奥秘。
+            </p>
+            <div class="module-card-tags">
+              <span class="tag">🎯 目标检测</span>
+              <span class="tag">🖼️ 图像分割</span>
+              <span class="tag">🛰️ 遥感分析</span>
+            </div>
+            <div class="module-card-btn">即将上线 →</div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Module 6: 3D打印 -->
+      <div class="col-lg-4 col-md-6">
+        <a href="#" class="module-card-link" onclick="alert('3D打印模块即将上线，敬请期待！'); return false;">
+          <div class="module-card" style="background: linear-gradient(135deg, #FDF2F8, #FBCFE8); border: 2px solid #DB2777;">
+            <div class="module-card-icon">🖨️</div>
+            <div class="module-card-badge">模块 6</div>
+            <h3 class="module-card-title">3D打印</h3>
+            <p class="module-card-desc">
+              从数字模型到真实物体！学习三维建模、切片处理和3D打印的完整流程。
+            </p>
+            <div class="module-card-tags">
+              <span class="tag">📐 三维建模</span>
+              <span class="tag">🔪 切片处理</span>
+              <span class="tag">🏗️ 打印制造</span>
+            </div>
+            <div class="module-card-btn">即将上线 →</div>
+          </div>
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Fun Facts Section -->
+<section class="facts-section">
+  <div class="container">
+    <h2 class="section-title text-center mb-4">🤔 你知道吗？</h2>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="fact-card">
+          <div class="fact-icon">💖</div>
+          <p><strong>情感计算</strong>让AI同时"看到"表情和"听到"声音，综合判断你的真实情感！</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="fact-card">
+          <div class="fact-icon">🌱</div>
+          <p><strong>时序预测</strong>让AI根据历史数据预测未来，就像天气预报一样神奇！</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="fact-card">
+          <div class="fact-icon">🤖</div>
+          <p><strong>具身智能</strong>让AI拥有"身体"，能像人一样与环境互动！</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="fact-card">
+          <div class="fact-icon">🚗</div>
+          <p><strong>自动驾驶</strong>汽车每秒处理海量传感器数据，做出安全驾驶决策！</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="fact-card">
+          <div class="fact-icon">🦅</div>
+          <p><strong>鹰眼系统</strong>可以从高空俯瞰大地，检测车辆、建筑物和道路！</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="fact-card">
+          <div class="fact-icon">🖨️</div>
+          <p><strong>3D打印</strong>让数字模型变成真实物体，从想象到实现！</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Quick Access Section -->
+<section class="modules-section">
+  <div class="container">
+    <h2 class="section-title text-center mb-4">🎮 课程工具</h2>
+    <div class="row g-4 justify-content-center">
+      <div class="col-lg-3 col-md-4">
+        <a href="{{ url_for('emotion_data.collect_page') }}" class="module-card-link">
+          <div class="module-card" style="background: linear-gradient(135deg,#EDE9FE,#DDD6FE); border: 2px solid #7C3AED;">
+            <div class="module-card-icon">📷</div>
+            <h3 class="module-card-title" style="font-size:1.1rem">表情数据采集</h3>
+            <p class="module-card-desc small">采集表情数据，AI自动标注</p>
+          </div>
+        </a>
+      </div>
+      <div class="col-lg-3 col-md-4">
+        <a href="{{ url_for('leaderboard.index') }}" class="module-card-link">
+          <div class="module-card" style="background: linear-gradient(135deg,#FEF3C7,#FDE68A); border: 2px solid #F59E0B;">
+            <div class="module-card-icon">🏆</div>
+            <h3 class="module-card-title" style="font-size:1.1rem">模型评估排行榜</h3>
+            <p class="module-card-desc small">排行榜竞赛，看谁登顶！</p>
+          </div>
+        </a>
+      </div>
+      <div class="col-lg-3 col-md-4">
+        <a href="{{ url_for('skill_tree.index') }}" class="module-card-link">
+          <div class="module-card" style="background: linear-gradient(135deg,#F0FDF4,#DCFCE7); border: 2px solid #10B981;">
+            <div class="module-card-icon">🌳</div>
+            <h3 class="module-card-title" style="font-size:1.1rem">我的技能树</h3>
+            <p class="module-card-desc small">解锁AI技能，完成课程任务</p>
+          </div>
+        </a>
+      </div>
+      <div class="col-lg-3 col-md-4">
+        <a href="{{ url_for('eco.index') }}" class="module-card-link">
+          <div class="module-card" style="background: linear-gradient(135deg,#DBEAFE,#BFDBFE); border: 2px solid #3B82F6;">
+            <div class="module-card-icon">📊</div>
+            <h3 class="module-card-title" style="font-size:1.1rem">传感器采集</h3>
+            <p class="module-card-desc small">模拟生态瓶传感器采集数据</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

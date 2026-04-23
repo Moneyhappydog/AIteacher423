@@ -1,0 +1,17 @@
+{
+  "draft_id": "9e7f1296",
+  "name": "4.21人脸测试",
+  "data_type": "face",
+  "created_at": "2026-04-21T13:54:35.897459",
+  "total_files": 933,
+  "selected_groups": [
+    "G02",
+    "G04",
+    "G06",
+    "G03",
+    "G07",
+    "G01",
+    "G05",
+    "user_3"
+  ]
+}

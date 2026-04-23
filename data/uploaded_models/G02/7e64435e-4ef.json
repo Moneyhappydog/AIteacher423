@@ -1,0 +1,18 @@
+{
+  "model_id": "7e64435e-4ef",
+  "group_id": "G02",
+  "course": "face",
+  "model_name": "audio_cnn_fp32",
+  "description": "",
+  "filename": "7e64435e-4ef.onnx",
+  "original_filename": "audio_cnn_fp32.onnx",
+  "file_path": "G02/7e64435e-4ef.onnx",
+  "file_size": 922267,
+  "file_hash": "99fe6d0c46f467a3ab18bce66c3b71b9",
+  "framework": "onnx",
+  "file_ext": ".onnx",
+  "uploaded_at": "2026-04-22T13:45:41.001861",
+  "is_active": true,
+  "accuracy": null,
+  "eval_count": 0
+}

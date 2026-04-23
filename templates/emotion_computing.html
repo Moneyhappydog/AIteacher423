@@ -1,0 +1,838 @@
+{% extends "base.html" %}
+{% block title %}情感计算 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+<style>
+  .emotion-card {
+    background: linear-gradient(135deg, #f5f3ff, #eef2ff);
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+  }
+  .emotion-emoji { font-size: 5rem; }
+  .emotion-label { font-size: 2rem; font-weight: 800; color: #7C3AED; }
+  .confidence-bar { height: 12px; background: #e0e0e0; border-radius: 6px; overflow: hidden; }
+  .confidence-fill { height: 100%; background: linear-gradient(90deg, #7C3AED, #EC4899); transition: width 0.5s; }
+  .result-display {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+  .toy-option {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .toy-option:hover { border-color: #7C3AED; transform: translateY(-5px); }
+  .toy-option.selected { border-color: #7C3AED; background: #f5f3ff; }
+  .toy-icon { font-size: 3rem; }
+  .emotion-visualizer { min-height: 140px; display: flex; align-items: flex-end; gap: 12px; justify-content: center; padding-bottom: 8px; }
+  .emotion-bar-labels { display: flex; align-items: flex-end; gap: 12px; justify-content: center; }
+  .emotion-bar-wrapper { display: flex; flex-direction: column; align-items: center; }
+  .emotion-bar {
+    width: 48px; background: linear-gradient(180deg, #7C3AED, #EC4899);
+    border-radius: 8px 8px 0 0; transition: height 0.3s;
+  }
+  .emotion-bar-label { font-size: 0.85rem; color: #666; margin-top: 6px; font-weight: 500; }
+  .preview-light {
+    width: 60px; height: 60px; border-radius: 50%;
+    box-shadow: 0 0 30px currentColor;
+    transition: all 0.3s;
+    display: inline-block;
+  }
+
+  /* 权重调节面板 */
+  .weight-panel {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .weight-panel-header {
+    font-size: 0.85rem;
+    color: #92400e;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .weight-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .weight-label {
+    font-size: 0.75rem;
+    color: #92400e;
+    min-width: 60px;
+    text-align: center;
+  }
+  .weight-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #7C3AED 0%, #EC4899 100%);
+    outline: none;
+  }
+  .weight-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #7C3AED;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  .weight-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid #7C3AED;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  .weight-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #7C3AED;
+    min-width: 50px;
+    text-align: center;
+  }
+  .weight-presets {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .weight-preset-btn {
+    background: rgba(124, 58, 237, 0.1);
+    border: 1px solid rgba(124, 58, 237, 0.3);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    color: #7C3AED;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .weight-preset-btn:hover {
+    background: rgba(124, 58, 237, 0.2);
+  }
+  .weight-preset-btn.active {
+    background: #7C3AED;
+    color: white;
+  }
+  .weight-preset-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .weight-slider.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .weight-slider.disabled::-webkit-slider-thumb {
+    cursor: not-allowed;
+  }
+  .weight-slider.disabled::-moz-range-thumb {
+    cursor: not-allowed;
+  }
+  .weight-hint {
+    font-size: 0.7rem;
+    color: #92400e;
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: rgba(124, 58, 237, 0.1);
+    border-radius: 6px;
+    display: none;
+  }
+  .weight-hint.show {
+    display: block;
+  }
+  .weight-hint.auto {
+    background: rgba(16, 185, 129, 0.1);
+    color: #065f46;
+  }
+
+  /* 策略选择器 */
+  .strategy-panel {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .strategy-panel-header {
+    font-size: 0.85rem;
+    color: #065f46;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .strategy-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .strategy-option {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .strategy-option:hover {
+    background: rgba(16, 185, 129, 0.2);
+    transform: translateY(-2px);
+  }
+  .strategy-option.selected {
+    background: #10b981;
+    border-color: #10b981;
+    color: white;
+  }
+  .strategy-option input[type="radio"] {
+    display: none;
+  }
+  .strategy-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  .strategy-desc {
+    font-size: 0.65rem;
+    opacity: 0.8;
+  }
+
+  /* 当前配置显示 */
+  .current-config {
+    background: rgba(124, 58, 237, 0.1);
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 12px;
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+  .current-config strong {
+    color: #7C3AED;
+  }
+
+  .camera-container {
+    position: relative;
+    background: #0D0D1A;
+    border-radius: 16px;
+    overflow: hidden;
+    min-height: 300px;
+  }
+  .camera-container #videoEl {
+    width: 100%;
+    border-radius: 16px;
+    vertical-align: top;
+  }
+  .camera-container #outputImg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 16px;
+  }
+  .camera-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a35;
+    border-radius: 16px;
+  }
+  .placeholder-content { text-align: center; }
+  .placeholder-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+  .placeholder-content p { color: #94a3b8; font-size: 0.9rem; margin: 0; }
+
+  /* 分割线 */
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #e5e7eb, transparent);
+    margin: 16px 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header text-center">
+  <div class="page-header-icon">💖</div>
+  <h1 class="page-title">情感计算实验室</h1>
+  <p class="page-subtitle">当表情和声音同时输入，AI会如何"读懂"你的心？</p>
+</div>
+
+<div class="container pb-5">
+  <!-- 设置面板区域 -->
+  <div class="row g-3 mb-4">
+    <!-- 表情模型选择 -->
+    <div class="col-md-6">
+      <div class="model-selector" id="faceModelSelector">
+        <div class="model-selector-label">
+          <i class="bi bi-person-circle"></i> 表情识别模型
+        </div>
+        <select id="faceModelSelect" onchange="switchFaceModel()">
+          <option value="">加载中...</option>
+        </select>
+        <div class="model-info" id="faceModelInfo">
+          <span class="badge">系统默认</span>
+          <span>FER2013 Mini-XCEPTION</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 声音情绪模型选择 -->
+    <div class="col-md-6">
+      <div class="model-selector" id="audioModelSelector">
+        <div class="model-selector-label">
+          <i class="bi bi-mic-fill"></i> 声音情绪模型
+        </div>
+        <select id="audioModelSelect" onchange="switchAudioModel()">
+          <option value="">加载中...</option>
+        </select>
+        <div class="model-info" id="audioModelInfo">
+          <span class="badge">系统默认</span>
+          <span>HuBERT Speech Emotion</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 权重和策略面板 -->
+  <div class="row g-3 mb-4">
+    <!-- 权重调节 -->
+    <div class="col-lg-6">
+      <div class="weight-panel">
+        <div class="weight-panel-header">
+          <i class="bi bi-sliders"></i> 融合权重调节
+          <span style="margin-left: auto; font-size: 0.7rem; color: #92400e; font-weight: 400;">拖动滑块调整表情/声音权重</span>
+        </div>
+        <div class="weight-slider-container">
+          <span class="weight-label">😀 表情</span>
+          <input type="range" class="weight-slider" id="faceWeightSlider"
+                 min="0" max="100" value="60"
+                 oninput="updateWeightDisplay()">
+          <span class="weight-value" id="faceWeightValue">60%</span>
+        </div>
+        <div class="weight-slider-container" style="margin-top: 8px;">
+          <span class="weight-label">🎤 声音</span>
+          <input type="range" class="weight-slider" id="audioWeightSlider"
+                 min="0" max="100" value="40"
+                 oninput="updateAudioWeightDisplay()">
+          <span class="weight-value" id="audioWeightValue">40%</span>
+        </div>
+        <div class="weight-presets">
+          <button class="weight-preset-btn active" onclick="setWeightPreset(60)">😀 6:4</button>
+          <button class="weight-preset-btn" onclick="setWeightPreset(70)">😀 7:3</button>
+          <button class="weight-preset-btn" onclick="setWeightPreset(50)">⚖️ 5:5</button>
+          <button class="weight-preset-btn" onclick="setWeightPreset(40)">🎤 4:6</button>
+          <button class="weight-preset-btn" onclick="setWeightPreset(80)">😀 8:2</button>
+          <button class="weight-preset-btn" onclick="setWeightPreset(20)">🎤 2:8</button>
+        </div>
+        <div class="weight-hint" id="weightHint">
+          💡 此策略不使用手动权重设置
+        </div>
+      </div>
+    </div>
+
+    <!-- 融合策略 -->
+    <div class="col-lg-6">
+      <div class="strategy-panel">
+        <div class="strategy-panel-header">
+          <i class="bi bi-cpu"></i> 融合策略
+          <span style="margin-left: auto; font-size: 0.7rem; color: #065f46; font-weight: 400;">选择不同的融合方式</span>
+        </div>
+        <div class="strategy-options">
+          <label class="strategy-option selected" data-strategy="weighted_average" data-uses-weight="true">
+            <input type="radio" name="strategy" value="weighted_average" checked>
+            <div class="strategy-name">加权平均 ⭐</div>
+            <div class="strategy-desc">按权重计算综合得分</div>
+          </label>
+          <label class="strategy-option" data-strategy="max_confidence" data-uses-weight="false">
+            <input type="radio" name="strategy" value="max_confidence">
+            <div class="strategy-name">最大置信度</div>
+            <div class="strategy-desc">选择置信度更高的模态</div>
+          </label>
+          <label class="strategy-option" data-strategy="emotion_voting" data-uses-weight="true">
+            <input type="radio" name="strategy" value="emotion_voting">
+            <div class="strategy-name">情绪投票</div>
+            <div class="strategy-desc">各情绪按置信度投票</div>
+          </label>
+          <label class="strategy-option" data-strategy="adaptive" data-uses-weight="false">
+            <input type="radio" name="strategy" value="adaptive">
+            <div class="strategy-name">自适应融合</div>
+            <div class="strategy-desc">系统自动调整权重</div>
+          </label>
+        </div>
+        <div class="current-config" id="currentConfig">
+          当前配置：<strong>加权平均</strong>，表情 <strong>60%</strong> + 声音 <strong>40%</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- 左侧：输入区域 -->
+    <div class="col-lg-5">
+      <!-- 摄像头区域 -->
+      <div class="content-card mb-4">
+        <div class="content-card-header"><i class="bi bi-camera-video"></i> 表情识别</div>
+        <div class="camera-container" style="border-radius: 12px; overflow: hidden; background: #1a1a35;">
+          <video id="videoEl" autoplay playsinline style="width:100%;transform:scaleX(-1);"></video>
+          <canvas id="canvasEl" style="display: none;"></canvas>
+          <img id="outputImg" src="" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.25s ease;">
+          <div class="camera-placeholder" id="cameraPlaceholder">
+            <div class="placeholder-content">
+              <div class="placeholder-icon">📷</div>
+              <p>点击开始摄像头</p>
+            </div>
+          </div>
+        </div>
+        <div class="text-center mt-3">
+          <button class="btn-fun btn-purple" id="startCameraBtn" onclick="startCamera()">📷 开启摄像头</button>
+          <button class="btn-fun btn-red d-none" id="stopCameraBtn" onclick="stopCamera()">⏹️ 关闭</button>
+        </div>
+        <p class="landmark-hint text-center mt-2" style="font-size: 0.85rem; color: #aaa;">
+          💡 绿色小点是模型检测到的脸部关键点（共 68 个），彩色方框表示识别到的情绪
+        </p>
+        <div id="faceResult" class="mt-3 text-center"></div>
+      </div>
+
+      <!-- 录音区域 -->
+      <div class="content-card">
+        <div class="content-card-header"><i class="bi bi-mic"></i> 声音情绪</div>
+        <div class="text-center mb-3">
+          <button class="btn-fun btn-green btn-lg" id="recordBtn" onclick="toggleRecording()">
+            <i class="bi bi-mic-fill"></i> 开始录音
+          </button>
+        </div>
+        <div id="audioWaveform" class="mb-3" style="height: 60px; background: #f5f5f5; border-radius: 8px;"></div>
+        <div id="audioResult" class="text-center"></div>
+      </div>
+    </div>
+
+    <!-- 右侧：融合结果 -->
+    <div class="col-lg-7">
+      <div class="emotion-card mb-4">
+        <h4 class="mb-3">🎯 情感计算判断</h4>
+        <div id="fusedEmotion">
+          <div class="emotion-emoji">🤔</div>
+          <div class="emotion-label">等待输入...</div>
+          <p class="text-muted">请先进行表情识别或声音录制</p>
+        </div>
+        <div class="emotion-visualizer mt-3" id="emotionVisualizer"></div>
+      </div>
+
+      <!-- 详细结果 -->
+      <div class="result-display mb-4">
+        <h5 class="mb-3">📊 详细分析</h5>
+        <div class="row">
+          <div class="col-6">
+            <h6 class="text-primary">😀 表情识别</h6>
+            <div id="faceDetail"></div>
+          </div>
+          <div class="col-6">
+            <h6 class="text-success">🎤 声音情绪</h6>
+            <div id="audioDetail"></div>
+          </div>
+        </div>
+        <div class="mt-3 p-2 bg-light rounded" id="fusionInfo">
+          <small class="text-muted" id="fusionInfoText">融合权重: 表情 60% + 声音 40%</small>
+        </div>
+      </div>
+
+      <!-- 情绪小玩具选择 -->
+      <div class="content-card">
+        <div class="content-card-header"><i class="bi bi-play-circle"></i> 情绪小玩具</div>
+        <div class="row g-3 mt-2">
+          <div class="col-4">
+            <div class="toy-option" onclick="selectToy('lamp')" data-toy="lamp">
+              <div class="toy-icon">💡</div>
+              <div class="mt-2"><strong>心情灯</strong></div>
+              <small class="text-muted">根据心情变色</small>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="toy-option" onclick="selectToy('diary')" data-toy="diary">
+              <div class="toy-icon">📔</div>
+              <div class="mt-2"><strong>心情日记</strong></div>
+              <small class="text-muted">记录情绪变化</small>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="toy-option" onclick="selectToy('badge')" data-toy="badge">
+              <div class="toy-icon">🎖️</div>
+              <div class="mt-2"><strong>情绪徽章</strong></div>
+              <small class="text-muted">展示今日心情</small>
+            </div>
+          </div>
+        </div>
+
+        <div id="toyPreview" class="mt-4 text-center" style="display: none;">
+          <div id="lampPreview" class="d-none">
+            <div style="text-align: center;">
+              <div class="preview-light" style="background: #7C3AED; color: #7C3AED; margin: 0 auto;"></div>
+            </div>
+            <p class="mt-2">心情灯效</p>
+          </div>
+          <div id="diaryPreview" class="d-none">
+            <p>📔 心情日记</p>
+            <p id="diaryContent" class="text-muted">今日心情: 开心</p>
+          </div>
+          <div id="badgePreview" class="d-none">
+            <div style="font-size: 4rem;" id="badgeEmoji">😊</div>
+            <p class="mt-2">这是你的今日心情徽章</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/emotion_computing.js') }}"></script>
+<script>
+// ── 全局变量 ──────────────────────────────────────────────────────────────────
+let customFaceModels = [];
+let customAudioModels = [];
+let currentFaceModelId = null;
+let currentAudioModelId = null;
+let currentFaceWeight = 0.6;
+let currentAudioWeight = 0.4;
+let currentStrategy = 'weighted_average';
+
+// ── 表情模型选择器 ───────────────────────────────────────────────────────────
+function loadFaceModels() {
+  fetch('/api/models/list?course=face')
+    .then(r => r.json())
+    .then(data => {
+      customFaceModels = data.models || [];
+      renderFaceModelSelector();
+    })
+    .catch(err => {
+      console.log('加载表情模型失败:', err);
+      renderFaceModelSelector();
+    });
+}
+
+function renderFaceModelSelector() {
+  const select = document.getElementById('faceModelSelect');
+  const modelInfo = document.getElementById('faceModelInfo');
+  if (!select) return;
+
+  select.innerHTML = '';
+
+  // 默认系统模型
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = '';
+  defaultOpt.textContent = '🤖 系统模型 (FER2013 Mini-XCEPTION)';
+  select.appendChild(defaultOpt);
+
+  // 自定义模型
+  if (customFaceModels.length > 0) {
+    customFaceModels.forEach(model => {
+      const opt = document.createElement('option');
+      opt.value = model.id;
+      opt.textContent = `📦 ${model.model_name} (${(model.accuracy * 100).toFixed(1)}%)`;
+      if (model.is_default) opt.textContent += ' ⭐';
+      select.appendChild(opt);
+    });
+  }
+
+  if (currentFaceModelId) select.value = currentFaceModelId;
+  updateFaceModelInfo();
+}
+
+function updateFaceModelInfo() {
+  const select = document.getElementById('faceModelSelect');
+  const modelInfo = document.getElementById('faceModelInfo');
+  if (!select || !modelInfo) return;
+
+  const selectedId = select.value;
+  if (!selectedId) {
+    modelInfo.innerHTML = '<span class="badge">系统默认</span><span>FER2013 Mini-XCEPTION</span>';
+    currentFaceModelId = null;
+  } else {
+    const model = customFaceModels.find(m => m.id === selectedId);
+    if (model) {
+      modelInfo.innerHTML = `
+        <span class="badge">${model.framework || 'tensorflow'}</span>
+        <span class="accuracy">准确率: ${(model.accuracy * 100).toFixed(1)}%</span>
+      `;
+      currentFaceModelId = selectedId;
+    }
+  }
+}
+
+function switchFaceModel() {
+  updateFaceModelInfo();
+}
+
+// ── 声音情绪模型选择器 ───────────────────────────────────────────────────────────
+function loadAudioModels() {
+  fetch('/api/models/list?course=audio')
+    .then(r => r.json())
+    .then(data => {
+      customAudioModels = data.models || [];
+      renderAudioModelSelector();
+    })
+    .catch(err => {
+      console.log('加载声音情绪模型失败:', err);
+      renderAudioModelSelector();
+    });
+}
+
+function renderAudioModelSelector() {
+  const select = document.getElementById('audioModelSelect');
+  const modelInfo = document.getElementById('audioModelInfo');
+  if (!select) return;
+
+  select.innerHTML = '';
+
+  // 默认系统模型
+  const defaultOpt = document.createElement('option');
+  defaultOpt.value = '';
+  defaultOpt.textContent = '🤖 系统模型 (HuBERT Speech Emotion)';
+  select.appendChild(defaultOpt);
+
+  // 自定义模型
+  if (customAudioModels.length > 0) {
+    customAudioModels.forEach(model => {
+      const opt = document.createElement('option');
+      opt.value = model.id;
+      opt.textContent = `📦 ${model.model_name} (${(model.accuracy * 100).toFixed(1)}%)`;
+      if (model.is_default) opt.textContent += ' ⭐';
+      select.appendChild(opt);
+    });
+  }
+
+  if (currentAudioModelId) select.value = currentAudioModelId;
+  updateAudioModelInfo();
+}
+
+function updateAudioModelInfo() {
+  const select = document.getElementById('audioModelSelect');
+  const modelInfo = document.getElementById('audioModelInfo');
+  if (!select || !modelInfo) return;
+
+  const selectedId = select.value;
+  if (!selectedId) {
+    modelInfo.innerHTML = '<span class="badge">系统默认</span><span>HuBERT Speech Emotion</span>';
+    currentAudioModelId = null;
+  } else {
+    const model = customAudioModels.find(m => m.id === selectedId);
+    if (model) {
+      modelInfo.innerHTML = `
+        <span class="badge">${model.framework || 'pytorch'}</span>
+        <span class="accuracy">准确率: ${(model.accuracy * 100).toFixed(1)}%</span>
+      `;
+      currentAudioModelId = selectedId;
+    }
+  }
+}
+
+function switchAudioModel() {
+  updateAudioModelInfo();
+}
+
+// ── 权重调节 ────────────────────────────────────────────────────────────────
+function updateWeightDisplay() {
+  const slider = document.getElementById('faceWeightSlider');
+  const audioSlider = document.getElementById('audioWeightSlider');
+  const faceValue = document.getElementById('faceWeightValue');
+  const audioValue = document.getElementById('audioWeightValue');
+
+  const val = parseInt(slider.value);
+  const audioVal = 100 - val;
+
+  faceValue.textContent = val + '%';
+  audioValue.textContent = audioVal + '%';
+  audioSlider.value = audioVal;
+
+  currentFaceWeight = val / 100;
+  currentAudioWeight = audioVal / 100;
+
+  // 更新预设按钮状态
+  document.querySelectorAll('.weight-preset-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  const activePreset = document.querySelector(`.weight-preset-btn[onclick="setWeightPreset(${val})"]`);
+  if (activePreset) activePreset.classList.add('active');
+
+  updateConfigDisplay();
+}
+
+function updateAudioWeightDisplay() {
+  const slider = document.getElementById('audioWeightSlider');
+  const faceSlider = document.getElementById('faceWeightSlider');
+  const faceValue = document.getElementById('faceWeightValue');
+  const audioValue = document.getElementById('audioWeightValue');
+
+  const val = parseInt(slider.value);
+  const faceVal = 100 - val;
+
+  faceValue.textContent = faceVal + '%';
+  audioValue.textContent = val + '%';
+  faceSlider.value = faceVal;
+
+  currentFaceWeight = faceVal / 100;
+  currentAudioWeight = val / 100;
+
+  // 更新预设按钮状态
+  document.querySelectorAll('.weight-preset-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  const activePreset = document.querySelector(`.weight-preset-btn[onclick="setWeightPreset(${faceVal})"]`);
+  if (activePreset) activePreset.classList.add('active');
+
+  updateConfigDisplay();
+}
+
+function setWeightPreset(facePercent) {
+  const faceSlider = document.getElementById('faceWeightSlider');
+  const audioSlider = document.getElementById('audioWeightSlider');
+
+  faceSlider.value = facePercent;
+  audioSlider.value = 100 - facePercent;
+
+  updateWeightDisplay();
+}
+
+// ── 策略选择 ────────────────────────────────────────────────────────────────
+const strategyNames = {
+  'weighted_average': '加权平均',
+  'max_confidence': '最大置信度',
+  'emotion_voting': '情绪投票',
+  'adaptive': '自适应'
+};
+
+function initStrategySelector() {
+  document.querySelectorAll('.strategy-option').forEach(option => {
+    option.addEventListener('click', function() {
+      // 移除所有选中状态
+      document.querySelectorAll('.strategy-option').forEach(opt => {
+        opt.classList.remove('selected');
+      });
+      // 添加选中状态
+      this.classList.add('selected');
+      // 设置 radio 选中
+      const radio = this.querySelector('input[type="radio"]');
+      radio.checked = true;
+      // 更新当前策略
+      currentStrategy = this.dataset.strategy;
+
+      // 根据策略处理权重滑块
+      const usesWeight = this.dataset.usesWeight === 'true';
+      updateWeightSliderState(usesWeight);
+
+      updateConfigDisplay();
+      // 如果有当前结果，重新计算融合
+      if (window.currentFaceResult || window.currentAudioResult) {
+        updateFusion();
+      }
+    });
+  });
+}
+
+function updateWeightSliderState(enabled) {
+  const faceSlider = document.getElementById('faceWeightSlider');
+  const audioSlider = document.getElementById('audioWeightSlider');
+  const presetBtns = document.querySelectorAll('.weight-preset-btn');
+  const weightHint = document.getElementById('weightHint');
+
+  if (enabled) {
+    // 启用权重滑块
+    faceSlider.classList.remove('disabled');
+    audioSlider.classList.remove('disabled');
+    presetBtns.forEach(btn => btn.classList.remove('disabled'));
+    weightHint.classList.remove('show', 'auto');
+  } else {
+    // 禁用权重滑块
+    faceSlider.classList.add('disabled');
+    audioSlider.classList.add('disabled');
+    presetBtns.forEach(btn => btn.classList.add('disabled'));
+
+    // 显示提示
+    if (currentStrategy === 'adaptive') {
+      weightHint.textContent = '🤖 自适应策略：系统将根据识别质量自动调整权重';
+      weightHint.classList.add('show', 'auto');
+    } else {
+      weightHint.textContent = '💡 此策略不使用手动权重设置';
+      weightHint.classList.add('show');
+      weightHint.classList.remove('auto');
+    }
+  }
+}
+
+function updateConfigDisplay() {
+  const config = document.getElementById('currentConfig');
+  const infoText = document.getElementById('fusionInfoText');
+  const strategyName = strategyNames[currentStrategy] || '加权平均';
+
+  const facePercent = Math.round(currentFaceWeight * 100);
+  const audioPercent = Math.round(currentAudioWeight * 100);
+
+  // 根据策略显示不同内容
+  const currentOption = document.querySelector(`.strategy-option[data-strategy="${currentStrategy}"]`);
+  const usesWeight = currentOption && currentOption.dataset.usesWeight === 'true';
+
+  if (usesWeight) {
+    config.innerHTML = `当前配置：<strong>${strategyName}</strong>，表情 <strong>${facePercent}%</strong> + 声音 <strong>${audioPercent}%</strong>`;
+  } else {
+    config.innerHTML = `当前配置：<strong>${strategyName}</strong><span style="color: #92400e; font-size: 0.7rem;">（权重由系统控制）</span>`;
+  }
+
+  if (infoText) {
+    if (usesWeight) {
+      infoText.innerHTML = `融合方式: ${strategyName} | 权重: 表情 ${facePercent}% + 声音 ${audioPercent}%`;
+    } else {
+      infoText.innerHTML = `融合方式: <strong>${strategyName}</strong>，权重由系统自动计算`;
+    }
+  }
+}
+
+// ── 获取配置 ────────────────────────────────────────────────────────────────
+function getCurrentFaceModelId() {
+  return currentFaceModelId;
+}
+
+function getCurrentAudioModelId() {
+  return currentAudioModelId;
+}
+
+function getCurrentWeight() {
+  return currentFaceWeight;
+}
+
+function getCurrentStrategy() {
+  return currentStrategy;
+}
+
+// ── 初始化 ────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadFaceModels();
+  loadAudioModels();
+  initStrategySelector();
+  updateConfigDisplay();
+});
+</script>
+{% endblock %}

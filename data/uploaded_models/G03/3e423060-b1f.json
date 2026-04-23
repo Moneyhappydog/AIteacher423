@@ -1,0 +1,19 @@
+{
+  "model_id": "3e423060-b1f",
+  "group_id": "G03",
+  "course": "audio",
+  "model_name": "audio_cnn_fp32",
+  "description": "",
+  "filename": "3e423060-b1f.onnx",
+  "original_filename": "audio_cnn_fp32.onnx",
+  "file_path": "G03/3e423060-b1f.onnx",
+  "file_size": 922334,
+  "file_hash": "af73f5cebd78e9511d0df66b3f5d97a8",
+  "framework": "onnx",
+  "file_ext": ".onnx",
+  "uploaded_at": "2026-04-22T13:51:51.982041",
+  "is_active": true,
+  "accuracy": 0.11587982832618025,
+  "eval_count": 3,
+  "last_eval_at": "2026-04-22T13:56:23.732010"
+}

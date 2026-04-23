@@ -1,0 +1,16 @@
+{
+  "group_id": "G02",
+  "group_name": "G02",
+  "device_id": "ESP32_G02",
+  "records": [
+    {
+      "timestamp": "2026-04-21 13:35:20",
+      "temperature": 25,
+      "humidity": 65,
+      "light": 400,
+      "oxygen": 20.5,
+      "solar_power": 0,
+      "status": "normal"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "testset_id": "audio_20260422_135107",
+  "name": "期末声音测试",
+  "data_type": "audio",
+  "draft_id": "d2988829",
+  "total_samples": 233,
+  "published_at": "2026-04-22T13:51:07.606070",
+  "published_by": "admin",
+  "publish_to_groups": true,
+  "groups_published": [
+    "all"
+  ]
+}

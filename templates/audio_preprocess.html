@@ -1,0 +1,1333 @@
+{% extends "base.html" %}
+{% block title %}声音情绪数据预处理 - 香港科技大学（广州）-编程猫青少年AI教育联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<style>
+  .preprocess-container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .panel-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+  }
+
+  .panel-header {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #10B981;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* 操作选择器 */
+  .operation-category {
+    margin-bottom: 1.5rem;
+  }
+
+  .category-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .operation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .operation-btn {
+    background: #f3f4f6;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .operation-btn:hover {
+    background: #d1fae5;
+    border-color: #10b981;
+  }
+
+  .operation-btn.active {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+  }
+
+  .operation-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .operation-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  /* 音频预览 */
+  .audio-preview-container {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .waveform-container {
+    height: 100px;
+    background: #1e1e3f;
+    border-radius: 8px;
+    margin: 1rem 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .waveform-canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  .audio-player {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .play-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 50%;
+    background: #10b981;
+    border: none;
+    color: white;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .play-btn:hover:not(:disabled) {
+    background: #059669;
+    transform: scale(1.05);
+  }
+
+  .play-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  .audio-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .audio-name {
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .audio-duration {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    margin-bottom: 0.4rem;
+  }
+
+  /* 播放进度条 */
+  .audio-progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .audio-progress-wrap .time-cur {
+    font-size: 0.75rem;
+    color: #6b7280;
+    min-width: 34px;
+    text-align: right;
+  }
+
+  .audio-progress-wrap .time-total {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    min-width: 34px;
+  }
+
+  .progress-track {
+    flex: 1;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .progress-track:hover {
+    height: 8px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: #10b981;
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.1s linear;
+    pointer-events: none;
+  }
+
+  .progress-thumb {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    background: #10b981;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.15s;
+    pointer-events: none;
+  }
+
+  .progress-track:hover .progress-thumb {
+    opacity: 1;
+  }
+
+  /* 参数滑块 */
+  .param-slider {
+    margin-top: 1rem;
+  }
+
+  .param-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+  }
+
+  .param-slider input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #e5e7eb;
+    -webkit-appearance: none;
+  }
+
+  .param-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #10b981;
+    cursor: pointer;
+  }
+
+  /* 文件列表 */
+  .audio-list {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .audio-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+
+  .audio-item:hover {
+    background: #f9fafb;
+  }
+
+  .audio-item.selected {
+    background: #d1fae5;
+  }
+
+  .audio-item input[type="checkbox"] {
+    margin-right: 0.75rem;
+  }
+
+  .audio-icon {
+    width: 50px;
+    height: 50px;
+    background: #10b981;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    color: white;
+    font-size: 1.5rem;
+  }
+
+  .audio-info {
+    flex: 1;
+  }
+
+  .audio-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .audio-meta {
+    font-size: 0.75rem;
+    color: #9ca3af;
+  }
+
+  .audio-emotion {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #d1fae5;
+    color: #10b981;
+    border-radius: 4px;
+    font-size: 0.75rem;
+  }
+
+  /* 统计卡片 */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .stat-card {
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #10b981;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+
+  /* 按钮样式 */
+  .btn-primary {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  }
+
+  .btn-secondary {
+    background: white;
+    color: #10b981;
+    border: 2px solid #10b981;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover {
+    background: #ecfdf5;
+  }
+
+  .btn-success {
+    background: #059669;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header - 全屏渐变背景 -->
+<div class="page-header text-center">
+  <div class="page-header-icon">🎤</div>
+  <h1 class="page-title">声音情绪数据预处理</h1>
+  <p class="page-subtitle">对已标注的音频数据进行预处理和增强，提升模型泛化能力</p>
+</div>
+
+<div class="preprocess-container">
+
+  <!-- 数据统计 -->
+  <div class="panel-card">
+    <div class="panel-header">
+      <i class="bi bi-graph-up"></i> 数据概览
+    </div>
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card">
+        <div class="stat-value" id="totalCount">-</div>
+        <div class="stat-label">总音频数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="happyCount">-</div>
+        <div class="stat-label">开心</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="sadCount">-</div>
+        <div class="stat-label">难过</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="angerCount">-</div>
+        <div class="stat-label">生气</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="fearCount">-</div>
+        <div class="stat-label">恐惧</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="surpriseCount">-</div>
+        <div class="stat-label">惊讶</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="neutralCount">-</div>
+        <div class="stat-label">平静</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- 左侧：操作选择 -->
+    <div class="col-lg-5">
+      <div class="panel-card">
+        <div class="panel-header">
+          <i class="bi bi-sliders"></i> 选择预处理操作
+        </div>
+
+        <!-- 基础预处理 -->
+        <div class="operation-category">
+          <div class="category-title">基础预处理</div>
+          <div class="operation-grid" id="basicOperations">
+            <!-- 由JS动态生成 -->
+          </div>
+        </div>
+
+        <!-- 数据增强-时域 -->
+        <div class="operation-category">
+          <div class="category-title">数据增强-时域</div>
+          <div class="operation-grid" id="timeOperations">
+            <!-- 由JS动态生成 -->
+          </div>
+          <div class="param-slider" id="noiseParam" style="display:none;">
+            <div class="param-label">
+              <span>噪声水平</span>
+              <span id="noiseValue">0.5%</span>
+            </div>
+            <input type="range" id="noiseSlider" min="1" max="10" value="5">
+          </div>
+          <div class="param-slider" id="speedParam" style="display:none;">
+            <div class="param-label">
+              <span>速度倍数</span>
+              <span id="speedValue">1.1x</span>
+            </div>
+            <input type="range" id="speedSlider" min="8" max="15" value="11">
+          </div>
+        </div>
+
+        <!-- 数据增强-频域 -->
+        <div class="operation-category">
+          <div class="category-title">数据增强-频域</div>
+          <div class="operation-grid" id="freqOperations">
+            <!-- 由JS动态生成 -->
+          </div>
+        </div>
+
+        <!-- 参数设置 -->
+        <div class="mt-3 d-flex gap-2">
+          <button class="btn-secondary" onclick="selectAllOperations()">全选</button>
+          <button class="btn-secondary" onclick="clearAllOperations()">清除</button>
+        </div>
+      </div>
+
+      <!-- 音频预览 -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <i class="bi bi-eye"></i> 音频预览
+        </div>
+        <div class="audio-preview-container">
+          <!-- 原始音频 -->
+          <div class="mb-3">
+            <div class="text-muted small mb-2">原始音频</div>
+            <div class="audio-player" id="originalPlayer">
+              <button class="play-btn" id="origPlayBtn" title="播放/暂停">▶</button>
+              <div class="audio-info">
+                <div class="audio-name" id="originalName">-</div>
+                <div class="audio-duration" id="originalDuration">-</div>
+                <div class="audio-progress-wrap">
+                  <span class="time-cur" id="origCurTime">0:00</span>
+                  <div class="progress-track" id="origProgressTrack" onclick="seekAudio('original', event)">
+                    <div class="progress-fill" id="origProgressFill"></div>
+                    <div class="progress-thumb" id="origProgressThumb"></div>
+                  </div>
+                  <span class="time-total" id="origTotalTime">0:00</span>
+                </div>
+              </div>
+            </div>
+            <div class="waveform-container">
+              <canvas id="originalWaveform" class="waveform-canvas"></canvas>
+            </div>
+          </div>
+
+          <!-- 预处理后音频 -->
+          <div id="processedSection" style="opacity:0.4; pointer-events:none;">
+            <div class="text-muted small mb-2">预处理后</div>
+            <div class="audio-player" id="processedPlayer">
+              <button class="play-btn" id="processedPlayBtn" title="播放/暂停" disabled>▶</button>
+              <div class="audio-info">
+                <div class="audio-name" id="processedName">-</div>
+                <div class="audio-duration" id="processedDuration">-</div>
+                <div class="audio-progress-wrap">
+                  <span class="time-cur" id="procCurTime">0:00</span>
+                  <div class="progress-track" id="procProgressTrack" onclick="seekAudio('processed', event)">
+                    <div class="progress-fill" id="procProgressFill"></div>
+                    <div class="progress-thumb" id="procProgressThumb"></div>
+                  </div>
+                  <span class="time-total" id="procTotalTime">0:00</span>
+                </div>
+              </div>
+            </div>
+            <div class="waveform-container">
+              <canvas id="processedWaveform" class="waveform-canvas"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="mt-3 text-center">
+          <button class="btn-primary" onclick="applyPreview()">
+            <i class="bi bi-play"></i> 应用预览
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：文件列表 -->
+    <div class="col-lg-7">
+      <div class="panel-card">
+        <div class="panel-header">
+          <i class="bi bi-music-note-list"></i> 已标注音频列表
+          <span class="ms-auto badge bg-success" id="selectedCount">已选择: 0</span>
+        </div>
+
+        <div class="mb-3 d-flex gap-2">
+          <button class="btn-secondary btn-sm" onclick="selectAllFiles()">全选</button>
+          <button class="btn-secondary btn-sm" onclick="deselectAllFiles()">取消全选</button>
+          <button class="btn-success btn-sm" onclick="startBatchProcess()">
+            <i class="bi bi-lightning"></i> 批量预处理（点击后等待处理即可）
+          </button>
+        </div>
+
+        <div class="audio-list" id="audioList">
+          <div class="text-center text-muted py-5">
+            加载中...
+          </div>
+        </div>
+      </div>
+
+      <!-- 处理结果 -->
+      <div class="panel-card" id="resultPanel" style="display:none;">
+        <div class="panel-header">
+          <i class="bi bi-check-circle"></i> 处理结果
+        </div>
+        <div id="resultContent">
+          <!-- 由JS填充 -->
+        </div>
+      </div>
+
+      <!-- 导出选项 -->
+      <div class="panel-card" id="exportPanel" style="display:none;">
+        <div class="panel-header">
+          <i class="bi bi-download"></i> 导出预处理数据
+        </div>
+        
+        <!-- 导出进度显示 -->
+        <div id="exportProgressContainer" style="display:none; margin-bottom: 1rem;">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span id="exportProgressText">准备中...</span>
+            <span id="exportProgressPercent" class="badge bg-primary">0%</span>
+          </div>
+          <div class="progress" style="height: 20px;">
+            <div id="exportProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                 role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </div>
+        
+        <button class="btn-success" id="exportBtn" onclick="exportData()">
+          <i class="bi bi-download"></i> 导出ZIP压缩包（请勿重复点击）
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// 全局变量
+let groupId = null;
+let audioList = [];
+let selectedFiles = new Set();
+let selectedOperations = new Set();
+let currentAudio = null;
+let originalAudioSrc = null;
+let processedAudioSrc = null;
+
+// 音频播放对象
+let originalAudio = null;
+let processedAudio = null;
+
+// 操作定义
+const operations = {
+  basic: [
+    { id: 'mel', name: '梅尔频谱图', icon: '📊' },
+    { id: 'normalize', name: '音频归一化', icon: '📈' },
+    { id: 'trim', name: '静音切除', icon: '✂️' }
+  ],
+  time: [
+    { id: 'noise', name: '添加噪声', icon: '🔊' },
+    { id: 'speed', name: '改变速度', icon: '⏱️' },
+    { id: 'time_mask', name: '时间掩码', icon: '⏱️' }
+  ],
+  freq: [
+    { id: 'freq_mask', name: '频率掩码', icon: '🎚️' },
+    { id: 'resample', name: '重采样', icon: '🔄' }
+  ]
+};
+
+// 初始化
+document.addEventListener('DOMContentLoaded', async function() {
+  // 优先从当前登录用户获取小组信息
+  try {
+    const resp = await fetch('/auth/me');
+    if (resp.ok) {
+      const userData = await resp.json();
+      if (userData.group && userData.group.group_code) {
+        groupId = userData.group.group_code;
+        localStorage.setItem('current_group_id', groupId);
+      }
+    }
+  } catch (err) {
+    console.error('获取用户信息失败:', err);
+  }
+
+  // 如果从登录信息获取失败，尝试从URL参数获取
+  if (!groupId) {
+    const urlGroupId = new URLSearchParams(window.location.search).get('group_id');
+    if (urlGroupId) {
+      groupId = urlGroupId;
+    }
+  }
+
+  // 如果还是没有小组ID，显示提示
+  if (!groupId) {
+    document.getElementById('audioList').innerHTML =
+      '<div class="text-center py-5 text-muted">您暂未分配到小组，无法使用音频预处理功能</div>';
+    return;
+  }
+
+  // 初始化音频对象
+  originalAudio = new Audio();
+  processedAudio = new Audio();
+
+  // 绑定播放事件（进度条实时更新、结束时恢复图标）
+  originalAudio.addEventListener('timeupdate', function() { updateProgress('original'); });
+  originalAudio.addEventListener('ended',     function() { setPlayBtnState('orig', false); resetProgress('orig'); });
+  processedAudio.addEventListener('timeupdate', function() { updateProgress('processed'); });
+  processedAudio.addEventListener('ended',     function() { setPlayBtnState('proc', false); resetProgress('proc'); });
+
+  // 播放/暂停按钮统一用 togglePlay（原始按钮也需要更新）
+  document.getElementById('origPlayBtn').addEventListener('click', function() { togglePlay('original'); });
+  document.getElementById('processedPlayBtn').addEventListener('click', function() { togglePlay('processed'); });
+
+  // 加载操作列表
+  renderOperations();
+
+  // 加载文件列表
+  loadAudioList();
+
+  // 绑定参数滑块事件
+  document.getElementById('noiseSlider').addEventListener('input', function() {
+    document.getElementById('noiseValue').textContent = `${(this.value / 10).toFixed(1)}%`;
+  });
+
+  document.getElementById('speedSlider').addEventListener('input', function() {
+    document.getElementById('speedValue').textContent = `${(this.value / 10).toFixed(1)}x`;
+  });
+});
+
+// 渲染操作按钮
+function renderOperations() {
+  // 基础预处理
+  const basicContainer = document.getElementById('basicOperations');
+  basicContainer.innerHTML = operations.basic.map(op => `
+    <div class="operation-btn" data-op="${op.id}" onclick="toggleOperation('${op.id}')">
+      <div class="operation-icon">${op.icon}</div>
+      <div class="operation-name">${op.name}</div>
+    </div>
+  `).join('');
+
+  // 时域操作
+  const timeContainer = document.getElementById('timeOperations');
+  timeContainer.innerHTML = operations.time.map(op => `
+    <div class="operation-btn" data-op="${op.id}" onclick="toggleOperation('${op.id}')">
+      <div class="operation-icon">${op.icon}</div>
+      <div class="operation-name">${op.name}</div>
+    </div>
+  `).join('');
+
+  // 频域操作
+  const freqContainer = document.getElementById('freqOperations');
+  freqContainer.innerHTML = operations.freq.map(op => `
+    <div class="operation-btn" data-op="${op.id}" onclick="toggleOperation('${op.id}')">
+      <div class="operation-icon">${op.icon}</div>
+      <div class="operation-name">${op.name}</div>
+    </div>
+  `).join('');
+}
+
+// 切换操作选择
+function toggleOperation(opId) {
+  const btn = document.querySelector(`.operation-btn[data-op="${opId}"]`);
+
+  if (selectedOperations.has(opId)) {
+    selectedOperations.delete(opId);
+    btn.classList.remove('active');
+  } else {
+    selectedOperations.add(opId);
+    btn.classList.add('active');
+  }
+
+  // 显示/隐藏参数滑块
+  if (opId === 'noise') {
+    document.getElementById('noiseParam').style.display =
+      selectedOperations.has('noise') ? 'block' : 'none';
+  }
+  if (opId === 'speed') {
+    document.getElementById('speedParam').style.display =
+      selectedOperations.has('speed') ? 'block' : 'none';
+  }
+}
+
+// 全选/清除操作
+function selectAllOperations() {
+  document.querySelectorAll('.operation-btn').forEach(btn => {
+    const opId = btn.dataset.op;
+    selectedOperations.add(opId);
+    btn.classList.add('active');
+  });
+}
+
+function clearAllOperations() {
+  selectedOperations.clear();
+  document.querySelectorAll('.operation-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.getElementById('noiseParam').style.display = 'none';
+  document.getElementById('speedParam').style.display = 'none';
+}
+
+// 加载音频列表
+async function loadAudioList() {
+  try {
+    const resp = await fetch(`/audio_preprocess/data?group_id=${groupId}`);
+    const data = await resp.json();
+
+    if (data.success) {
+      audioList = data.data;
+      renderAudioList();
+      updateStats(data.emotion_stats);
+    }
+  } catch (err) {
+    console.error('加载音频列表失败:', err);
+    document.getElementById('audioList').innerHTML = '<div class="text-danger text-center py-5">加载失败</div>';
+  }
+}
+
+// 渲染音频列表
+function renderAudioList() {
+  const container = document.getElementById('audioList');
+
+  if (audioList.length === 0) {
+    container.innerHTML = '<div class="text-muted text-center py-5">暂无已标注音频</div>';
+    return;
+  }
+
+  container.innerHTML = audioList.map((audio, index) => `
+    <div class="audio-item" data-index="${index}" onclick="selectForPreview(${index})">
+      <input type="checkbox" onclick="event.stopPropagation(); toggleFileSelection(${index})"
+             ${selectedFiles.has(index) ? 'checked' : ''}>
+      <div class="audio-icon">🎵</div>
+      <div class="audio-info">
+        <div class="audio-name">${audio.filename}</div>
+        <div class="audio-meta">${(audio.size / 1024).toFixed(1)} KB</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// 获取情绪标签
+function getEmotionLabel(emotion) {
+  const labels = {
+    'happy': '开心', 'sad': '难过', 'angry': '生气',
+    'fear': '害怕', 'surprise': '惊讶', 'neutral': '平静'
+  };
+  return labels[emotion] || emotion || '未知';
+}
+
+// 切换文件选择
+function toggleFileSelection(index) {
+  if (selectedFiles.has(index)) {
+    selectedFiles.delete(index);
+  } else {
+    selectedFiles.add(index);
+  }
+  updateSelectedCount();
+}
+
+// 全选/取消全选
+function selectAllFiles() {
+  audioList.forEach((_, i) => selectedFiles.add(i));
+  renderAudioList();
+  updateSelectedCount();
+}
+
+function deselectAllFiles() {
+  selectedFiles.clear();
+  renderAudioList();
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  document.getElementById('selectedCount').textContent = `已选择: ${selectedFiles.size}`;
+}
+
+// 选择音频进行预览
+function selectForPreview(index) {
+  const audio = audioList[index];
+  currentAudio = audio;
+
+  // 更新选中状态
+  selectedFiles.clear();
+  selectedFiles.add(index);
+  renderAudioList();
+  updateSelectedCount();
+
+  // 停止所有播放
+  originalAudio.pause();
+  processedAudio.pause();
+  setPlayBtnState('orig', false);
+  setPlayBtnState('proc', false);
+
+  // 重置进度条
+  resetProgress('orig');
+  resetProgress('proc');
+
+  // 设置原始音频
+  originalAudioSrc = audio.url;
+  originalAudio.src = audio.url;
+
+  document.getElementById('originalName').textContent = audio.filename;
+  originalAudio.onloadedmetadata = function() {
+    document.getElementById('originalDuration').textContent = formatDuration(originalAudio.duration);
+    document.getElementById('origTotalTime').textContent = formatDuration(originalAudio.duration);
+    document.getElementById('origPlayBtn').disabled = false;
+    setPlayBtnState('orig', false);
+    drawWaveform('originalWaveform', audio.waveform || []);
+  };
+
+  // 重置处理后音频显示
+  processedAudioSrc = null;
+  processedAudio.src = '';
+  const processedSection = document.getElementById('processedSection');
+  processedSection.style.opacity = '0.4';
+  processedSection.style.pointerEvents = 'none';
+  document.getElementById('processedPlayBtn').disabled = true;
+  document.getElementById('processedName').textContent = '-';
+  document.getElementById('processedDuration').textContent = '-';
+  clearWaveform('processedWaveform');
+  resetProgress('proc');
+}
+
+// 播放/暂停切换
+function togglePlay(type) {
+  if (type === 'original') {
+    if (originalAudio.paused) {
+      processedAudio.pause();
+      setPlayBtnState('proc', false);
+      originalAudio.play().then(function() {
+        setPlayBtnState('orig', true);
+      }).catch(function(err) {
+        console.error('原始音频播放失败:', err);
+        alert('原始音频无法播放，请检查文件或浏览器权限。');
+      });
+    } else {
+      originalAudio.pause();
+      setPlayBtnState('orig', false);
+    }
+  } else {
+    if (processedAudio.paused) {
+      originalAudio.pause();
+      setPlayBtnState('orig', false);
+      processedAudio.play().then(function() {
+        setPlayBtnState('proc', true);
+      }).catch(function(err) {
+        console.error('预处理音频播放失败:', err);
+        alert('预处理后音频无法播放，请重试「应用预览」或更换预处理操作。');
+      });
+    } else {
+      processedAudio.pause();
+      setPlayBtnState('proc', false);
+    }
+  }
+}
+
+// 设置播放按钮图标
+function setPlayBtnState(prefix, isPlaying) {
+  const btn = document.getElementById(prefix === 'orig' ? 'origPlayBtn' : 'processedPlayBtn');
+  if (btn) btn.textContent = isPlaying ? '⏸' : '▶';
+}
+
+// 更新进度条
+function updateProgress(type) {
+  const audio = type === 'original' ? originalAudio : processedAudio;
+  if (!audio.duration || isNaN(audio.duration)) return;
+  const pct = (audio.currentTime / audio.duration) * 100;
+  const prefix = type === 'original' ? 'orig' : 'proc';
+  document.getElementById(prefix + 'ProgressFill').style.width = pct + '%';
+  document.getElementById(prefix + 'ProgressThumb').style.left = pct + '%';
+  document.getElementById(prefix + 'CurTime').textContent = formatDuration(audio.currentTime);
+}
+
+// 重置进度条
+function resetProgress(type) {
+  const prefix = type === 'original' ? 'orig' : 'proc';
+  document.getElementById(prefix + 'ProgressFill').style.width = '0%';
+  document.getElementById(prefix + 'ProgressThumb').style.left = '0%';
+  document.getElementById(prefix + 'CurTime').textContent = '0:00';
+}
+
+// 拖动进度条seek
+function seekAudio(type, event) {
+  const audio = type === 'original' ? originalAudio : processedAudio;
+  const track = event.currentTarget;
+  const rect = track.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+  audio.currentTime = pct * audio.duration;
+  updateProgress(type);
+}
+
+// 格式化时长
+function formatDuration(seconds) {
+  if (isNaN(seconds)) return '-';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// 绘制波形
+function drawWaveform(canvasId, waveformData) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!waveformData || waveformData.length === 0) {
+    // 绘制占位波形
+    ctx.fillStyle = '#374151';
+    for (let i = 0; i < 100; i++) {
+      const height = 10 + Math.random() * 40;
+      const x = (i / 100) * canvas.width;
+      const y = (canvas.height - height) / 2;
+      ctx.fillRect(x, y, canvas.width / 100 - 2, height);
+    }
+    return;
+  }
+
+  // 绘制真实波形
+  ctx.fillStyle = '#10b981';
+  const step = canvas.width / waveformData.length;
+  waveformData.forEach((val, i) => {
+    const height = (Math.abs(val) * canvas.height * 0.8) || 10;
+    const x = i * step;
+    const y = (canvas.height - height) / 2;
+    ctx.fillRect(x, y, step - 1, height);
+  });
+}
+
+// 清除波形
+function clearWaveform(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// 应用预览
+async function applyPreview() {
+  if (!currentAudio) {
+    alert('请先选择一个音频文件');
+    return;
+  }
+
+  if (selectedOperations.size === 0) {
+    alert('请先选择预处理操作');
+    return;
+  }
+
+  // 获取参数
+  const params = {};
+  if (selectedOperations.has('noise')) {
+    params.noise_level = parseInt(document.getElementById('noiseSlider').value) / 1000;
+  }
+  if (selectedOperations.has('speed')) {
+    params.speed_factor = parseInt(document.getElementById('speedSlider').value) / 10;
+  }
+
+  // 获取音频数据
+  try {
+    const resp = await fetch(currentAudio.url);
+    const blob = await resp.blob();
+    const reader = new FileReader();
+
+    reader.onload = async function(e) {
+      const audioData = e.target.result;
+
+      // 调用预处理API
+      const apiResp = await fetch('/audio_preprocess/preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audio: audioData,
+          operations: [...selectedOperations],
+          params: params
+        })
+      });
+
+      const result = await apiResp.json();
+
+      if (result.success) {
+        // 停止原始音频播放
+        originalAudio.pause();
+        setPlayBtnState('orig', false);
+
+        // 设置处理后音频
+        processedAudioSrc = result.processed_audio;
+        processedAudio.src = result.processed_audio;
+
+        const processedSection = document.getElementById('processedSection');
+        processedSection.style.opacity = '1';
+        processedSection.style.pointerEvents = 'auto';
+
+        document.getElementById('processedPlayBtn').disabled = false;
+        setPlayBtnState('proc', false);
+        resetProgress('proc');
+
+        document.getElementById('processedName').textContent =
+          `${currentAudio.filename.split('.')[0]}_${result.suffix}.wav`;
+        document.getElementById('processedDuration').textContent = formatDuration(result.duration);
+        document.getElementById('procTotalTime').textContent = formatDuration(result.duration);
+
+        // 绘制波形
+        drawWaveform('processedWaveform', result.waveform || []);
+      } else {
+        alert('预处理失败: ' + result.error);
+      }
+    };
+
+    reader.readAsDataURL(blob);
+  } catch (err) {
+    console.error('预览失败:', err);
+    alert('预览失败');
+  }
+}
+
+// 批量处理
+async function startBatchProcess() {
+  if (selectedFiles.size === 0) {
+    alert('请先选择要处理的文件');
+    return;
+  }
+
+  if (selectedOperations.size === 0) {
+    alert('请先选择预处理操作');
+    return;
+  }
+
+  // 获取参数
+  const params = {};
+  if (selectedOperations.has('noise')) {
+    params.noise_level = parseInt(document.getElementById('noiseSlider').value) / 1000;
+  }
+  if (selectedOperations.has('speed')) {
+    params.speed_factor = parseInt(document.getElementById('speedSlider').value) / 10;
+  }
+
+  const resp = await fetch('/audio_preprocess/batch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      group_id: groupId,
+      operations: [...selectedOperations],
+      params: params,
+      file_indices: [...selectedFiles]
+    })
+  });
+
+  const result = await resp.json();
+
+  if (result.success) {
+    document.getElementById('resultPanel').style.display = 'block';
+    document.getElementById('exportPanel').style.display = 'block';
+
+    document.getElementById('resultContent').innerHTML = `
+      <div class="alert alert-success">
+        <i class="bi bi-check-circle"></i>
+        处理完成！成功处理 ${result.processed_count} 个文件
+        ${result.failed_count > 0 ? `，失败 ${result.failed_count} 个` : ''}
+      </div>
+      <p class="text-muted small">输出目录: ${result.output_dir}</p>
+      <p class="text-muted small">操作后缀: ${result.suffix}</p>
+    `;
+  } else {
+    alert('处理失败: ' + result.error);
+  }
+}
+
+// 导出数据
+let pollInterval;
+
+function startProgressPoll() {
+  const progressBar = document.getElementById('exportProgressBar');
+  const progressPercent = document.getElementById('exportProgressPercent');
+  const progressText = document.getElementById('exportProgressText');
+  
+  progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+  
+  pollInterval = setInterval(async () => {
+    try {
+      const resp = await fetch('/audio_preprocess/export/progress', {
+        credentials: 'include'
+      });
+      const data = await resp.json();
+      
+      if (data.status !== 'idle' && data.status !== 'error') {
+        const percent = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
+        progressBar.style.width = percent + '%';
+        progressText.textContent = data.message || '正在打包...';
+        progressPercent.textContent = percent + '%';
+        
+        if (data.status === 'completed') {
+          clearInterval(pollInterval);
+        }
+      } else if (data.status === 'error') {
+        clearInterval(pollInterval);
+        progressText.textContent = data.message || '导出失败';
+        progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+        progressBar.classList.add('bg-danger');
+      }
+    } catch (e) {
+      // 忽略轮询错误
+    }
+  }, 200); // 每200ms轮询一次
+}
+
+async function exportData() {
+  const btn = document.getElementById('exportBtn');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  
+  const progressContainer = document.getElementById('exportProgressContainer');
+  const progressBar = document.getElementById('exportProgressBar');
+  const progressPercent = document.getElementById('exportProgressPercent');
+  const progressText = document.getElementById('exportProgressText');
+
+  // 显示进度条
+  progressContainer.style.display = 'block';
+  progressBar.style.width = '0%';
+  progressBar.classList.remove('bg-success', 'bg-danger');
+  progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+  progressText.textContent = '正在连接服务器...';
+  progressPercent.textContent = '0%';
+
+  console.log('开始导出请求，groupId:', groupId);
+
+  // 进度轮询
+  let pollStarted = false;
+  function startProgressPollOnce() {
+    if (pollStarted) return;
+    pollStarted = true;
+    progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+    
+    pollInterval = setInterval(async () => {
+      try {
+        const resp = await fetch('/audio_preprocess/export/progress', {
+          credentials: 'include'
+        });
+        const data = await resp.json();
+        
+        if (data.status !== 'idle' && data.status !== 'error') {
+          const percent = data.total > 0 ? Math.round((data.current / data.total) * 100) : 0;
+          progressBar.style.width = percent + '%';
+          progressText.textContent = data.message || '正在打包...';
+          progressPercent.textContent = percent + '%';
+          
+          if (data.status === 'completed') {
+            clearInterval(pollInterval);
+          }
+        } else if (data.status === 'error') {
+          clearInterval(pollInterval);
+          progressText.textContent = data.message || '导出失败';
+          progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+          progressBar.classList.add('bg-danger');
+        }
+      } catch (e) {
+        // 忽略轮询错误
+      }
+    }, 200); // 每200ms轮询一次
+  }
+
+  try {
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> 正在打包...';
+    
+    console.log('发送 POST 请求到 /audio_preprocess/export');
+    
+    // 启动进度轮询
+    startProgressPollOnce();
+    
+    // 发送 POST 请求（只导出预处理后数据）
+    const resp = await fetch('/audio_preprocess/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        group_id: groupId,
+        include_original: false,
+        include_processed: true
+      })
+    });
+
+    console.log('收到响应，状态:', resp.status);
+
+    // 停止轮询
+    if (pollInterval) {
+      clearInterval(pollInterval);
+    }
+
+    if (!resp.ok) {
+      throw new Error(`服务器错误: ${resp.status} ${resp.statusText}`);
+    }
+
+    const contentType = resp.headers.get('content-type');
+    console.log('Content-Type:', contentType);
+    
+    if (!contentType || !contentType.includes('application/zip')) {
+      const text = await resp.text();
+      console.log('非 ZIP 响应:', text);
+      throw new Error(`导出失败: ${text.substring(0, 200)}`);
+    }
+
+    // 下载文件
+    console.log('开始下载文件...');
+    progressText.textContent = '正在下载（请耐心等待）...';
+    progressBar.style.width = '100%';
+    progressPercent.textContent = '100%';
+    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    
+    const blob = await resp.blob();
+    console.log('Blob 大小:', blob.size, '类型:', blob.type);
+    
+    if (blob.size === 0) {
+      throw new Error('下载的文件为空');
+    }
+    
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audio_preprocessed_${groupId}.zip`;
+    document.body.appendChild(a);
+    console.log('触发下载...');
+    a.click();
+    window.URL.revokeObjectURL(url);
+    a.remove();
+    console.log('下载完成');
+
+    // 显示成功
+    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    progressBar.classList.add('bg-success');
+    progressText.textContent = '导出成功！';
+    progressPercent.textContent = '100%';
+    
+    setTimeout(() => {
+      progressContainer.style.display = 'none';
+    }, 3000);
+    
+  } catch (err) {
+    console.error('导出失败:', err);
+    progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    progressBar.classList.add('bg-danger');
+    progressText.textContent = '导出失败: ' + err.message;
+    alert('导出失败: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+    if (pollInterval) {
+      clearInterval(pollInterval);
+    }
+  }
+}
+
+// 更新统计
+function updateStats(emotionStats) {
+  const stats = emotionStats || {};
+  // 计算总数（包括anger和angry两种标签名）
+  const total = Object.values(stats).reduce((a, b) => a + b, 0);
+  document.getElementById('totalCount').textContent = total;
+  // 处理happy、sad标签（音频情绪使用）
+  document.getElementById('happyCount').textContent = stats.happy || 0;
+  document.getElementById('sadCount').textContent = stats.sad || 0;
+  // 处理anger/angry标签（统一使用anger）
+  const angerCount = (stats.anger || 0) + (stats.angry || 0);
+  document.getElementById('angerCount').textContent = angerCount;
+  // fear 和 surprise
+  document.getElementById('fearCount').textContent = stats.fear || 0;
+  document.getElementById('surpriseCount').textContent = stats.surprise || 0;
+  // neutral
+  document.getElementById('neutralCount').textContent = stats.neutral || 0;
+}
+</script>
+{% endblock %}

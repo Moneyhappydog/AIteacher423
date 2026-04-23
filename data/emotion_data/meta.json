@@ -1,0 +1,168 @@
+{
+  "version": "2026-v1",
+  "emotion_face": {
+    "total_images": 3048,
+    "by_label": {
+      "happy": 951,
+      "sad": 264,
+      "surprise": 339,
+      "angry": 167,
+      "neutral": 833,
+      "disgust": 225,
+      "fear": 269
+    },
+    "by_group": {
+      "G06": {
+        "total": 289,
+        "by_label": {
+          "happy": 69,
+          "sad": 65,
+          "surprise": 56,
+          "angry": 18,
+          "neutral": 48,
+          "fear": 21,
+          "disgust": 12
+        }
+      },
+      "G07": {
+        "total": 143,
+        "by_label": {
+          "surprise": 18,
+          "happy": 46,
+          "disgust": 12,
+          "neutral": 56,
+          "sad": 10,
+          "fear": 1
+        }
+      },
+      "G03": {
+        "total": 134,
+        "by_label": {
+          "surprise": 15,
+          "happy": 30,
+          "angry": 16,
+          "neutral": 24,
+          "disgust": 23,
+          "fear": 13,
+          "sad": 13
+        }
+      },
+      "G05": {
+        "total": 470,
+        "by_label": {
+          "neutral": 116,
+          "disgust": 39,
+          "fear": 28,
+          "angry": 31,
+          "surprise": 28,
+          "happy": 187,
+          "sad": 41
+        }
+      },
+      "user_3": {
+        "total": 2,
+        "by_label": {
+          "happy": 1,
+          "neutral": 1
+        }
+      },
+      "G02": {
+        "total": 221,
+        "by_label": {
+          "neutral": 28,
+          "surprise": 20,
+          "disgust": 31,
+          "angry": 15,
+          "fear": 22,
+          "sad": 25,
+          "happy": 80
+        }
+      },
+      "G01": {
+        "total": 377,
+        "by_label": {
+          "disgust": 6,
+          "neutral": 93,
+          "fear": 123,
+          "surprise": 17,
+          "angry": 16,
+          "sad": 40,
+          "happy": 82
+        }
+      },
+      "G04": {
+        "total": 517,
+        "by_label": {
+          "surprise": 86,
+          "neutral": 185,
+          "fear": 24,
+          "disgust": 54,
+          "angry": 22,
+          "sad": 37,
+          "happy": 109
+        }
+      },
+      "G08": {
+        "total": 121,
+        "by_label": {
+          "happy": 32,
+          "sad": 14,
+          "surprise": 21,
+          "neutral": 20,
+          "angry": 10,
+          "disgust": 15,
+          "fear": 9
+        }
+      },
+      "G09": {
+        "total": 381,
+        "by_label": {
+          "neutral": 142,
+          "happy": 209,
+          "surprise": 13,
+          "disgust": 2,
+          "angry": 8,
+          "fear": 4,
+          "sad": 3
+        }
+      },
+      "G10": {
+        "total": 128,
+        "by_label": {
+          "happy": 29,
+          "neutral": 25,
+          "surprise": 21,
+          "angry": 17,
+          "fear": 16,
+          "disgust": 16,
+          "sad": 4
+        }
+      },
+      "G12": {
+        "total": 125,
+        "by_label": {
+          "neutral": 51,
+          "happy": 34,
+          "disgust": 9,
+          "fear": 3,
+          "surprise": 15,
+          "angry": 9,
+          "sad": 4
+        }
+      },
+      "G11": {
+        "total": 140,
+        "by_label": {
+          "neutral": 44,
+          "surprise": 29,
+          "happy": 43,
+          "sad": 8,
+          "fear": 5,
+          "angry": 5,
+          "disgust": 6
+        }
+      }
+    },
+    "last_updated": "2026-04-23T15:24:58.082606"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "task_id": "0697830c-2c1",
+  "model_id": "045c68ca-182",
+  "model_name": "face_cnn_fp16",
+  "model_framework": "onnx",
+  "model_path": "/home/pub/code/eduplatform/data/uploaded_models/G06/045c68ca-182.onnx",
+  "testset_id": "face_20260421_135441",
+  "testset_name": "4.21人脸测试",
+  "course": "face",
+  "group_id": "G06",
+  "status": "running",
+  "created_at": "2026-04-22T11:06:50.034839",
+  "started_at": "2026-04-22T11:06:50.073271",
+  "completed_at": null,
+  "progress": 3,
+  "total_samples": 933,
+  "processed_samples": 28,
+  "metrics": null,
+  "predictions": [],
+  "error": null
+}

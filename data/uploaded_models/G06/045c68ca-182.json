@@ -1,0 +1,19 @@
+{
+  "model_id": "045c68ca-182",
+  "group_id": "G06",
+  "course": "face",
+  "model_name": "face_cnn_fp16",
+  "description": "",
+  "filename": "045c68ca-182.onnx",
+  "original_filename": "face_cnn_fp16.onnx",
+  "file_path": "G06/045c68ca-182.onnx",
+  "file_size": 1973039,
+  "file_hash": "1268b6d3bdaffedbb0bd81d0497a8f77",
+  "framework": "onnx",
+  "file_ext": ".onnx",
+  "uploaded_at": "2026-04-22T11:06:23.347836",
+  "is_active": true,
+  "accuracy": 0.2733118971061093,
+  "eval_count": 1,
+  "last_eval_at": "2026-04-22T11:09:32.051309"
+}

@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}登录 - 联合实验室教学平台{% endblock %}
+
+{% block extra_head %}
+<style>
+  .auth-container {
+    min-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .auth-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem 3rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+  .auth-logo {
+    text-align: center;
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+  .auth-title {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 0.5rem;
+  }
+  .auth-subtitle {
+    text-align: center;
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+  .form-control-fun {
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    border: 1.5px solid #e0e0e0;
+    font-size: 0.95rem;
+  }
+  .form-control-fun:focus {
+    border-color: #7C3AED;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+  }
+  .btn-login {
+    width: 100%;
+    border-radius: 10px;
+    padding: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #7C3AED, #EC4899);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-login:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
+  }
+  .btn-login:active { transform: translateY(0); }
+  .auth-link {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: #666;
+  }
+  .auth-link a {
+    color: #7C3AED;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .auth-link a:hover { text-decoration: underline; }
+  .error-alert {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #DC2626;
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    font-size: 0.88rem;
+    margin-bottom: 1rem;
+  }
+  .info-alert {
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    color: #2563EB;
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    font-size: 0.88rem;
+    margin-bottom: 1rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-logo">🎓</div>
+    <div class="auth-title">Welcome Back, Explorer!</div>
+    <div class="auth-subtitle">香港科技大学（广州）× 编程猫 联合实验室教学平台</div>
+
+    <div id="errorMsg" class="error-alert d-none"></div>
+    <div id="infoMsg" class="info-alert d-none"></div>
+
+    <div class="mb-3">
+      <label class="form-label fw-600">用户名</label>
+      <input type="text" class="form-control form-control-fun" id="inputUsername"
+             placeholder="请输入用户名" autocomplete="username">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label fw-600">密码</label>
+      <input type="password" class="form-control form-control-fun" id="inputPassword"
+             placeholder="请输入密码" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+
+    <button class="btn-login" onclick="doLogin()">
+      <span id="loginBtnText">登 录</span>
+    </button>
+
+    <div class="auth-link">
+      <span style="color: #999; font-size: 0.85rem;">账号由管理员统一分配，如有疑问请联系教师</span>
+    </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+async function doLogin() {
+  const username = document.getElementById('inputUsername').value.trim();
+  const password = document.getElementById('inputPassword').value;
+  const btn = document.getElementById('loginBtnText');
+  const errorEl = document.getElementById('errorMsg');
+  const infoEl = document.getElementById('infoMsg');
+
+  errorEl.classList.add('d-none');
+  infoEl.classList.add('d-none');
+  btn.textContent = '登录中...';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch('{{ url_for("auth.login") }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      // 特殊处理：需要先修改密码
+      if (data.code === 'PASSWORD_NOT_SET') {
+        infoEl.classList.remove('d-none');
+        infoEl.textContent = '⚠️ 检测到默认密码，请先修改密码';
+        btn.textContent = '前往修改';
+        btn.onclick = () => window.location.href = '{{ url_for("auth.login") }}';
+        btn.disabled = false;
+        return;
+      }
+      errorEl.classList.remove('d-none');
+      errorEl.textContent = '❌ ' + (data.error || '登录失败');
+      btn.textContent = '登 录';
+      btn.disabled = false;
+      return;
+    }
+
+    btn.textContent = '✅ 登录成功';
+    window.location.href = data.redirect || '/';
+  } catch(e) {
+    errorEl.classList.remove('d-none');
+    errorEl.textContent = '❌ 网络错误：' + e.message;
+    btn.textContent = '登 录';
+    btn.disabled = false;
+  }
+}
+</script>
+{% endblock %}

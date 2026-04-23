@@ -1,0 +1,8 @@
+{
+  "models_downloaded": {
+    "speech": "wav2vec2_base",
+    "face": "existing_models (haarcascade + XCEPTION)",
+    "timeseries": "local algorithms (Prophet, ARIMA)"
+  },
+  "note": "本项目使用的模型说明"
+}

@@ -1,0 +1,65 @@
+{
+  "version": "2026-v1",
+  "course": "audio_eval",
+  "updated_at": "2026-04-23T02:27:30.146646",
+  "records": [
+    {
+      "group_id": "G06",
+      "group_name": "G06",
+      "model_id": "7dada8ef-7cf",
+      "model_name": "audio_cnn_fp32_0420_0055",
+      "accuracy": 0.6667,
+      "testset_id": "audio_20260420_013314",
+      "course_type": "audio_eval",
+      "timestamp": "2026-04-20T02:52:58.513500",
+      "precision": 0.1667,
+      "recall": 0.1667,
+      "f1_score": 0.1667,
+      "rank": 1
+    },
+    {
+      "group_id": "G02",
+      "group_name": "G02",
+      "model_id": "e5d86cd6-677",
+      "model_name": "audio_cnn_fp32",
+      "accuracy": 0.3333,
+      "testset_id": "audio_20260420_013314",
+      "course_type": "audio_eval",
+      "timestamp": "2026-04-22T13:46:25.945544",
+      "precision": 0.0833,
+      "recall": 0.0833,
+      "f1_score": 0.0833,
+      "rank": 2
+    },
+    {
+      "group_id": "G03",
+      "group_name": "G03",
+      "model_id": "4f232012-402",
+      "model_name": "audio_cnn_fp16",
+      "accuracy": 0.1588,
+      "testset_id": "audio_20260422_135107",
+      "course_type": "audio_eval",
+      "timestamp": "2026-04-22T13:57:13.980323",
+      "precision": 0.1667,
+      "recall": 0.1667,
+      "f1_score": 0.1667,
+      "rank": 3
+    },
+    {
+      "group_id": "G01",
+      "group_name": "G01",
+      "model_id": "0a384cb6-e8f",
+      "model_name": "audio_cnn_fp32",
+      "accuracy": 0.1159,
+      "testset_id": "audio_20260422_135107",
+      "course_type": "audio_eval",
+      "timestamp": "2026-04-22T14:04:42.982237",
+      "precision": 0.1667,
+      "recall": 0.1667,
+      "f1_score": 0.1667,
+      "rank": 4
+    }
+  ],
+  "test_set_size": 50,
+  "last_updated_by": "G06"
+}

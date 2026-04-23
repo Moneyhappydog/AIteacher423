@@ -1,0 +1,19 @@
+{
+  "model_id": "d14095a3-db1",
+  "group_id": "G01",
+  "course": "face",
+  "model_name": "face_cnn_fp32",
+  "description": "",
+  "filename": "d14095a3-db1.onnx",
+  "original_filename": "face_cnn_fp32.onnx",
+  "file_path": "G01/d14095a3-db1.onnx",
+  "file_size": 3938376,
+  "file_hash": "2bc96b4aa6d0e27c0c4bdfc0e3ac14d0",
+  "framework": "onnx",
+  "file_ext": ".onnx",
+  "uploaded_at": "2026-04-21T13:55:23.541140",
+  "is_active": true,
+  "accuracy": 0.2733118971061093,
+  "eval_count": 1,
+  "last_eval_at": "2026-04-22T09:51:54.156240"
+}

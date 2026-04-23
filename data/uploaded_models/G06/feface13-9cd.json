@@ -1,0 +1,19 @@
+{
+  "model_id": "feface13-9cd",
+  "group_id": "G06",
+  "course": "audio",
+  "model_name": "audio_cnn_fp32",
+  "description": "",
+  "filename": "feface13-9cd.onnx",
+  "original_filename": "audio_cnn_fp32.onnx",
+  "file_path": "G06/feface13-9cd.onnx",
+  "file_size": 922267,
+  "file_hash": "cae9473cd6069e36db1e5dca4d2b97e8",
+  "framework": "onnx",
+  "file_ext": ".onnx",
+  "uploaded_at": "2026-04-22T13:47:33.120405",
+  "is_active": true,
+  "accuracy": 0.1459227467811159,
+  "eval_count": 4,
+  "last_eval_at": "2026-04-22T14:25:15.138219"
+}
