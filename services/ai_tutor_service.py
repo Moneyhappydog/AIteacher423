@@ -497,6 +497,184 @@ def call_llm_api(question: str, context: dict = None) -> dict:
         }
 
 
+def _first_tip(tips: list | None) -> str | None:
+    if not tips:
+        return None
+    return tips[0]
+
+
+def compose_structured_response(
+    question: str,
+    request_context: dict,
+    rule_result: dict,
+    knowledge_context: dict,
+    base_result: dict | None = None,
+) -> dict:
+    """Compose the phase 1 structured tutor response."""
+    diagnosis = rule_result.get('diagnosis')
+    tips = rule_result.get('tips') or []
+    next_step = rule_result.get('next_step')
+
+    if diagnosis and next_step:
+        current_state = '我看到了你当前页面的操作状态。'
+        if request_context.get('recent_event_summaries'):
+            current_state = f"我看到你刚才做了：{request_context['recent_event_summaries'][-1]}。"
+        answer_parts = [current_state, next_step]
+        if _first_tip(tips):
+            answer_parts.append(f"提示：{_first_tip(tips)}")
+        answer = ''.join(answer_parts)
+        source = 'hybrid' if knowledge_context.get('knowledge_refs') else 'rule'
+        mode = rule_result.get('mode') or 'guide'
+        tokens_used = 0
+        latency_ms = 0
+        model = None
+    else:
+        base_result = base_result or get_answer(
+            question,
+            context={
+                'course': request_context.get('course'),
+                'step_code': request_context.get('step_code'),
+                'snapshot': request_context.get('snapshot'),
+                'knowledge': knowledge_context.get('text'),
+            },
+            prefer_llm=False,
+        )
+        answer = base_result['answer']
+        source = base_result['source']
+        mode = base_result.get('mode', detect_mode(question))
+        tokens_used = base_result.get('tokens_used', 0)
+        latency_ms = base_result.get('latency_ms', 0)
+        model = base_result.get('model')
+
+    from services.ai_context_service import build_context_used
+
+    context_used = build_context_used(
+        request_context,
+        rule_hits=rule_result.get('rule_hits') or [],
+        knowledge_refs=knowledge_context.get('knowledge_refs') or [],
+    )
+
+    return {
+        'answer': answer,
+        'source': source,
+        'model': model,
+        'tokens_used': tokens_used,
+        'latency_ms': latency_ms,
+        'mode': mode,
+        'diagnosis': diagnosis,
+        'next_step': next_step,
+        'tips': tips,
+        'context_used': context_used,
+        'rule_result': rule_result,
+    }
+
+
+def build_llm_messages_from_context(
+    question: str,
+    request_context: dict,
+    rule_result: dict,
+    knowledge_context: dict,
+) -> list[dict]:
+    """Build messages for a later context-aware LLM call."""
+    system_prompt = (
+        '你是面向小学高年级学生的 AI 学习助教。回答要短，先说当前状态，'
+        '再说下一步，最后最多给一条提示。'
+    )
+    user_prompt = (
+        f"问题：{question}\n"
+        f"页面：{request_context.get('page')}\n"
+        f"课程：{request_context.get('course')}\n"
+        f"步骤：{request_context.get('step_code')}\n"
+        f"诊断：{rule_result.get('diagnosis')}\n"
+        f"最近操作：{request_context.get('recent_event_summaries')}\n\n"
+        f"知识片段：\n{knowledge_context.get('text') or ''}"
+    )
+    return [
+        {'role': 'system', 'content': system_prompt},
+        {'role': 'user', 'content': user_prompt},
+    ]
+
+
+def _persist_tutor_message(
+    request_context: dict,
+    question: str,
+    structured_result: dict,
+) -> None:
+    """Best-effort persistence for tutor Q&A text."""
+    try:
+        from models import AiTutorMessage, db
+
+        message = AiTutorMessage(
+            session_id=request_context['session_id'],
+            group_id=request_context['group_id'],
+            role='assistant',
+            user_question_text=question,
+            answer_text=structured_result.get('answer'),
+            diagnosis=structured_result.get('diagnosis'),
+            next_step=structured_result.get('next_step'),
+            tips=structured_result.get('tips'),
+            context_used=structured_result.get('context_used'),
+            source=structured_result.get('source'),
+        )
+        db.session.add(message)
+        db.session.commit()
+    except Exception as exc:
+        logger.warning(f'AI tutor message persistence skipped: {exc}')
+
+
+def answer_with_context(
+    question: str,
+    raw_context: dict,
+    group_id=None,
+    prefer_llm: bool = False,
+) -> dict:
+    """Answer with page context, recent events, rules, and markdown knowledge."""
+    from services import ai_context_store
+    from services.ai_context_service import build_request_context
+    from services.ai_knowledge_service import build_knowledge_context
+    from services.ai_rule_service import detect_stuck
+    from services.ai_session_service import update_session_diagnosis
+
+    request_context = build_request_context(question, raw_context, group_id=group_id)
+    rule_result = detect_stuck(request_context)
+    knowledge_context = build_knowledge_context(
+        request_context.get('course'),
+        step_code=request_context.get('step_code'),
+        diagnosis=rule_result.get('diagnosis'),
+        question=question,
+    )
+
+    base_result = None
+    if not rule_result.get('diagnosis') or prefer_llm:
+        base_context = {
+            'course': request_context.get('course'),
+            'step_code': request_context.get('step_code'),
+            'snapshot': request_context.get('snapshot'),
+            'recent_events': request_context.get('recent_event_summaries'),
+            'diagnosis': rule_result.get('diagnosis'),
+            'knowledge': knowledge_context.get('text'),
+        }
+        base_result = get_answer(question, context=base_context, prefer_llm=prefer_llm)
+
+    structured = compose_structured_response(
+        question,
+        request_context,
+        rule_result,
+        knowledge_context,
+        base_result=base_result,
+    )
+
+    if rule_result.get('diagnosis'):
+        ai_context_store.set_diag(request_context['session_id'], rule_result)
+        try:
+            update_session_diagnosis(request_context['session_id'], rule_result)
+        except Exception as exc:
+            logger.warning(f'AI tutor diagnosis persistence skipped: {exc}')
+
+    _persist_tutor_message(request_context, question, structured)
+    return structured
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # 4. 主入口：获取回复
 # ──────────────────────────────────────────────────────────────────────────────

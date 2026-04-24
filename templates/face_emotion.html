@@ -181,6 +181,31 @@
 let customModels = [];
 let currentModelId = null;
 
+function trackFaceModelEvent(eventName, eventType, stepCode, payload) {
+  if (typeof window.reportFaceEmotionEvent === 'function') {
+    return window.reportFaceEmotionEvent(eventName, eventType, stepCode, payload);
+  }
+  if (window.AiContextTracker && stepCode) {
+    window.AiContextTracker.setStep(stepCode);
+  }
+  if (!window.AiCourseBridge) return Promise.resolve({ skipped: true });
+  return window.AiCourseBridge.track(eventName, {
+    eventType: eventType,
+    stepCode: stepCode,
+    payload: payload || {}
+  });
+}
+
+function scheduleFaceModelSnapshot(stepCode, delayMs) {
+  if (typeof window.scheduleFaceEmotionSnapshot === 'function') {
+    window.scheduleFaceEmotionSnapshot(stepCode, delayMs);
+    return;
+  }
+  if (window.AiContextTracker && typeof window.AiContextTracker.scheduleSnapshot === 'function') {
+    window.AiContextTracker.scheduleSnapshot(delayMs || 500, { stepCode: stepCode });
+  }
+}
+
 function loadCustomModels() {
   fetch('/api/models/list?course=face')
     .then(r => r.json())
@@ -256,6 +281,12 @@ function updateModelInfo() {
 function switchModel() {
   updateModelInfo();
   // 如果当前正在运行，重启摄像头以使用新模型
+  trackFaceModelEvent('model_selected', 'model', 'select_model', {
+    current_model: currentModelId || 'system_default',
+    model_id: currentModelId,
+    model_type: currentModelId ? 'custom' : 'system'
+  });
+  scheduleFaceModelSnapshot('select_model');
   if (isRunning) {
     stopCamera();
     setTimeout(startCamera, 500);
@@ -269,6 +300,25 @@ function getCurrentModelId() {
 
 // 页面加载完成后加载自定义模型
 document.addEventListener('DOMContentLoaded', () => {
+  if (window.AiCourseBridge) {
+    window.AiCourseBridge.init({
+      page: 'face_emotion',
+      course: 'face_emotion',
+      groupId: '{{ session.get("group_id", "") }}',
+      stepCode: 'select_model',
+      snapshotProvider: function() {
+        if (typeof window.getFaceEmotionSnapshot === 'function') {
+          return window.getFaceEmotionSnapshot();
+        }
+        return {
+          current_model: currentModelId || 'system_default',
+          model_id: currentModelId,
+          camera_status: 'unknown'
+        };
+      }
+    });
+    scheduleFaceModelSnapshot('select_model', 600);
+  }
   loadCustomModels();
 });
 </script>

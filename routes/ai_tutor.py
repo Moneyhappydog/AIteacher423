@@ -11,6 +11,7 @@ routes/ai_tutor.py — AI学习助手 API 路由
 from flask import Blueprint, request, jsonify, render_template
 from services.ai_tutor_service import (
     get_answer,
+    answer_with_context,
     code_review,
     get_learning_guide,
     local_answer,
@@ -69,8 +70,17 @@ def ask():
         context.setdefault('user', user.username)
         if user.group:
             context.setdefault('course', user.group.course)
+            context.setdefault('group_id', user.group.group_code)
 
-    result = get_answer(question, context=context, prefer_llm=prefer_llm)
+    if context.get('session_id'):
+        result = answer_with_context(
+            question,
+            raw_context=context,
+            group_id=context.get('group_id'),
+            prefer_llm=prefer_llm,
+        )
+    else:
+        result = get_answer(question, context=context, prefer_llm=prefer_llm)
 
     return jsonify({
         'success': True,
@@ -80,6 +90,10 @@ def ask():
         'tokens_used': result.get('tokens_used', 0),
         'latency_ms': result.get('latency_ms', 0),
         'mode': result.get('mode', 'qa'),
+        'diagnosis': result.get('diagnosis'),
+        'next_step': result.get('next_step'),
+        'tips': result.get('tips', []),
+        'context_used': result.get('context_used'),
     })
 
 

@@ -17,7 +17,10 @@ let mediaRecorder = null;
 let audioChunks = [];
 let currentFaceResult = null;
 let currentAudioResult = null;
+let currentFusionResult = null;
 let selectedToy = null;
+let lastEmotionEventKeys = {};
+let lastEmotionEventTimes = {};
 let firstFaceFrame = true;  // true until first annotated image arrives
 let inflightFaceCount = 0;   // 当前在飞行中的面部请求数
 let latestFaceTimestamp = 0;   // 最新面部请求时间戳（用于处理乱序）
@@ -53,6 +56,81 @@ const strategyCN = {
 };
 
 // ── 摄像头控制 ────────────────────────────────────────────────────────────────
+function getEmotionConfidence(result) {
+  if (!result) return null;
+  if (typeof result.confidence === 'number') return result.confidence;
+  if (result.scores && result.emotion && typeof result.scores[result.emotion] === 'number') {
+    return result.scores[result.emotion];
+  }
+  return null;
+}
+
+function summarizeEmotionResult(result) {
+  if (!result) return null;
+  return {
+    emotion: result.emotion || result.fused_emotion || null,
+    emotion_cn: result.emotion_cn || result.fused_emotion_cn || null,
+    confidence: getEmotionConfidence(result),
+    model_source: result.model_source || null,
+    model_name: result.model_name || null
+  };
+}
+
+function getEmotionComputingSnapshot() {
+  return {
+    face_model_id: typeof getCurrentFaceModelId === 'function' ? getCurrentFaceModelId() : null,
+    audio_model_id: typeof getCurrentAudioModelId === 'function' ? getCurrentAudioModelId() : null,
+    fusion_strategy: typeof getCurrentStrategy === 'function' ? getCurrentStrategy() : 'weighted_average',
+    face_weight: typeof getCurrentWeight === 'function' ? getCurrentWeight() : 0.6,
+    camera_started: !!videoStream,
+    recording: !!isRecording,
+    selected_toy: selectedToy,
+    last_face_result: summarizeEmotionResult(currentFaceResult),
+    last_audio_result: summarizeEmotionResult(currentAudioResult),
+    last_fusion_result: summarizeEmotionResult(currentFusionResult)
+  };
+}
+
+function reportEmotionEvent(eventName, eventType, stepCode, payload) {
+  const throttleMs = eventName === 'face_result_updated' || eventName === 'fusion_result_updated' ? 1500 : 0;
+  const eventKey = `${eventName}:${payload && payload.emotion ? payload.emotion : ''}`;
+  const lastKey = lastEmotionEventKeys[eventName];
+  const lastTime = lastEmotionEventTimes[eventName] || 0;
+  const now = Date.now();
+  if (throttleMs && lastKey === eventKey && now - lastTime < throttleMs) {
+    return Promise.resolve({ skipped: true, reason: 'throttled' });
+  }
+  lastEmotionEventKeys[eventName] = eventKey;
+  lastEmotionEventTimes[eventName] = now;
+
+  if (window.AiContextTracker && stepCode) {
+    window.AiContextTracker.setStep(stepCode);
+  }
+  if (!window.AiCourseBridge) return Promise.resolve({ skipped: true });
+  return window.AiCourseBridge.track(eventName, {
+    eventType: eventType,
+    stepCode: stepCode,
+    payload: Object.assign({}, payload || {}, {
+      snapshot: getEmotionComputingSnapshot()
+    })
+  });
+}
+
+function scheduleEmotionSnapshot(stepCode, delayMs) {
+  if (window.AiContextTracker && stepCode) {
+    window.AiContextTracker.setStep(stepCode);
+  }
+  if (window.AiContextTracker && typeof window.AiContextTracker.scheduleSnapshot === 'function') {
+    window.AiContextTracker.scheduleSnapshot(delayMs || 500, { stepCode: stepCode });
+  } else if (window.AiCourseBridge) {
+    window.AiCourseBridge.snapshot({ stepCode: stepCode });
+  }
+}
+
+window.getEmotionComputingSnapshot = getEmotionComputingSnapshot;
+window.reportEmotionEvent = reportEmotionEvent;
+window.scheduleEmotionSnapshot = scheduleEmotionSnapshot;
+
 const FACE_DETECT_INTERVAL_MS = 80;  // 面部检测间隔: 80ms (~12.5 FPS)
 const FACE_JPEG_QUALITY = 0.75; // JPEG压缩质量: 0.75，清晰度与传输效率平衡
 const FACE_VIDEO_WIDTH = 640;  // 视频宽度: 640px（原320）
@@ -83,6 +161,10 @@ async function startCamera() {
 
     // 开始定时捕获 (100ms间隔，比原来500ms快5倍)
     captureInterval = setInterval(captureAndPredict, FACE_DETECT_INTERVAL_MS);
+    reportEmotionEvent('camera_started', 'camera', 'single_modal_capture', {
+      interval_ms: FACE_DETECT_INTERVAL_MS
+    });
+    scheduleEmotionSnapshot('single_modal_capture');
 
   } catch (err) {
     alert('无法打开摄像头: ' + err.message);
@@ -113,6 +195,8 @@ function stopCamera() {
   document.getElementById('cameraPlaceholder').style.display = 'flex';
   document.getElementById('startCameraBtn').classList.remove('d-none');
   document.getElementById('stopCameraBtn').classList.add('d-none');
+  reportEmotionEvent('camera_stopped', 'camera', 'single_modal_capture');
+  scheduleEmotionSnapshot('single_modal_capture');
 }
 
 async function captureAndPredict() {
@@ -213,6 +297,14 @@ function displayFaceResult(result) {
     <small class="text-muted">${confidence}%</small>
     <div style="margin-top: 4px; font-size: 0.7rem;">${modelSource}</div>
   `;
+  reportEmotionEvent('face_result_updated', 'result', 'single_modal_result', {
+    emotion: result.emotion,
+    emotion_cn: cn,
+    confidence: getEmotionConfidence(result),
+    model_source: result.model_source || null,
+    model_name: result.model_name || null
+  });
+  scheduleEmotionSnapshot('single_modal_result', 350);
 }
 
 // ── 录音控制 ────────────────────────────────────────────────────────────────
@@ -271,6 +363,10 @@ async function startRecording() {
 
     // 用真实麦克风音量驱动波形，录音期间持续显示
     startRecordingWaveform();
+    reportEmotionEvent('recording_started', 'audio', 'single_modal_capture', {
+      realtime_interval_ms: 500
+    });
+    scheduleEmotionSnapshot('single_modal_capture');
   } catch (err) {
     alert('无法录音: ' + err.message);
   }
@@ -284,6 +380,8 @@ function stopRecording() {
       '<i class="bi bi-mic-fill"></i> 开始录音';
     document.getElementById('recordBtn').classList.add('btn-green');
     document.getElementById('recordBtn').classList.remove('btn-red');
+    reportEmotionEvent('recording_stopped', 'audio', 'single_modal_capture');
+    scheduleEmotionSnapshot('single_modal_capture');
   }
 }
 
@@ -465,6 +563,16 @@ function displayAudioResult(result, isRealtime) {
     <small class="text-muted">${confidence}%</small>
     <div style="margin-top: 4px; font-size: 0.7rem;">${modelSource}</div>
   `;
+  if (!isRealtime) {
+    reportEmotionEvent('audio_result_updated', 'result', 'single_modal_result', {
+      emotion: result.emotion,
+      emotion_cn: cn,
+      confidence: getEmotionConfidence(result),
+      model_source: result.model_source || null,
+      model_name: result.model_name || null
+    });
+    scheduleEmotionSnapshot('single_modal_result', 350);
+  }
 }
 
 // ── 融合分析 ────────────────────────────────────────────────────────────────
@@ -512,6 +620,7 @@ async function updateFusion() {
 }
 
 function displayFusedResult(result) {
+  currentFusionResult = result;
   const container = document.getElementById('fusedEmotion');
   const emoji = emotionEmojis[result.fused_emotion] || '😐';
   const cn = result.fused_emotion_cn || emotionCN[result.fused_emotion] || result.fused_emotion;
@@ -566,6 +675,15 @@ function displayFusedResult(result) {
 
   // 更新小玩具预览
   updateToyPreview(result.fused_emotion);
+  reportEmotionEvent('fusion_result_updated', 'result', 'fusion_result', {
+    emotion: result.fused_emotion,
+    emotion_cn: cn,
+    confidence: getEmotionConfidence(result),
+    fusion_method: result.fusion_method || null,
+    dominant_source: result.dominant_source || null,
+    weights: result.weights || result.adaptive_weights || null
+  });
+  scheduleEmotionSnapshot('fusion_result', 350);
 }
 
 function updateFusionInfo(result) {
@@ -637,6 +755,11 @@ function selectToy(toy) {
   const emotion = Object.keys(emotionCN).find(key => emotionCN[key] === label?.textContent) || 'happy';
 
   updateToyPreview(emotion);
+  reportEmotionEvent('toy_selected', 'feedback', 'toy_feedback', {
+    selected_toy: toy,
+    emotion: emotion
+  });
+  scheduleEmotionSnapshot('toy_feedback');
 }
 
 function updateToyPreview(emotion) {

@@ -19,10 +19,94 @@ let trainConfig = {
   polynomialDegree: 2,
   predictionSteps: 12
 };
+let ecoCurrentTab = 'collect';
+let ecoLastPrediction = null;
+let ecoLastControl = null;
+let ecoLastExplore = null;
+
+function getEcoDataCount() {
+  const tableCount = Array.isArray(ecoTableData) ? ecoTableData.length : 0;
+  const pointCount = dataPoints && dataPoints.light ? dataPoints.light.length : 0;
+  return Math.max(tableCount, pointCount);
+}
+
+function getEcoPredictionModel() {
+  const selectedModel = typeof getCurrentModelId === 'function' ? getCurrentModelId() : null;
+  const modelType = document.getElementById('predictModel')?.value || trainConfig.modelType || 'prophet';
+  return selectedModel || modelType || 'system_default';
+}
+
+function getEcobottleSnapshot() {
+  return {
+    current_tab: ecoCurrentTab,
+    data_count: getEcoDataCount(),
+    table_data_count: Array.isArray(ecoTableData) ? ecoTableData.length : 0,
+    training_data_count: dataPoints.light.length,
+    prediction_model: getEcoPredictionModel(),
+    selected_model_id: typeof getCurrentModelId === 'function' ? getCurrentModelId() : null,
+    train_config: Object.assign({}, trainConfig),
+    last_prediction: ecoLastPrediction,
+    last_training: trainResultData ? {
+      success: !!trainResultData.success,
+      model_type: trainResultData.config && trainResultData.config.model_type,
+      channels: trainResultData.results ? Object.keys(trainResultData.results) : []
+    } : null,
+    last_explore: ecoLastExplore,
+    last_control: ecoLastControl,
+    current_sensor_values: Object.assign({}, ecoSensorValues),
+    control_values: Object.assign({}, ecoControlValues),
+    control_strategy: document.querySelector('input[name="ctrlStrategy"]:checked')?.value || 'threshold'
+  };
+}
+
+function reportEcobottleEvent(eventName, eventType, stepCode, payload) {
+  if (window.AiContextTracker && stepCode) {
+    window.AiContextTracker.setStep(stepCode);
+  }
+  if (!window.AiCourseBridge) return Promise.resolve({ skipped: true });
+  return window.AiCourseBridge.track(eventName, {
+    eventType: eventType,
+    stepCode: stepCode,
+    payload: Object.assign({}, payload || {}, {
+      snapshot: getEcobottleSnapshot()
+    })
+  });
+}
+
+function scheduleEcobottleSnapshot(stepCode, delayMs) {
+  if (window.AiContextTracker && stepCode) {
+    window.AiContextTracker.setStep(stepCode);
+  }
+  if (window.AiContextTracker && typeof window.AiContextTracker.scheduleSnapshot === 'function') {
+    window.AiContextTracker.scheduleSnapshot(delayMs || 500, { stepCode: stepCode });
+  } else if (window.AiCourseBridge) {
+    window.AiCourseBridge.snapshot({ stepCode: stepCode });
+  }
+}
+
+function ecobottleStepForTab(tabName) {
+  const map = {
+    collect: 'collect_data',
+    explore: 'explore_data',
+    train: 'train_model',
+    control: 'control',
+    report: 'report'
+  };
+  return map[tabName] || tabName || 'collect_data';
+}
+
+function getEcoGroupId() {
+  return window.ECO_GROUP_ID || 'G01';
+}
+
+window.getEcobottleSnapshot = getEcobottleSnapshot;
+window.reportEcobottleEvent = reportEcobottleEvent;
+window.scheduleEcobottleSnapshot = scheduleEcobottleSnapshot;
 
 // ── 标签页切换 ────────────────────────────────────────────────────────────────────
 function showTab(tabName) {
   try {
+    ecoCurrentTab = tabName;
     const tabId = 'tab-' + tabName;
     const targetTab = document.getElementById(tabId);
     
@@ -59,6 +143,10 @@ function showTab(tabName) {
     if (tabName === 'report' && typeof loadReports === 'function') {
       loadReports();
     }
+    reportEcobottleEvent('tab_changed', 'navigation', ecobottleStepForTab(tabName), {
+      current_tab: tabName
+    });
+    scheduleEcobottleSnapshot(ecobottleStepForTab(tabName));
   } catch(e) {
     console.error('showTab:', e);
   }
@@ -76,6 +164,10 @@ function ecoApplyManual() {
   ecoSensorValues.oxygen      = parseFloat(document.getElementById('ecoInputOxygen').value) || 21;
   ecoSensorValues.solar_power = parseFloat(document.getElementById('ecoInputPower').value) || 0;
   updateEcoDisplay();
+  reportEcobottleEvent('sensor_values_changed', 'collect', 'collect_data', {
+    values: Object.assign({}, ecoSensorValues)
+  });
+  scheduleEcobottleSnapshot('collect_data');
 }
 
 function updateEcoDisplay() {
@@ -106,6 +198,11 @@ function ecoQuickAction(action) {
       break;
   }
   updateEcoDisplay();
+  reportEcobottleEvent('quick_action_used', 'collect', 'collect_data', {
+    action: action,
+    values: Object.assign({}, ecoSensorValues)
+  });
+  scheduleEcobottleSnapshot('collect_data');
 }
 
 function ecoAddData() {
@@ -118,8 +215,13 @@ function ecoAddData() {
   fetch('/sensor/add', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ group_id: 'G01', ...ecoSensorValues })
+    body: JSON.stringify({ group_id: getEcoGroupId(), ...ecoSensorValues })
   }).catch(() => {});
+  reportEcobottleEvent('data_point_added', 'collect', 'collect_data', {
+    data_count: getEcoDataCount(),
+    record: record
+  });
+  scheduleEcobottleSnapshot('collect_data');
 }
 
 function updateEcoTable() {
@@ -145,7 +247,7 @@ function updateEcoTable() {
 async function ecoDeleteRecord(timestamp) {
   if (!confirm('确定要删除这条记录吗？删除后无法恢复哦！')) return;
   try {
-    const resp = await fetch(`/sensor/delete_record/G01/${encodeURIComponent(timestamp)}`, { method: 'POST' });
+    const resp = await fetch(`/sensor/delete_record/${encodeURIComponent(getEcoGroupId())}/${encodeURIComponent(timestamp)}`, { method: 'POST' });
     const result = await resp.json().catch(() => ({}));
     if (!resp.ok || result.error) {
       showMsg('❌ 删除失败：' + (result.error || resp.status), 'error');
@@ -167,11 +269,11 @@ function ecoClear() {
 }
 
 async function ecoClearTable() {
-  if (!window.confirm('将清空表格，并删除服务器上 G01 组的全部传感器记录（与导出/导入使用同一数据源）。确定吗？')) {
+  if (!window.confirm(`将清空表格，并删除服务器上 ${getEcoGroupId()} 组的全部传感器记录（与导出/导入使用同一数据源）。确定吗？`)) {
     return;
   }
   try {
-    const resp = await fetch('/sensor/clear/G01', { method: 'POST' });
+    const resp = await fetch(`/sensor/clear/${encodeURIComponent(getEcoGroupId())}`, { method: 'POST' });
     const result = await resp.json().catch(() => ({}));
     if (!resp.ok) {
       showMsg('❌ 服务器清空失败：' + (result.error || resp.status), 'error');
@@ -189,7 +291,7 @@ async function ecoClearTable() {
   dataPoints.light = [];
   dataPoints.oxygen = [];
   dataPoints.solar_power = [];
-  showMsg('🗑️ 已清空本地列表与服务器 G01 数据', 'success');
+  showMsg(`🗑️ 已清空本地列表与服务器 ${getEcoGroupId()} 数据`, 'success');
 }
 
 async function ecoImportCsv() {
@@ -197,20 +299,24 @@ async function ecoImportCsv() {
   if (!file) { alert('请先选择CSV文件'); return; }
   const fd = new FormData();
   fd.append('file', file);
-  fd.append('group_id', 'G01');
+  fd.append('group_id', getEcoGroupId());
   const resp = await fetch('/sensor/upload', { method: 'POST', body: fd });
   const result = await resp.json();
   alert(`成功导入 ${result.imported || 0} 条记录`);
   ecoLoadHistory();
+  reportEcobottleEvent('csv_imported', 'collect', 'collect_data', {
+    imported: result.imported || 0
+  });
+  scheduleEcobottleSnapshot('collect_data');
 }
 
 function ecoExportCsv() {
-  window.open('/sensor/export/G01', '_blank');
+  window.open(`/sensor/export/${encodeURIComponent(getEcoGroupId())}`, '_blank');
 }
 
 async function ecoLoadHistory() {
   try {
-    const resp = await fetch('/sensor/history/G01');
+    const resp = await fetch(`/sensor/history/${encodeURIComponent(getEcoGroupId())}`);
     const data = await resp.json();
     ecoTableData = data.records || [];
     document.getElementById('ecoRecordCount').textContent = ecoTableData.length + '条';
@@ -269,11 +375,16 @@ function renderExploreChart() {
 function showExploreChannel(ch) {
   exploreChannel = ch;
   renderExploreChart();
+  reportEcobottleEvent('explore_channel_changed', 'explore', 'explore_data', {
+    channel: ch,
+    data_count: getEcoDataCount()
+  });
+  scheduleEcobottleSnapshot('explore_data');
 }
 
 async function runExploreAnalysis() {
   if (ecoTableData.length < 5) { alert('请先采集至少5条数据'); return; }
-  const resp = await fetch('/sensor/explore/G01');
+  const resp = await fetch(`/sensor/explore/${encodeURIComponent(getEcoGroupId())}`);
   const result = await resp.json();
   if (result.error) { alert(result.error); return; }
   const insights = document.getElementById('exploreInsights');
@@ -288,11 +399,18 @@ async function runExploreAnalysis() {
     }
   }
   insights.innerHTML = html || '<p class="text-muted text-center">未发现明显规律</p>';
+  ecoLastExplore = {
+    type: 'trend',
+    data_count: getEcoDataCount(),
+    trend_keys: result.trends ? Object.keys(result.trends) : []
+  };
+  reportEcobottleEvent('explore_analysis_run', 'explore', 'explore_data', ecoLastExplore);
+  scheduleEcobottleSnapshot('explore_data');
 }
 
 async function runCorrelationAnalysis() {
   if (ecoTableData.length < 5) { alert('请先采集至少5条数据'); return; }
-  const resp = await fetch('/sensor/explore/G01');
+  const resp = await fetch(`/sensor/explore/${encodeURIComponent(getEcoGroupId())}`);
   const result = await resp.json();
   if (result.error) { alert(result.error); return; }
   const cards = document.getElementById('corrCards');
@@ -320,6 +438,13 @@ async function runCorrelationAnalysis() {
     }
   }
   cards.innerHTML = html;
+  ecoLastExplore = {
+    type: 'correlation',
+    data_count: getEcoDataCount(),
+    correlation_keys: result.correlation ? Object.keys(result.correlation) : []
+  };
+  reportEcobottleEvent('correlation_analysis_run', 'explore', 'explore_data', ecoLastExplore);
+  scheduleEcobottleSnapshot('explore_data');
 }
 
 // ── 预测练习：5 个通道轮流出题（温度/湿度/光照/氧气/发电）────────────────────────
@@ -555,6 +680,10 @@ function initControlTab() {
   });
   ecoRefreshControl();
   ctrlRefreshTimer = setInterval(ecoRefreshControl, 3000);
+  reportEcobottleEvent('control_tab_initialized', 'control', 'control', {
+    strategy: document.querySelector('input[name="ctrlStrategy"]:checked')?.value || 'threshold'
+  });
+  scheduleEcobottleSnapshot('control');
 }
 
 async function ecoRefreshControl() {
@@ -570,6 +699,16 @@ async function ecoRefreshControl() {
       body: JSON.stringify({ values: vals, thresholds })
     });
     const result = await resp.json();
+    ecoLastControl = {
+      strategy: strategy,
+      thresholds: thresholds,
+      scores: {
+        temp_score: result.temp_score || 0,
+        light_score: result.light_score || 0,
+        energy_score: result.energy_score || 0,
+        composite_score: result.composite_score || 0
+      }
+    };
     document.getElementById('ctrlTempScore').textContent = (result.temp_score || 0).toFixed(0);
     document.getElementById('ctrlLightScore').textContent = (result.light_score || 0).toFixed(0);
     document.getElementById('ctrlEnergyScore').textContent = (result.energy_score || 0).toFixed(0);
@@ -668,6 +807,12 @@ function ecoManualControl(action) {
       break;
   }
   ecoRefreshControl();
+  reportEcobottleEvent('manual_control_applied', 'control', 'control', {
+    action: action,
+    enabled: on,
+    values: Object.assign({}, ecoControlValues)
+  });
+  scheduleEcobottleSnapshot('control');
   document.getElementById('ctrlActionLog').innerHTML = `<span class="badge bg-${on ? 'success' : 'secondary'}">${action}: ${on ? '开启' : '关闭'}</span> 控制已更新`;
 }
 
@@ -802,6 +947,11 @@ function clearAllData() {
 async function runPrediction() {
   syncEcoTableToDataPoints();
   if (dataPoints.light.length < 2) {
+    reportEcobottleEvent('prediction_blocked_not_enough_data', 'predict', 'predict', {
+      data_count: getEcoDataCount(),
+      required_count: 2
+    });
+    scheduleEcobottleSnapshot('predict');
     showMsg('⚠️ 请至少添加 2 个数据点才能预测！', 'warning');
     return;
   }
@@ -828,7 +978,8 @@ async function runPrediction() {
         oxygen:       dataPoints.oxygen.map(p => ({ ds: p.ds, y: p.y })),
         solar_power:  dataPoints.solar_power.map(p => ({ ds: p.ds, y: p.y }))
       },
-      model_type: modelType
+      model_type: modelType,
+      model_id: typeof getCurrentModelId === 'function' ? getCurrentModelId() : null
     };
 
     const resp = await fetch('/eco/predict', {
@@ -855,6 +1006,11 @@ async function runPrediction() {
 
     const validKeys = ['temperature','humidity','light','oxygen','solar_power']
       .filter(k => forecastData[k] && !forecastData[k].error);
+    ecoLastPrediction = {
+      model: modelType,
+      data_count: getEcoDataCount(),
+      channels: validKeys
+    };
 
     if (validKeys.length === 0) {
       showMsg('❌ 没有有效的预测数据', 'error');
@@ -863,6 +1019,8 @@ async function runPrediction() {
 
     if (chartsSec) chartsSec.style.display = '';
     showChart(currentChartKey);
+    reportEcobottleEvent('prediction_requested', 'predict', 'predict', ecoLastPrediction);
+    scheduleEcobottleSnapshot('predict');
     showMsg('🎉 预测完成！查看图表了解未来走势。', 'success');
   } catch (err) {
     if (loadingEl) loadingEl.classList.add('d-none');
@@ -997,6 +1155,11 @@ function selectModel(modelType) {
   
   const deg = document.getElementById('degreeOption');
   if (deg) deg.style.display = modelType === 'polynomial' ? 'block' : 'none';
+  reportEcobottleEvent('training_model_selected', 'train', 'train_model', {
+    model_type: modelType,
+    data_count: getEcoDataCount()
+  });
+  scheduleEcobottleSnapshot('train_model');
 }
 
 // 更新预测步长
@@ -1018,6 +1181,11 @@ async function runTraining() {
   console.log('[训练] 数据点数量:', dataPoints.light.length);
 
   if (dataPoints.light.length < 3) {
+    reportEcobottleEvent('training_blocked_not_enough_data', 'train', 'train_model', {
+      data_count: getEcoDataCount(),
+      required_count: 3
+    });
+    scheduleEcobottleSnapshot('train_model');
     showMsg('⚠️ 请至少添加 3 个数据点才能训练模型！', 'warning');
     return;
   }
@@ -1063,6 +1231,12 @@ async function runTraining() {
 
     trainResultData = result;
     displayTrainingResults(result);
+    reportEcobottleEvent('training_completed', 'train', 'train_model', {
+      model_type: trainConfig.modelType,
+      data_count: getEcoDataCount(),
+      channels: result.results ? Object.keys(result.results) : []
+    });
+    scheduleEcobottleSnapshot('train_model');
     showMsg('🎉 训练完成！查看训练结果。', 'success');
 
   } catch (err) {
@@ -1421,4 +1595,3 @@ function showMsg(msg, type) {
   el.style.background = colors[type] || colors.info;
   setTimeout(() => el.classList.add('d-none'), 4000);
 }
-

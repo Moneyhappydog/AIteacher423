@@ -22,8 +22,86 @@ let isRunning        = false;
 let firstFrame       = true;
 let inflightCount    = 0;          // 当前有多少个请求在飞行中
 let latestReqId      = 0;          // 最新请求ID，用于取消旧请求
+let lastFaceResult   = null;
+let lastFaceCount    = 0;
+let consecutiveNoFaceCount = 0;
+let lastFaceEventKeys = {};
+let lastFaceEventTimes = {};
 
 // ── Camera ──────────────────────────────────────────────────────────────────
+function getSelectedFaceModelId() {
+  return typeof getCurrentModelId === 'function' ? getCurrentModelId() : null;
+}
+
+function getFaceConfidence(face) {
+  if (!face || !Array.isArray(face.scores) || face.scores.length === 0) return null;
+  return Math.max(...face.scores);
+}
+
+function summarizeFaceResult(face) {
+  if (!face) return null;
+  return {
+    emotion_idx: face.emotion_idx,
+    emotion: face.emotion_en || null,
+    emotion_cn: face.emotion_cn || null,
+    confidence: getFaceConfidence(face)
+  };
+}
+
+function getFaceEmotionSnapshot() {
+  const modelId = getSelectedFaceModelId();
+  return {
+    current_model: modelId || 'system_default',
+    model_id: modelId,
+    camera_status: isRunning ? 'running' : 'stopped',
+    camera_started: !!isRunning,
+    last_result: summarizeFaceResult(lastFaceResult),
+    last_face_count: lastFaceCount,
+    consecutive_no_face_count: consecutiveNoFaceCount
+  };
+}
+
+function reportFaceEmotionEvent(eventName, eventType, stepCode, payload) {
+  const data = payload || {};
+  const throttleMs = eventName === 'face_result_updated' || eventName === 'no_face_detected' ? 1500 : 0;
+  const eventKey = `${eventName}:${data.emotion || data.face_count || ''}`;
+  const lastKey = lastFaceEventKeys[eventName];
+  const lastTime = lastFaceEventTimes[eventName] || 0;
+  const now = Date.now();
+  if (throttleMs && lastKey === eventKey && now - lastTime < throttleMs) {
+    return Promise.resolve({ skipped: true, reason: 'throttled' });
+  }
+  lastFaceEventKeys[eventName] = eventKey;
+  lastFaceEventTimes[eventName] = now;
+
+  if (window.AiContextTracker && stepCode) {
+    window.AiContextTracker.setStep(stepCode);
+  }
+  if (!window.AiCourseBridge) return Promise.resolve({ skipped: true });
+  return window.AiCourseBridge.track(eventName, {
+    eventType: eventType,
+    stepCode: stepCode,
+    payload: Object.assign({}, data, {
+      snapshot: getFaceEmotionSnapshot()
+    })
+  });
+}
+
+function scheduleFaceEmotionSnapshot(stepCode, delayMs) {
+  if (window.AiContextTracker && stepCode) {
+    window.AiContextTracker.setStep(stepCode);
+  }
+  if (window.AiContextTracker && typeof window.AiContextTracker.scheduleSnapshot === 'function') {
+    window.AiContextTracker.scheduleSnapshot(delayMs || 500, { stepCode: stepCode });
+  } else if (window.AiCourseBridge) {
+    window.AiCourseBridge.snapshot({ stepCode: stepCode });
+  }
+}
+
+window.getFaceEmotionSnapshot = getFaceEmotionSnapshot;
+window.reportFaceEmotionEvent = reportFaceEmotionEvent;
+window.scheduleFaceEmotionSnapshot = scheduleFaceEmotionSnapshot;
+
 function startCamera() {
   videoEl     = document.getElementById('videoEl');
   videoCanvas = document.getElementById('videoCanvas');
@@ -61,9 +139,17 @@ function startCamera() {
         latestReqId = 0;
         setStatus('📡 正在识别中...', '#7C3AED');
         startCaptureLoop();
+        reportFaceEmotionEvent('camera_started', 'camera', 'start_camera', {
+          interval_ms: DETECT_INTERVAL_MS,
+          model_id: getSelectedFaceModelId()
+        });
+        scheduleFaceEmotionSnapshot('start_camera');
       };
     })
     .catch(err => {
+      reportFaceEmotionEvent('camera_error', 'camera', 'start_camera', {
+        error: err.message
+      });
       setStatus('❌ 无法访问摄像头：' + err.message, '#EF4444');
     });
 }
@@ -90,6 +176,8 @@ function stopCamera() {
   outputImg.style.display = 'none';
   outputImg.classList.remove('visible');
   outputImg.src = '';
+  reportFaceEmotionEvent('camera_stopped', 'camera', 'start_camera');
+  scheduleFaceEmotionSnapshot('start_camera');
 
   document.getElementById('cameraPlaceholder').style.display = 'flex';
   document.getElementById('faceCountBadge').textContent = '未检测到人脸';
@@ -144,6 +232,7 @@ function captureAndPredict() {
 }
 
 function renderFaceResult(data) {
+  lastFaceCount = data.face_count || 0;
   // 显示标注图
   if (data.image) {
     outputImg.src = data.image;
@@ -164,9 +253,28 @@ function renderFaceResult(data) {
 
   if (data.faces && data.faces.length > 0) {
     const face = data.faces[0];
+    lastFaceResult = face;
+    consecutiveNoFaceCount = 0;
     updateEmotionUI(face);
+    reportFaceEmotionEvent('face_result_updated', 'result', 'view_result', {
+      face_count: lastFaceCount,
+      emotion: face.emotion_en || null,
+      emotion_cn: face.emotion_cn || null,
+      confidence: getFaceConfidence(face),
+      model_id: getSelectedFaceModelId(),
+      model_source: data.model_source || null,
+      model_name: data.model_name || null
+    });
+    scheduleFaceEmotionSnapshot('view_result', 350);
     setStatus('✅ 检测成功！', '#10B981');
   } else {
+    lastFaceResult = null;
+    consecutiveNoFaceCount += 1;
+    reportFaceEmotionEvent('no_face_detected', 'result', 'start_camera', {
+      face_count: 0,
+      consecutive_no_face_count: consecutiveNoFaceCount
+    });
+    scheduleFaceEmotionSnapshot('start_camera', 350);
     setStatus('🔍 请将脸移近摄像头...', '#F59E0B');
   }
 }

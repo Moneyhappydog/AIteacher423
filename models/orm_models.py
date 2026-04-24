@@ -576,6 +576,162 @@ class Announcement(db.Model):
 # 便利查询函数
 # ──────────────────────────────────────────────────────────────────────────────
 
+class AiTutorSession(db.Model):
+    """Current AI tutor course session."""
+    __tablename__ = 'ai_tutor_sessions'
+
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    session_id = db.Column(db.String(64), unique=True, nullable=False)
+    group_id = db.Column(
+        db.Integer, db.ForeignKey('groups.user_id', ondelete='CASCADE'),
+        nullable=False
+    )
+    member_id = db.Column(db.String(20), default=None)
+    page = db.Column(db.String(50), nullable=False)
+    course = db.Column(db.String(50), nullable=False)
+    step_code = db.Column(db.String(50), default=None)
+    latest_snapshot = db.Column(db.JSON, default=None)
+    latest_diagnosis = db.Column(db.JSON, default=None)
+    started_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    last_active_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    ended_at = db.Column(db.DateTime, default=None)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    def to_dict(self) -> dict:
+        return {
+            'id': self.id,
+            'session_id': self.session_id,
+            'group_id': self.group_id,
+            'member_id': self.member_id,
+            'page': self.page,
+            'course': self.course,
+            'step_code': self.step_code,
+            'latest_snapshot': self.latest_snapshot,
+            'latest_diagnosis': self.latest_diagnosis,
+            'started_at': self.started_at.isoformat() if self.started_at else None,
+            'last_active_at': self.last_active_at.isoformat() if self.last_active_at else None,
+            'ended_at': self.ended_at.isoformat() if self.ended_at else None,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class AiTutorEvent(db.Model):
+    """Persisted AI tutor page event."""
+    __tablename__ = 'ai_tutor_events'
+
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    session_id = db.Column(db.String(64), nullable=False, index=True)
+    group_id = db.Column(
+        db.Integer, db.ForeignKey('groups.user_id', ondelete='CASCADE'),
+        nullable=False
+    )
+    member_id = db.Column(db.String(20), default=None)
+    page = db.Column(db.String(50), nullable=False)
+    course = db.Column(db.String(50), nullable=False)
+    step_code = db.Column(db.String(50), default=None)
+    event_type = db.Column(db.String(50), nullable=False)
+    event_name = db.Column(db.String(100), nullable=False)
+    payload = db.Column(db.JSON, default=None)
+    summary_text = db.Column(db.String(255), default=None)
+    dedupe_key = db.Column(db.String(120), default=None)
+    event_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    def to_dict(self) -> dict:
+        return {
+            'id': self.id,
+            'session_id': self.session_id,
+            'group_id': self.group_id,
+            'member_id': self.member_id,
+            'page': self.page,
+            'course': self.course,
+            'step_code': self.step_code,
+            'event_type': self.event_type,
+            'event_name': self.event_name,
+            'payload': self.payload,
+            'summary_text': self.summary_text,
+            'dedupe_key': self.dedupe_key,
+            'event_time': self.event_time.isoformat() if self.event_time else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
+class AiTutorMemorySummary(db.Model):
+    """Longer-lived AI tutor memory summary for a group."""
+    __tablename__ = 'ai_tutor_memory_summaries'
+
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    group_id = db.Column(
+        db.Integer, db.ForeignKey('groups.user_id', ondelete='CASCADE'),
+        nullable=False
+    )
+    summary_type = db.Column(db.String(50), nullable=False)
+    course = db.Column(db.String(50), default=None)
+    summary_json = db.Column(db.JSON, nullable=False)
+    window_start = db.Column(db.DateTime, default=None)
+    window_end = db.Column(db.DateTime, default=None)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    def to_dict(self) -> dict:
+        return {
+            'id': self.id,
+            'group_id': self.group_id,
+            'summary_type': self.summary_type,
+            'course': self.course,
+            'summary_json': self.summary_json,
+            'window_start': self.window_start.isoformat() if self.window_start else None,
+            'window_end': self.window_end.isoformat() if self.window_end else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }
+
+
+class AiTutorMessage(db.Model):
+    """Persisted AI tutor question and answer text."""
+    __tablename__ = 'ai_tutor_messages'
+
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    session_id = db.Column(db.String(64), nullable=False, index=True)
+    group_id = db.Column(
+        db.Integer, db.ForeignKey('groups.user_id', ondelete='CASCADE'),
+        nullable=False
+    )
+    role = db.Column(db.String(20), nullable=False)
+    user_question_text = db.Column(db.Text, default=None)
+    answer_text = db.Column(db.Text, default=None)
+    diagnosis = db.Column(db.String(100), default=None)
+    next_step = db.Column(db.String(255), default=None)
+    tips = db.Column(db.JSON, default=None)
+    context_used = db.Column(db.JSON, default=None)
+    source = db.Column(db.String(30), default=None)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    def to_dict(self) -> dict:
+        return {
+            'id': self.id,
+            'session_id': self.session_id,
+            'group_id': self.group_id,
+            'role': self.role,
+            'user_question_text': self.user_question_text,
+            'answer_text': self.answer_text,
+            'diagnosis': self.diagnosis,
+            'next_step': self.next_step,
+            'tips': self.tips,
+            'context_used': self.context_used,
+            'source': self.source,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 def get_group_by_code(code: str) -> Group | None:
     return Group.query.filter_by(group_code=code).first()
 

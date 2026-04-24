@@ -519,6 +519,44 @@ let currentAudioModelId = null;
 let currentFaceWeight = 0.6;
 let currentAudioWeight = 0.4;
 let currentStrategy = 'weighted_average';
+let emotionWeightTrackTimer = null;
+
+function trackEmotionConfigEvent(eventName, eventType, stepCode, payload) {
+  if (typeof window.reportEmotionEvent === 'function') {
+    return window.reportEmotionEvent(eventName, eventType, stepCode, payload);
+  }
+  if (window.AiContextTracker && stepCode) {
+    window.AiContextTracker.setStep(stepCode);
+  }
+  if (!window.AiCourseBridge) return Promise.resolve({ skipped: true });
+  return window.AiCourseBridge.track(eventName, {
+    eventType: eventType,
+    stepCode: stepCode,
+    payload: payload || {}
+  });
+}
+
+function scheduleEmotionConfigSnapshot(stepCode, delayMs) {
+  if (typeof window.scheduleEmotionSnapshot === 'function') {
+    window.scheduleEmotionSnapshot(stepCode, delayMs);
+    return;
+  }
+  if (window.AiContextTracker && typeof window.AiContextTracker.scheduleSnapshot === 'function') {
+    window.AiContextTracker.scheduleSnapshot(delayMs || 500, { stepCode: stepCode });
+  }
+}
+
+function scheduleWeightTracking() {
+  clearTimeout(emotionWeightTrackTimer);
+  emotionWeightTrackTimer = setTimeout(() => {
+    trackEmotionConfigEvent('face_weight_changed', 'fusion', 'fusion_config', {
+      face_weight: currentFaceWeight,
+      audio_weight: currentAudioWeight,
+      fusion_strategy: currentStrategy
+    });
+    scheduleEmotionConfigSnapshot('fusion_config', 300);
+  }, 500);
+}
 
 // ── 表情模型选择器 ───────────────────────────────────────────────────────────
 function loadFaceModels() {
@@ -585,6 +623,11 @@ function updateFaceModelInfo() {
 
 function switchFaceModel() {
   updateFaceModelInfo();
+  trackEmotionConfigEvent('face_model_selected', 'model', 'select_model', {
+    face_model_id: currentFaceModelId,
+    model_type: currentFaceModelId ? 'custom' : 'system'
+  });
+  scheduleEmotionConfigSnapshot('select_model');
 }
 
 // ── 声音情绪模型选择器 ───────────────────────────────────────────────────────────
@@ -652,6 +695,11 @@ function updateAudioModelInfo() {
 
 function switchAudioModel() {
   updateAudioModelInfo();
+  trackEmotionConfigEvent('audio_model_selected', 'model', 'select_model', {
+    audio_model_id: currentAudioModelId,
+    model_type: currentAudioModelId ? 'custom' : 'system'
+  });
+  scheduleEmotionConfigSnapshot('select_model');
 }
 
 // ── 权重调节 ────────────────────────────────────────────────────────────────
@@ -679,6 +727,7 @@ function updateWeightDisplay() {
   if (activePreset) activePreset.classList.add('active');
 
   updateConfigDisplay();
+  scheduleWeightTracking();
 }
 
 function updateAudioWeightDisplay() {
@@ -705,6 +754,7 @@ function updateAudioWeightDisplay() {
   if (activePreset) activePreset.classList.add('active');
 
   updateConfigDisplay();
+  scheduleWeightTracking();
 }
 
 function setWeightPreset(facePercent) {
@@ -715,6 +765,12 @@ function setWeightPreset(facePercent) {
   audioSlider.value = 100 - facePercent;
 
   updateWeightDisplay();
+  trackEmotionConfigEvent('weight_preset_selected', 'fusion', 'fusion_config', {
+    face_weight: currentFaceWeight,
+    audio_weight: currentAudioWeight,
+    preset_face_percent: facePercent
+  });
+  scheduleEmotionConfigSnapshot('fusion_config', 300);
 }
 
 // ── 策略选择 ────────────────────────────────────────────────────────────────
@@ -745,6 +801,11 @@ function initStrategySelector() {
       updateWeightSliderState(usesWeight);
 
       updateConfigDisplay();
+      trackEmotionConfigEvent('fusion_strategy_changed', 'fusion', 'fusion_config', {
+        fusion_strategy: currentStrategy,
+        uses_weight: usesWeight
+      });
+      scheduleEmotionConfigSnapshot('fusion_config', 300);
       // 如果有当前结果，重新计算融合
       if (window.currentFaceResult || window.currentAudioResult) {
         updateFusion();
@@ -829,6 +890,27 @@ function getCurrentStrategy() {
 
 // ── 初始化 ────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  if (window.AiCourseBridge) {
+    window.AiCourseBridge.init({
+      page: 'emotion_computing',
+      course: 'emotion_computing',
+      groupId: '{{ session.get("group_id", "") }}',
+      stepCode: 'select_model',
+      snapshotProvider: function() {
+        if (typeof window.getEmotionComputingSnapshot === 'function') {
+          return window.getEmotionComputingSnapshot();
+        }
+        return {
+          face_model_id: currentFaceModelId,
+          audio_model_id: currentAudioModelId,
+          fusion_strategy: currentStrategy,
+          face_weight: currentFaceWeight,
+          audio_weight: currentAudioWeight
+        };
+      }
+    });
+    scheduleEmotionConfigSnapshot('select_model', 600);
+  }
   loadFaceModels();
   loadAudioModels();
   initStrategySelector();

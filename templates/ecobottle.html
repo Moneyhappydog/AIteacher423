@@ -591,9 +591,35 @@
 {% block extra_scripts %}
 <script src="{{ url_for('static', filename='js/ecobottle.js') }}"></script>
 <script>
+window.ECO_GROUP_ID = '{{ session.get("group_id", "G01") }}' || 'G01';
 // ── 自定义模型选择器 ─────────────────────────────────────────────────────────
 let customModels = [];
 let currentModelId = null;
+
+function trackEcoModelEvent(eventName, eventType, stepCode, payload) {
+  if (typeof window.reportEcobottleEvent === 'function') {
+    return window.reportEcobottleEvent(eventName, eventType, stepCode, payload);
+  }
+  if (window.AiContextTracker && stepCode) {
+    window.AiContextTracker.setStep(stepCode);
+  }
+  if (!window.AiCourseBridge) return Promise.resolve({ skipped: true });
+  return window.AiCourseBridge.track(eventName, {
+    eventType: eventType,
+    stepCode: stepCode,
+    payload: payload || {}
+  });
+}
+
+function scheduleEcoModelSnapshot(stepCode, delayMs) {
+  if (typeof window.scheduleEcobottleSnapshot === 'function') {
+    window.scheduleEcobottleSnapshot(stepCode, delayMs);
+    return;
+  }
+  if (window.AiContextTracker && typeof window.AiContextTracker.scheduleSnapshot === 'function') {
+    window.AiContextTracker.scheduleSnapshot(delayMs || 500, { stepCode: stepCode });
+  }
+}
 
 function loadCustomModels() {
   fetch('/api/models/list?course=eco')
@@ -659,6 +685,12 @@ function updateModelInfo() {
 
 function switchModel() {
   updateModelInfo();
+  trackEcoModelEvent('prediction_model_selected', 'model', 'predict', {
+    selected_model_id: currentModelId,
+    prediction_model: currentModelId || 'system_default',
+    model_type: currentModelId ? 'custom' : 'system'
+  });
+  scheduleEcoModelSnapshot('predict');
   showMsg('已切换预测模型，请重新点击「开始预测」', 'info');
 }
 
@@ -667,6 +699,25 @@ function getCurrentModelId() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  if (window.AiCourseBridge) {
+    window.AiCourseBridge.init({
+      page: 'ecobottle',
+      course: 'ecobottle',
+      groupId: '{{ session.get("group_id", "") }}',
+      stepCode: 'collect_data',
+      snapshotProvider: function() {
+        if (typeof window.getEcobottleSnapshot === 'function') {
+          return window.getEcobottleSnapshot();
+        }
+        return {
+          current_tab: 'collect',
+          data_count: 0,
+          prediction_model: currentModelId || 'system_default'
+        };
+      }
+    });
+    scheduleEcoModelSnapshot('collect_data', 600);
+  }
   loadCustomModels();
 });
 </script>

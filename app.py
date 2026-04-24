@@ -41,6 +41,7 @@ def create_app():
     from routes.evaluation import evaluation_bp
     from routes.auth import auth_bp  # 认证蓝图
     from routes.ai_tutor import ai_tutor_bp  # AI助手蓝图
+    from routes.ai_context import ai_context_bp  # AI助手上下文蓝图
     from routes.editor import editor_bp  # Monaco编辑器蓝图
     from routes.admin import admin_bp  # 管理员控制台蓝图
     from routes.custom_model import custom_model_bp  # 自定义模型管理蓝图
@@ -65,6 +66,7 @@ def create_app():
     app.register_blueprint(evaluation_bp, url_prefix='/eval')
     app.register_blueprint(auth_bp)   # /auth/*
     app.register_blueprint(ai_tutor_bp)  # /ai/*
+    app.register_blueprint(ai_context_bp)  # /ai/context/*
     app.register_blueprint(editor_bp)  # /editor/*
     app.register_blueprint(admin_bp)   # /admin/*
     app.register_blueprint(custom_model_bp)  # /api/models/*

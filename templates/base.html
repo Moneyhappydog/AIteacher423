@@ -396,10 +396,77 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai_context_tracker.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ai_course_bridge.js') }}"></script>
 
 <!-- AI Chat Assistant Script -->
 <script>
 // 编程猫对话助手 — 已接入 /ai/ask API
+
+function inferMaoPageInfo() {
+  const path = window.location.pathname;
+  if (path.includes('emotion')) return { page: 'emotion_computing', course: 'emotion' };
+  if (path.includes('face')) return { page: 'face_emotion', course: 'face' };
+  if (path.includes('eco')) return { page: 'ecobottle', course: 'ecobottle' };
+  return { page: 'global', course: 'general' };
+}
+
+function getMaoAskPayload(question) {
+  const info = inferMaoPageInfo();
+  if (window.AiCourseBridge && !window.AiCourseBridge.page) {
+    window.AiCourseBridge.init({
+      page: info.page,
+      course: info.course,
+      groupId: '{{ session.get("group_id", "") }}'
+    });
+  } else if (window.AiContextTracker && !window.AiContextTracker.getSessionId()) {
+    window.AiContextTracker.init({
+      page: info.page,
+      course: info.course,
+      groupId: '{{ session.get("group_id", "") }}'
+    });
+  }
+
+  const payload = { question: question };
+  if (window.AiCourseBridge && typeof window.AiCourseBridge.attachAskContext === 'function') {
+    return window.AiCourseBridge.attachAskContext(payload);
+  }
+  if (window.AiContextTracker) {
+    return window.AiContextTracker.wrapAskPayload(question, {
+      context: {
+        page: info.page,
+        course: info.course,
+        group_id: '{{ session.get("group_id", "") }}'
+      }
+    });
+  }
+  return payload;
+}
+
+function formatMaoReply(data) {
+  if (!data.success) return '出错啦：' + (data.error || '');
+  const parts = [data.answer || ''];
+  if (data.next_step && !parts[0].includes(data.next_step)) {
+    parts.push('下一步：' + data.next_step);
+  }
+  if (data.tips && data.tips.length) {
+    parts.push('提示：' + data.tips[0]);
+  }
+  return parts.filter(Boolean).join('\n');
+}
+
+async function askMaoApi(question) {
+  const payload = getMaoAskPayload(question);
+  if (window.AiCourseBridge) {
+    window.AiCourseBridge.snapshot({ stepCode: payload.context && payload.context.step_code });
+  }
+  const resp = await fetch('/ai/ask', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  return await resp.json();
+}
 
 function toggleMaoChat() {
   const panel = document.getElementById('maoChatPanel');
@@ -447,14 +514,9 @@ async function sendToMao() {
   const tid = 'thk-' + Date.now();
   addMaoThinking(tid);
   try {
-    const resp = await fetch('/ai/ask', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: message })
-    });
-    const data = await resp.json();
+    const data = await askMaoApi(message);
     removeMaoThinking(tid);
-    addMaoMsg(data.success ? data.answer : ('出错啦：' + (data.error || '')), 'ai');
+    addMaoMsg(formatMaoReply(data), 'ai');
   } catch(e) {
     removeMaoThinking(tid);
     addMaoMsg('网络连接失败 🐱', 'ai');
@@ -471,15 +533,10 @@ function askQuickQuestion(question) {
   addMaoMsg(question, 'user');
   const tid = 'thk-' + Date.now();
   addMaoThinking(tid);
-  fetch('/ai/ask', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question })
-  })
-  .then(r => r.json())
+  askMaoApi(question)
   .then(data => {
     removeMaoThinking(tid);
-    addMaoMsg(data.success ? data.answer : '抱歉出了点小问题 🐱', 'ai');
+    addMaoMsg(data.success ? formatMaoReply(data) : '抱歉出了点小问题 🐱', 'ai');
   })
   .catch(() => { removeMaoThinking(tid); addMaoMsg('网络连接失败 🐱', 'ai'); });
 }
