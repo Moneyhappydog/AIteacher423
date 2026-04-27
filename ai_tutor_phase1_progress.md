@@ -764,3 +764,234 @@ Run a final Phase 1 consistency pass, fix small mismatches, and make sure the pr
 
 - Full browser end-to-end event POST testing was not run because the local runtime still lacks required Python packages such as `flask_sqlalchemy`.
 - Database migration/application still needs to be run in the real deployment environment using `docs/sql/ai_tutor_context_tables.sql`.
+
+## Step 14 - Context-Aware LLM Answer Chain Adjustment
+
+Status: Done
+
+### Goal
+
+Change `/ai/ask` from a rule-template-first response flow into a context-aware LLM flow for session-based asks, so recent student events, page snapshot, diagnosis, and knowledge notes become hidden context for the final tutor answer.
+
+### Modified Files
+
+- `services/ai_tutor_service.py`
+- `routes/ai_tutor.py`
+- `ai_tutor_phase1_progress.md`
+
+### Implemented
+
+- Added `call_llm_messages()` so the tutor can send structured context messages to an OpenAI-compatible API instead of only sending a plain question string.
+- Added `build_context_llm_messages()` to assemble:
+  - current page and course
+  - step code
+  - recent event summaries
+  - snapshot highlights
+  - rule diagnosis and next-step hints
+  - markdown knowledge notes
+- Changed `answer_with_context()` so session-based asks now try the context-aware LLM path first when `LLM_API_KEY` is available.
+- Changed `compose_structured_response()` so rule results remain structured guidance, but they no longer automatically own the final natural-language answer when a valid LLM answer exists.
+- Updated `/ai/ask` so session-based asks default to `prefer_llm=True` unless the client explicitly overrides it.
+- Added `llm_attempted` and `llm_error` to the `/ai/ask` response payload so local verification can tell whether the API path was actually attempted and whether it failed.
+- Added prompt constraints telling the model not to echo internal event names, raw telemetry, or field names to students unless explicitly asked.
+
+### Verification
+
+- Python AST parse passed for:
+  - `services/ai_tutor_service.py`
+  - `routes/ai_tutor.py`
+- `py_compile` could not complete in this workspace because Windows denied the `__pycache__` write/replace step.
+- Functional target after restart:
+  - `/ai/ask` response should expose `source`, `llm_attempted`, and `llm_error`
+  - session-based knowledge questions should stop defaulting to raw rule-template wording like `face_result_updated`
+
+### Not Done Yet
+
+- Browser-side end-to-end verification with a real external model response has not been completed in this step.
+- Standalone asks without `session_id` still follow the older plain `get_answer()` path.
+
+## Step 15 - Reply Tone And Quick-Question Consistency Fix
+
+Status: Done
+
+### Goal
+
+Reduce mechanical tutor replies, avoid duplicate appended hints in the floating chat UI, and make sure each quick-question bubble sends the same question text that it displays.
+
+### Modified Files
+
+- `services/ai_tutor_service.py`
+- `templates/base.html`
+- `ai_tutor_phase1_progress.md`
+
+### Implemented
+
+- Rewrote the context-aware LLM prompt in Chinese so the tutor speaks in a more classroom-friendly, student-facing tone instead of sounding like a diagnostics console.
+- Added prompt constraints that explicitly discourage repeating internal labels such as raw event names, telemetry fields, or rigid `当前状态/下一步/提示` wording.
+- Softened the non-LLM rule fallback text so it no longer echoes the latest raw event summary directly to students.
+- Prevented a second plain LLM retry after the context-aware LLM path has already been attempted and failed.
+- Added backend info logging for each context-aware answer with:
+  - final `source`
+  - `llm_attempted`
+  - `llm_error`
+  - `diagnosis`
+- Updated the floating assistant formatter so `llm_api` answers are shown as-is instead of appending duplicated `next_step` and `tips`.
+- Fixed quick-question topic refresh in `base.html`:
+  - refreshed button text
+  - refreshed `data-question`
+  - refreshed click handler
+  so the displayed bubble text and the actual sent question stay aligned.
+- Exposed the latest `/ai/ask` response as `window.__lastMaoAskResponse` and added a console info log for local verification of whether LLM was actually attempted.
+
+### Verification
+
+- Python AST parse passed for:
+  - `services/ai_tutor_service.py`
+- Confirmed the key frontend Step 15 markers are present in `templates/base.html`:
+  - `data.source === 'llm_api'`
+  - `window.__lastMaoAskResponse`
+  - refreshed quick-question `onclick` binding
+- Direct `node --check` is not applicable to the full Jinja HTML template file itself.
+- Functional target after restart:
+  - quick-question button text and sent question should match
+  - `window.__lastMaoAskResponse` should show `source`, `llm_attempted`, and `llm_error`
+  - `llm_api` answers should no longer have duplicated appended hints in the chat panel
+
+### Not Done Yet
+
+- Real browser-side confirmation with a successful external Qwen response is still needed after restart.
+
+## Step 16 - LLM UTF-8 Request Path Fix
+
+Status: Done
+
+### Goal
+
+Fix the external LLM call path that was failing with an ASCII encoding error during `/ai/ask`, so Chinese prompts and context can be sent safely to the OpenAI-compatible Qwen endpoint.
+
+### Modified Files
+
+- `services/ai_tutor_service.py`
+- `ai_tutor_phase1_progress.md`
+
+### Implemented
+
+- Added `_post_openai_compatible_messages()` as a shared low-level HTTP request helper for chat completions.
+- Switched both `call_llm_api()` and `call_llm_messages()` away from the SDK wrapper and onto explicit UTF-8 JSON POST requests.
+- Explicitly send:
+  - `Content-Type: application/json; charset=utf-8`
+  - request body encoded with `json.dumps(..., ensure_ascii=False).encode('utf-8')`
+- Unified the compatibility path so the plain ask path and the context-aware ask path now use the same transport behavior.
+- Kept the existing return contract:
+  - `answer`
+  - `source`
+  - `model`
+  - `tokens_used`
+  - `latency_ms`
+  - `error`
+
+### Verification
+
+- Pending restart-and-retry verification in the running local Flask process.
+- Expected success signal after restart:
+  - no more `ascii codec can't encode characters` in backend logs
+  - `/ai/ask` response should show `llm_attempted: true`
+  - `llm_error` should become `null` when Qwen returns normally
+
+### Not Done Yet
+
+- Real browser-side confirmation with a successful external Qwen response is still needed after restart.
+
+## Step 17 - Ignore Broken Local Proxy Environment For LLM Calls
+
+Status: Done
+
+### Goal
+
+Prevent local `/ai/ask` LLM requests from being hijacked by broken system proxy environment variables during development.
+
+### Modified Files
+
+- `services/ai_tutor_service.py`
+- `ai_tutor_phase1_progress.md`
+
+### Implemented
+
+- Updated the shared HTTP client in `_post_openai_compatible_messages()` to use `trust_env=False`.
+- This makes the LLM request path ignore local environment proxy variables such as:
+  - `HTTP_PROXY`
+  - `HTTPS_PROXY`
+  - `ALL_PROXY`
+- This change was added because the current local shell has proxy values pointing to `http://127.0.0.1:9`, which causes external LLM requests to fail before they reach the Qwen endpoint.
+
+### Verification
+
+- Local direct function check confirmed the current shell environment contains broken proxy settings:
+  - `HTTP_PROXY=http://127.0.0.1:9`
+  - `HTTPS_PROXY=http://127.0.0.1:9`
+  - `ALL_PROXY=http://127.0.0.1:9`
+- Before this change, direct local LLM-call tests failed with:
+  - `[WinError 10061] 由于目标计算机积极拒绝，无法连接。`
+
+### Not Done Yet
+
+- Real browser-side confirmation with a successful external Qwen response is still needed after restart.
+
+## Step 18 - Add Direct Qwen Probe Endpoint
+
+Status: Done
+
+### Goal
+
+Add a direct probe path that checks whether the configured Qwen endpoint can really answer, without hiding failures behind local fallback text.
+
+### Modified Files
+
+- `services/ai_tutor_service.py`
+- `routes/ai_tutor.py`
+- `ai_tutor_phase1_progress.md`
+
+### Implemented
+
+- Added `probe_llm_connection(prompt=None)` in `services/ai_tutor_service.py`.
+- The probe sends a minimal two-message request straight to the configured OpenAI-compatible endpoint and returns:
+  - `ok`
+  - `answer`
+  - `source`
+  - `model`
+  - `tokens_used`
+  - `latency_ms`
+  - `error`
+  - `prompt`
+- Added `GET/POST /ai/llm_probe` in `routes/ai_tutor.py`.
+- The new route is login-protected and returns:
+  - HTTP `200` when the external LLM actually answers
+  - HTTP `502` when the external LLM call fails or returns empty
+- This route does not use rule-based or local-answer fallback, so it is suitable for diagnosing `403`, bad model names, invalid keys, and empty upstream responses.
+
+### Verification
+
+- Python AST parse passed for:
+  - `services/ai_tutor_service.py`
+  - `routes/ai_tutor.py`
+- Direct local function probe executed:
+  - `probe_llm_connection()`
+- Current runtime result in this environment:
+  - `ok=False`
+  - `model='qwen3.6-plus'`
+  - `error=Client error '403 Forbidden' for url 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'`
+- Intended local probe examples after restart:
+  - `GET /ai/llm_probe`
+  - `POST /ai/llm_probe` with `{ "prompt": "请只回复：探测成功" }`
+- Expected success signal:
+  - `probe_ok: true`
+  - non-empty `answer`
+  - `error: null`
+- Expected failure signal:
+  - `probe_ok: false`
+  - HTTP `502`
+  - explicit upstream `error`
+
+### Not Done Yet
+
+- Runtime confirmation against the current DashScope/Qwen credentials still needs to be executed after the Flask process reloads.

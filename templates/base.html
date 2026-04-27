@@ -445,11 +445,13 @@ function getMaoAskPayload(question) {
 
 function formatMaoReply(data) {
   if (!data.success) return '出错啦：' + (data.error || '');
-  const parts = [data.answer || ''];
-  if (data.next_step && !parts[0].includes(data.next_step)) {
+  const answer = data.answer || '';
+  if (data.source === 'llm_api') return answer;
+  const parts = [answer];
+  if (data.next_step && answer && !answer.includes(data.next_step)) {
     parts.push('下一步：' + data.next_step);
   }
-  if (data.tips && data.tips.length) {
+  if (data.tips && data.tips.length && answer && !answer.includes(data.tips[0])) {
     parts.push('提示：' + data.tips[0]);
   }
   return parts.filter(Boolean).join('\n');
@@ -465,7 +467,18 @@ async function askMaoApi(question) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
-  return await resp.json();
+  const data = await resp.json();
+  window.__lastMaoAskResponse = data;
+  if (data && data.success) {
+    console.info('[AI Tutor]', {
+      source: data.source,
+      model: data.model,
+      llm_attempted: data.llm_attempted,
+      llm_error: data.llm_error,
+      diagnosis: data.diagnosis
+    });
+  }
+  return data;
 }
 
 function toggleMaoChat() {
@@ -495,7 +508,11 @@ async function loadMaoTopics() {
     if (data.success && data.topics) {
       const btns = document.querySelectorAll('.mao-quick-questions button');
       data.topics.slice(0, 4).forEach((topic, i) => {
-        if (btns[i]) btns[i].textContent = topic;
+        if (btns[i]) {
+          btns[i].textContent = topic;
+          btns[i].dataset.question = topic;
+          btns[i].onclick = () => askQuickQuestion(topic);
+        }
       });
     }
   } catch(e) {}

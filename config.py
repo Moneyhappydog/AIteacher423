@@ -13,8 +13,12 @@ class Config:
     # ── MySQL 数据库配置 ──────────────────────────────────────────────────────────
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         'SQLALCHEMY_DATABASE_URI',
-        'mysql+pymysql://root:hkustmao%40com888F@localhost:3306/maogang?charset=utf8mb4'
+        'mysql+pymysql://root@127.0.0.1:3307/maogang?charset=utf8mb4'
     )
+    # SQLALCHEMY_DATABASE_URI = os.environ.get(
+    #     'SQLALCHEMY_DATABASE_URI',
+    #     'mysql+pymysql://root:hkustmao%40com888F@localhost:3306/maogang?charset=utf8mb4'
+    # )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # ── Redis 缓存配置（高并发优化）─────────────────────────────────────────────
     REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
@@ -64,8 +68,9 @@ class Config:
 
     # AI助手配置
     LLM_API_KEY = os.environ.get('LLM_API_KEY', '')
-    LLM_BASE_URL = os.environ.get('LLM_BASE_URL', 'https://api.openai.com/v1')
-    LLM_MODEL = os.environ.get('LLM_MODEL', 'gpt-4o-mini')
+    LLM_BASE_URL = os.environ.get('LLM_BASE_URL', 'https://dashscope.aliyuncs.com/compatible-mode/v1')
+    LLM_MODEL = os.environ.get('LLM_MODEL', 'qwen3.6-plus')
+
 
     # 传感器通道（模拟模式）
     SENSOR_UPLOAD_INTERVAL = 30  # 秒

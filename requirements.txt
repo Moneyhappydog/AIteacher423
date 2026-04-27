@@ -1,0 +1,3 @@
+D:\MySQL80\bin\mysqld.exe --defaults-file=D:\codeC\VsCodeP\eduplatform\.local_mysql\my.ini
+python app.py
+http://127.0.0.1:5000

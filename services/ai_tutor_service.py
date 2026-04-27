@@ -13,6 +13,7 @@ import os
 import re
 import time
 import logging
+import json
 from typing import Optional
 from config import Config
 
@@ -450,51 +451,14 @@ def call_llm_api(question: str, context: dict = None) -> dict:
         {'role': 'user', 'content': user_prompt},
     ]
 
-    # 调用 OpenAI 兼容 API
-    try:
-        import openai
-        client = openai.OpenAI(api_key=api_key, base_url=base_url if base_url else None)
-
-        start_ms = int(time.time() * 1000)
-        response = client.chat.completions.create(
-            model=model,
-            messages=messages,
-            temperature=0.7,
-            max_tokens=600,
-        )
-        latency_ms = int(time.time() * 1000) - start_ms
-
-        answer = response.choices[0].message.content.strip()
-        tokens_used = response.usage.total_tokens if response.usage else 0
-
-        return {
-            'answer': answer,
-            'source': 'llm_api',
-            'model': model,
-            'tokens_used': tokens_used,
-            'latency_ms': latency_ms,
-            'error': None,
-        }
-
-    except ImportError:
-        return {
-            'answer': None,
-            'source': 'llm_api',
-            'model': model,
-            'error': '请安装 openai 库：pip install openai',
-            'tokens_used': 0,
-            'latency_ms': 0,
-        }
-    except Exception as e:
-        logger.warning(f'LLM API 调用失败: {e}')
-        return {
-            'answer': None,
-            'source': 'llm_api',
-            'model': model,
-            'error': str(e),
-            'tokens_used': 0,
-            'latency_ms': 0,
-        }
+    return _post_openai_compatible_messages(
+        messages,
+        model=model,
+        api_key=api_key,
+        base_url=base_url,
+        temperature=0.7,
+        max_tokens=600,
+    )
 
 
 def _first_tip(tips: list | None) -> str | None:
@@ -503,22 +467,167 @@ def _first_tip(tips: list | None) -> str | None:
     return tips[0]
 
 
+def _post_openai_compatible_messages(
+    messages: list[dict],
+    *,
+    model: str,
+    api_key: str,
+    base_url: str | None,
+    temperature: float,
+    max_tokens: int,
+) -> dict:
+    """Post chat-completions with explicit UTF-8 JSON to avoid SDK encoding issues."""
+    try:
+        import httpx
+    except ImportError:
+        return {
+            'answer': None,
+            'source': 'llm_api',
+            'model': model,
+            'error': 'Please install httpx',
+            'tokens_used': 0,
+            'latency_ms': 0,
+        }
+
+    if not base_url:
+        return {
+            'answer': None,
+            'source': 'llm_api',
+            'model': model,
+            'error': 'LLM_BASE_URL not configured',
+            'tokens_used': 0,
+            'latency_ms': 0,
+        }
+
+    endpoint = base_url.rstrip('/') + '/chat/completions'
+    payload = {
+        'model': model,
+        'messages': messages,
+        'temperature': temperature,
+        'max_tokens': max_tokens,
+    }
+    headers = {
+        'Authorization': f'Bearer {api_key}',
+        'Content-Type': 'application/json; charset=utf-8',
+    }
+
+    try:
+        start_ms = int(time.time() * 1000)
+        with httpx.Client(timeout=45.0, trust_env=False) as client:
+            response = client.post(
+                endpoint,
+                headers=headers,
+                content=json.dumps(payload, ensure_ascii=False).encode('utf-8'),
+            )
+        latency_ms = int(time.time() * 1000) - start_ms
+
+        response.raise_for_status()
+        data = response.json()
+
+        answer = (
+            data.get('choices', [{}])[0]
+            .get('message', {})
+            .get('content', '')
+            .strip()
+        )
+        usage = data.get('usage') or {}
+        tokens_used = usage.get('total_tokens', 0)
+
+        return {
+            'answer': answer or None,
+            'source': 'llm_api',
+            'model': data.get('model') or model,
+            'tokens_used': tokens_used,
+            'latency_ms': latency_ms,
+            'error': None if answer else 'Empty LLM response',
+        }
+    except Exception as exc:
+        logger.warning(f'LLM API call failed: {exc}')
+        return {
+            'answer': None,
+            'source': 'llm_api',
+            'model': model,
+            'error': str(exc),
+            'tokens_used': 0,
+            'latency_ms': 0,
+        }
+
+
+def call_llm_messages(messages: list[dict]) -> dict:
+    """Call the configured OpenAI-compatible API with prebuilt messages."""
+    api_key = Config.LLM_API_KEY
+    base_url = Config.LLM_BASE_URL
+    model = Config.LLM_MODEL
+
+    if not api_key or api_key.strip() == '':
+        return {
+            'answer': None,
+            'source': 'llm_api',
+            'model': model,
+            'error': 'LLM_API_KEY not configured',
+            'tokens_used': 0,
+            'latency_ms': 0,
+        }
+
+    return _post_openai_compatible_messages(
+        messages,
+        model=model,
+        api_key=api_key,
+        base_url=base_url,
+        temperature=0.5,
+        max_tokens=700,
+    )
+
+
+def probe_llm_connection(prompt: str | None = None) -> dict:
+    """Run a direct LLM probe without any local fallback."""
+    probe_prompt = (prompt or '').strip() or '请只回复“探测成功”。'
+    messages = [
+        {
+            'role': 'system',
+            'content': '你是一个接口连通性探测助手。严格按要求简短作答，不要补充解释。',
+        },
+        {
+            'role': 'user',
+            'content': probe_prompt,
+        },
+    ]
+
+    llm_result = call_llm_messages(messages)
+    return {
+        'ok': bool(llm_result.get('answer')),
+        'answer': llm_result.get('answer'),
+        'source': llm_result.get('source'),
+        'model': llm_result.get('model'),
+        'tokens_used': llm_result.get('tokens_used', 0),
+        'latency_ms': llm_result.get('latency_ms', 0),
+        'error': llm_result.get('error'),
+        'prompt': probe_prompt,
+    }
+
+
 def compose_structured_response(
     question: str,
     request_context: dict,
     rule_result: dict,
     knowledge_context: dict,
     base_result: dict | None = None,
+    llm_result: dict | None = None,
 ) -> dict:
     """Compose the phase 1 structured tutor response."""
     diagnosis = rule_result.get('diagnosis')
     tips = rule_result.get('tips') or []
     next_step = rule_result.get('next_step')
 
-    if diagnosis and next_step:
-        current_state = '我看到了你当前页面的操作状态。'
-        if request_context.get('recent_event_summaries'):
-            current_state = f"我看到你刚才做了：{request_context['recent_event_summaries'][-1]}。"
+    if llm_result and llm_result.get('answer'):
+        answer = llm_result['answer']
+        source = llm_result.get('source', 'llm_api')
+        mode = rule_result.get('mode') or detect_mode(question)
+        tokens_used = llm_result.get('tokens_used', 0)
+        latency_ms = llm_result.get('latency_ms', 0)
+        model = llm_result.get('model')
+    elif diagnosis and next_step:
+        current_state = '我看了下你现在的进度，已经到这一小步啦。'
         answer_parts = [current_state, next_step]
         if _first_tip(tips):
             answer_parts.append(f"提示：{_first_tip(tips)}")
@@ -565,6 +674,8 @@ def compose_structured_response(
         'next_step': next_step,
         'tips': tips,
         'context_used': context_used,
+        'llm_attempted': bool(llm_result),
+        'llm_error': (llm_result or {}).get('error'),
         'rule_result': rule_result,
     }
 
@@ -588,6 +699,56 @@ def build_llm_messages_from_context(
         f"诊断：{rule_result.get('diagnosis')}\n"
         f"最近操作：{request_context.get('recent_event_summaries')}\n\n"
         f"知识片段：\n{knowledge_context.get('text') or ''}"
+    )
+    return [
+        {'role': 'system', 'content': system_prompt},
+        {'role': 'user', 'content': user_prompt},
+    ]
+
+
+def build_context_llm_messages(
+    question: str,
+    request_context: dict,
+    rule_result: dict,
+    knowledge_context: dict,
+) -> list[dict]:
+    """Build the actual context-rich messages used by `/ai/ask`."""
+    snapshot = request_context.get('snapshot') or {}
+    recent_events = request_context.get('recent_event_summaries') or []
+    tips = rule_result.get('tips') or []
+    next_step = rule_result.get('next_step')
+    knowledge_text = knowledge_context.get('text') or ''
+
+    snapshot_lines = []
+    for key, value in snapshot.items():
+        if value is None or isinstance(value, (dict, list)):
+            continue
+        snapshot_lines.append(f'- {key}: {value}')
+        if len(snapshot_lines) >= 8:
+            break
+
+    system_prompt = (
+        '你是一位面向小学高年级学生的课堂 AI 助教。'
+        '请用自然、温和、像老师在课堂上解释一样的中文回答。'
+        '优先直接回答学生真正问的问题，不要一上来就讲系统状态。'
+        '页面状态、最近操作、诊断结果、知识笔记只是你的隐藏参考，不要把内部事件名、字段名、step code、原始埋点直接念给学生听。'
+        '如果学生问的是知识概念，就先讲明白原理，再轻轻联系他刚才页面上的操作。'
+        '如果学生问的是“下一步怎么办”，再给出一条明确可执行的下一步。'
+        '避免机械重复“提示、下一步、当前状态”这些标签；除非很有帮助，否则不要列很多条。'
+        '回答尽量控制在 2 到 4 句，清楚、亲切、不官腔。'
+    )
+    user_prompt = (
+        f"学生问题：{question}\n"
+        f"页面：{request_context.get('page')}\n"
+        f"课程：{request_context.get('course')}\n"
+        f"步骤：{request_context.get('step_code')}\n"
+        f"诊断：{rule_result.get('diagnosis')}\n"
+        f"建议下一步：{next_step}\n"
+        f"可参考提示：{tips}\n"
+        f"最近操作摘要：{recent_events}\n"
+        f"页面快照：\n{chr(10).join(snapshot_lines) if snapshot_lines else '- 无'}\n\n"
+        f"知识笔记：\n{knowledge_text}\n\n"
+        '请给出一段适合学生阅读的回答：先解答问题，再在必要时轻轻点出他现在所处的步骤，最后只给一条最值得做的下一步。'
     )
     return [
         {'role': 'system', 'content': system_prompt},
@@ -644,8 +805,20 @@ def answer_with_context(
         question=question,
     )
 
+    llm_result = None
+    has_llm = bool(Config.LLM_API_KEY and Config.LLM_API_KEY.strip())
+    if has_llm:
+        llm_messages = build_context_llm_messages(
+            question,
+            request_context,
+            rule_result,
+            knowledge_context,
+        )
+        llm_result = call_llm_messages(llm_messages)
+
     base_result = None
-    if not rule_result.get('diagnosis') or prefer_llm:
+    fallback_prefer_llm = prefer_llm and llm_result is None
+    if not (llm_result and llm_result.get('answer')) and (not rule_result.get('diagnosis') or prefer_llm):
         base_context = {
             'course': request_context.get('course'),
             'step_code': request_context.get('step_code'),
@@ -654,7 +827,7 @@ def answer_with_context(
             'diagnosis': rule_result.get('diagnosis'),
             'knowledge': knowledge_context.get('text'),
         }
-        base_result = get_answer(question, context=base_context, prefer_llm=prefer_llm)
+        base_result = get_answer(question, context=base_context, prefer_llm=fallback_prefer_llm)
 
     structured = compose_structured_response(
         question,
@@ -662,6 +835,7 @@ def answer_with_context(
         rule_result,
         knowledge_context,
         base_result=base_result,
+        llm_result=llm_result,
     )
 
     if rule_result.get('diagnosis'):
@@ -670,6 +844,15 @@ def answer_with_context(
             update_session_diagnosis(request_context['session_id'], rule_result)
         except Exception as exc:
             logger.warning(f'AI tutor diagnosis persistence skipped: {exc}')
+
+    logger.info(
+        'AI tutor answer source=%s llm_attempted=%s llm_error=%s diagnosis=%s session_id=%s',
+        structured.get('source'),
+        structured.get('llm_attempted'),
+        structured.get('llm_error'),
+        structured.get('diagnosis'),
+        request_context.get('session_id'),
+    )
 
     _persist_tutor_message(request_context, question, structured)
     return structured

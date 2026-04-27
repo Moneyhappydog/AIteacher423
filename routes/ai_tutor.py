@@ -16,6 +16,7 @@ from services.ai_tutor_service import (
     get_learning_guide,
     local_answer,
     call_llm_api,
+    probe_llm_connection,
 )
 from routes.auth import login_required, get_current_user
 
@@ -62,7 +63,7 @@ def ask():
         return jsonify({'success': False, 'error': '问题长度不能超过500字'}), 400
 
     context = data.get('context') or {}
-    prefer_llm = bool(data.get('prefer_llm', False))
+    prefer_llm = bool(data['prefer_llm']) if 'prefer_llm' in data else bool(context.get('session_id'))
 
     # 尝试接入当前用户信息
     user = get_current_user()
@@ -94,6 +95,8 @@ def ask():
         'next_step': result.get('next_step'),
         'tips': result.get('tips', []),
         'context_used': result.get('context_used'),
+        'llm_attempted': result.get('llm_attempted', False),
+        'llm_error': result.get('llm_error'),
     })
 
 
@@ -167,6 +170,30 @@ def get_mode_info():
             'learning_guide': True,
         },
     })
+
+
+@ai_tutor_bp.route('/llm_probe', methods=['GET', 'POST'])
+@login_required
+def llm_probe():
+    """Directly probe whether the configured LLM can answer."""
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        prompt = (data.get('prompt') or '').strip()
+    else:
+        prompt = (request.args.get('prompt') or '').strip()
+
+    result = probe_llm_connection(prompt=prompt)
+    return jsonify({
+        'success': result['ok'],
+        'probe_ok': result['ok'],
+        'answer': result.get('answer'),
+        'source': result.get('source'),
+        'model': result.get('model'),
+        'tokens_used': result.get('tokens_used', 0),
+        'latency_ms': result.get('latency_ms', 0),
+        'error': result.get('error'),
+        'prompt': result.get('prompt'),
+    }), (200 if result['ok'] else 502)
 
 
 @ai_tutor_bp.route('/quick_answer', methods=['GET'])

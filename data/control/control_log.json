@@ -7230,6 +7230,3846 @@
       "temp_action": "fan_on",
       "light_action": null,
       "group_id": "G03"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:50.481655",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:50.504531",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:50.543140",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:50.584754",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:50.613990",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:50.659951",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:50.701490",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:50.730644",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:50.764044",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:50.797764",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:50.834788",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:50.859830",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:50.893280",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:50.930820",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:53.551569",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:56.561380",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:45:59.551373",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:02.556443",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:05.559938",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:08.563921",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:11.546977",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:14.559705",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:17.556331",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:20.556864",
+      "current_values": {
+        "temperature": 25,
+        "light": 120,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.130614",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": true
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.231564",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": true
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.259545",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": true
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.293030",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": true
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.335814",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.366053",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.397191",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.426416",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.455803",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.488922",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.522409",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.559881",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.589594",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.623125",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.652370",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.685470",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.723277",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.751883",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.781835",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.814019",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.847332",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.880995",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.918029",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.955640",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:33.989033",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.018405",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.055693",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.093029",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.126486",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.164304",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.201620",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.239049",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.276384",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.313905",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.355557",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.389523",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.422390",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.464121",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.497284",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.539050",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.580679",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.618192",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.651381",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.763922",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.797835",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.834834",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.876395",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.905676",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.943540",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:34.980597",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.018476",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.063963",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.097301",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.130667",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.168094",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.206938",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.239023",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.284780",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.322357",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.355716",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.393221",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.430682",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.480612",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.518030",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.547300",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.576468",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.609983",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.643424",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.680665",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:35.714043",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:46:55.957152",
+      "current_values": {
+        "temperature": 22,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:00.047294",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:00.084961",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:00.126816",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:00.164023",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:00.197331",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:00.243201",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:00.280572",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:00.318567",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:00.355674",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:00.397355",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:02.555611",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:05.559865",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:08.561854",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:11.559798",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:14.555598",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:17.556086",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:20.559763",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:23.559797",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:26.556071",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:29.555610",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:32.555932",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:35.559692",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:38.555836",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:41.555981",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:44.555886",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:47.561668",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:50.555533",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:53.556081",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:56.559754",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:47:59.559948",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:48:02.555716",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": false
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:48:32.639836",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": true
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
+    },
+    {
+      "strategy": "threshold",
+      "timestamp": "2026-04-24T16:48:40.835141",
+      "current_values": {
+        "temperature": 25,
+        "light": 400,
+        "solar_power": 0,
+        "using_solar": true
+      },
+      "actions": [
+        {
+          "target": "fan",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "heater",
+          "action": "off",
+          "reason": "温度正常"
+        },
+        {
+          "target": "light",
+          "action": "auto",
+          "reason": "光照正常"
+        }
+      ],
+      "temp_action": null,
+      "light_action": null,
+      "group_id": "G01"
     }
   ]
 }
