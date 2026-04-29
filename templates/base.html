@@ -106,6 +106,62 @@
     color: #10b981;
     font-weight: 600;
   }
+  .mao-mode-switch {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(124, 58, 237, 0.12);
+    background: linear-gradient(180deg, rgba(124, 58, 237, 0.05) 0%, rgba(124, 58, 237, 0.02) 100%);
+  }
+  .mao-mode-meta {
+    flex: 1;
+    min-width: 0;
+  }
+  .mao-mode-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #5b21b6;
+  }
+  .mao-mode-hint {
+    font-size: 0.73rem;
+    line-height: 1.45;
+    color: #6b7280;
+  }
+  .mao-mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid rgba(124, 58, 237, 0.18);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  }
+  .mao-mode-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 7px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    color: #6b7280;
+    background: transparent;
+    transition: all 0.2s ease;
+  }
+  .mao-mode-btn.active {
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+    color: #fff;
+    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.28);
+  }
+  .mao-mode-btn:not(.active):hover {
+    color: #4c1d95;
+    background: rgba(124, 58, 237, 0.08);
+  }
 </style>
 
 <!-- Navigation -->
@@ -376,6 +432,19 @@
       <span>港科大（广州）& 编程猫小助手</span>
       <button class="mao-chat-close" onclick="toggleMaoChat()">×</button>
     </div>
+    <div class="mao-mode-switch">
+      <div class="mao-mode-meta">
+        <div class="mao-mode-label">
+          <i class="bi bi-toggles2"></i>
+          <span id="maoModeLabel">当前模式：轻问答</span>
+        </div>
+        <div class="mao-mode-hint" id="maoModeHint">快速提问，不结合当前页面过程。刷新页面后会恢复为轻问答。</div>
+      </div>
+      <div class="mao-mode-toggle" role="group" aria-label="AI 助教模式切换">
+        <button type="button" class="mao-mode-btn active" id="maoModeSimpleBtn" onclick="setMaoAskMode('simple')">轻问答</button>
+        <button type="button" class="mao-mode-btn" id="maoModeContextBtn" onclick="setMaoAskMode('context')">全链路</button>
+      </div>
+    </div>
     <div class="mao-chat-messages" id="maoMessages">
       <div class="mao-msg mao-msg-ai">
         <img src="{{ url_for('static', filename='images/mao.png') }}" alt="编程猫">
@@ -403,6 +472,52 @@
 <script>
 // 编程猫对话助手 — 已接入 /ai/ask API
 
+const MAO_ASK_MODE_SIMPLE = 'simple';
+const MAO_ASK_MODE_CONTEXT = 'context';
+
+function getMaoAskMode() {
+  return window.__aiAskMode === MAO_ASK_MODE_CONTEXT ? MAO_ASK_MODE_CONTEXT : MAO_ASK_MODE_SIMPLE;
+}
+
+function getMaoModeText(mode) {
+  if (mode === MAO_ASK_MODE_CONTEXT) {
+    return {
+      label: '当前模式：全链路',
+      hint: '结合当前页面过程、操作记录和上下文链路来回答。本页临时有效，刷新后恢复为轻问答。'
+    };
+  }
+  return {
+    label: '当前模式：轻问答',
+    hint: '快速提问，不结合当前页面过程。刷新页面后会恢复为轻问答。'
+  };
+}
+
+function applyMaoAskMode(mode) {
+  const nextMode = mode === MAO_ASK_MODE_CONTEXT ? MAO_ASK_MODE_CONTEXT : MAO_ASK_MODE_SIMPLE;
+  window.__aiAskMode = nextMode;
+  window.getAiAskMode = getMaoAskMode;
+
+  const simpleBtn = document.getElementById('maoModeSimpleBtn');
+  const contextBtn = document.getElementById('maoModeContextBtn');
+  const label = document.getElementById('maoModeLabel');
+  const hint = document.getElementById('maoModeHint');
+  const text = getMaoModeText(nextMode);
+
+  if (simpleBtn) simpleBtn.classList.toggle('active', nextMode === MAO_ASK_MODE_SIMPLE);
+  if (contextBtn) contextBtn.classList.toggle('active', nextMode === MAO_ASK_MODE_CONTEXT);
+  if (label) label.textContent = text.label;
+  if (hint) hint.textContent = text.hint;
+}
+
+function setMaoAskMode(mode) {
+  applyMaoAskMode(mode);
+  console.info('[AI Tutor] ask_mode switched to', getMaoAskMode());
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  applyMaoAskMode(MAO_ASK_MODE_SIMPLE);
+});
+
 function inferMaoPageInfo() {
   const path = window.location.pathname;
   if (path.includes('emotion')) return { page: 'emotion_computing', course: 'emotion' };
@@ -411,7 +526,15 @@ function inferMaoPageInfo() {
   return { page: 'global', course: 'general' };
 }
 
-function getMaoAskPayload(question) {
+function buildSimpleMaoAskPayload(question) {
+  return {
+    question: question,
+    prefer_llm: true,
+    ask_mode: MAO_ASK_MODE_SIMPLE
+  };
+}
+
+function buildContextMaoAskPayload(question) {
   const info = inferMaoPageInfo();
   if (window.AiCourseBridge && !window.AiCourseBridge.page) {
     window.AiCourseBridge.init({
@@ -427,12 +550,19 @@ function getMaoAskPayload(question) {
     });
   }
 
-  const payload = { question: question };
+  const payload = {
+    question: question,
+    prefer_llm: true,
+    ask_mode: MAO_ASK_MODE_CONTEXT
+  };
   if (window.AiCourseBridge && typeof window.AiCourseBridge.attachAskContext === 'function') {
     return window.AiCourseBridge.attachAskContext(payload);
   }
   if (window.AiContextTracker) {
     return window.AiContextTracker.wrapAskPayload(question, {
+      question: question,
+      prefer_llm: true,
+      ask_mode: MAO_ASK_MODE_CONTEXT,
       context: {
         page: info.page,
         course: info.course,
@@ -440,7 +570,20 @@ function getMaoAskPayload(question) {
       }
     });
   }
-  return payload;
+  return Object.assign({}, payload, {
+    context: {
+      page: info.page,
+      course: info.course,
+      group_id: '{{ session.get("group_id", "") }}'
+    }
+  });
+}
+
+function getMaoAskPayload(question) {
+  if (getMaoAskMode() === MAO_ASK_MODE_CONTEXT) {
+    return buildContextMaoAskPayload(question);
+  }
+  return buildSimpleMaoAskPayload(question);
 }
 
 function formatMaoReply(data) {
@@ -459,6 +602,12 @@ function formatMaoReply(data) {
 
 async function askMaoApi(question) {
   const payload = getMaoAskPayload(question);
+  console.info('[AI Tutor] ask payload', {
+    ask_mode: payload.ask_mode,
+    prefer_llm: payload.prefer_llm,
+    has_context: Boolean(payload.context),
+    context_keys: payload.context ? Object.keys(payload.context) : []
+  });
   if (window.AiCourseBridge) {
     window.AiCourseBridge.snapshot({ stepCode: payload.context && payload.context.step_code });
   }

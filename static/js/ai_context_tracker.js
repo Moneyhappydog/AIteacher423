@@ -49,6 +49,17 @@
     return Object.assign({}, current, next || {});
   }
 
+  function getGlobalAskMode() {
+    if (typeof window.getAiAskMode === 'function') {
+      try {
+        return window.getAiAskMode();
+      } catch (err) {
+        return 'simple';
+      }
+    }
+    return window.__aiAskMode === 'context' ? 'context' : 'simple';
+  }
+
   function Tracker() {
     this.config = {
       page: null,
@@ -136,6 +147,14 @@
     });
   };
 
+  Tracker.prototype.getAskMode = function getAskMode() {
+    return getGlobalAskMode();
+  };
+
+  Tracker.prototype.isContextModeEnabled = function isContextModeEnabled() {
+    return this.getAskMode() === 'context';
+  };
+
   Tracker.prototype.postJson = async function postJson(url, payload) {
     if (!this.config.enabled) return { skipped: true };
     try {
@@ -154,6 +173,13 @@
   Tracker.prototype.reportEvent = function reportEvent(eventName, options) {
     const opts = options || {};
     if (!eventName) return Promise.resolve({ success: false, error: 'eventName is required' });
+    if (!this.isContextModeEnabled()) {
+      return Promise.resolve({
+        skipped: true,
+        reason: 'ask_mode_simple',
+        ask_mode: this.getAskMode()
+      });
+    }
 
     const payload = this.buildBasePayload({
       step_code: opts.stepCode || opts.step_code || this.config.stepCode,
@@ -169,6 +195,13 @@
 
   Tracker.prototype.reportSnapshot = function reportSnapshot(options) {
     const opts = options || {};
+    if (!this.isContextModeEnabled()) {
+      return Promise.resolve({
+        skipped: true,
+        reason: 'ask_mode_simple',
+        ask_mode: this.getAskMode()
+      });
+    }
     const payload = this.buildBasePayload({
       step_code: opts.stepCode || opts.step_code || this.config.stepCode,
       snapshot: this.getSnapshot(opts.extraSnapshot),

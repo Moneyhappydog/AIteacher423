@@ -886,6 +886,8 @@ def get_answer(question: str, context: dict = None, prefer_llm: bool = False) ->
             'mode': 'qa' | 'code_review' | 'suggestion',
         }
     """
+    mode = detect_mode(question)
+
     # Step 1: 尝试本地规则引擎
     local_result = local_answer(question)
     if local_result and not prefer_llm:
@@ -895,7 +897,9 @@ def get_answer(question: str, context: dict = None, prefer_llm: bool = False) ->
             'model': None,
             'tokens_used': 0,
             'latency_ms': 0,
-            'mode': detect_mode(question),
+            'mode': mode,
+            'llm_attempted': False,
+            'llm_error': None,
         }
 
     # Step 2: 尝试 LLM API
@@ -907,7 +911,9 @@ def get_answer(question: str, context: dict = None, prefer_llm: bool = False) ->
             'model': llm_result['model'],
             'tokens_used': llm_result['tokens_used'],
             'latency_ms': llm_result['latency_ms'],
-            'mode': detect_mode(question),
+            'mode': mode,
+            'llm_attempted': True,
+            'llm_error': llm_result.get('error'),
         }
 
     # Step 3: 本地有答案但 LLM 失败 → 返回本地答案
@@ -918,7 +924,9 @@ def get_answer(question: str, context: dict = None, prefer_llm: bool = False) ->
             'model': None,
             'tokens_used': 0,
             'latency_ms': 0,
-            'mode': detect_mode(question),
+            'mode': mode,
+            'llm_attempted': True,
+            'llm_error': llm_result.get('error'),
         }
 
     # Step 4: 完全无法回答 → 返回默认回复
@@ -934,7 +942,9 @@ def get_answer(question: str, context: dict = None, prefer_llm: bool = False) ->
         'model': None,
         'tokens_used': 0,
         'latency_ms': 0,
-        'mode': detect_mode(question),
+        'mode': mode,
+        'llm_attempted': True,
+        'llm_error': llm_result.get('error'),
     }
 
 

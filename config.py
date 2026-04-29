@@ -67,9 +67,9 @@ class Config:
     )
 
     # AI助手配置
-    LLM_API_KEY = os.environ.get('LLM_API_KEY', '')
+    LLM_API_KEY = os.environ.get('LLM_API_KEY', 'sk-2d14dfa59ec04ff9adda9f5baca43d03')
     LLM_BASE_URL = os.environ.get('LLM_BASE_URL', 'https://dashscope.aliyuncs.com/compatible-mode/v1')
-    LLM_MODEL = os.environ.get('LLM_MODEL', 'qwen3.6-plus')
+    LLM_MODEL = os.environ.get('LLM_MODEL', 'qwen3.5-flash')
 
 
     # 传感器通道（模拟模式）

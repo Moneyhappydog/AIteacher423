@@ -8,6 +8,8 @@ routes/ai_tutor.py — AI学习助手 API 路由
 - GET  /ai/mode       — 查询当前可用模式
 """
 
+import logging
+
 from flask import Blueprint, request, jsonify, render_template
 from services.ai_tutor_service import (
     get_answer,
@@ -21,6 +23,7 @@ from services.ai_tutor_service import (
 from routes.auth import login_required, get_current_user
 
 ai_tutor_bp = Blueprint('ai_tutor', __name__, url_prefix='/ai')
+logger = logging.getLogger(__name__)
 
 
 @ai_tutor_bp.route('/')
@@ -63,7 +66,9 @@ def ask():
         return jsonify({'success': False, 'error': '问题长度不能超过500字'}), 400
 
     context = data.get('context') or {}
-    prefer_llm = bool(data['prefer_llm']) if 'prefer_llm' in data else bool(context.get('session_id'))
+    ask_mode = (data.get('ask_mode') or '').strip().lower()
+    has_session_context = bool(context.get('session_id'))
+    prefer_llm = bool(data['prefer_llm']) if 'prefer_llm' in data else has_session_context
 
     # 尝试接入当前用户信息
     user = get_current_user()
@@ -73,7 +78,28 @@ def ask():
             context.setdefault('course', user.group.course)
             context.setdefault('group_id', user.group.group_code)
 
-    if context.get('session_id'):
+    route_name = 'legacy_qa'
+    effective_ask_mode = ask_mode or ('context' if has_session_context else 'simple')
+
+    if ask_mode == 'simple':
+        prefer_llm = True
+        route_name = 'simple_explicit'
+        result = get_answer(question, context=context, prefer_llm=prefer_llm)
+    elif ask_mode == 'context':
+        if has_session_context:
+            route_name = 'context_explicit'
+            result = answer_with_context(
+                question,
+                raw_context=context,
+                group_id=context.get('group_id'),
+                prefer_llm=prefer_llm,
+            )
+        else:
+            prefer_llm = bool(data['prefer_llm']) if 'prefer_llm' in data else False
+            route_name = 'context_missing_session_fallback'
+            result = get_answer(question, context=context, prefer_llm=prefer_llm)
+    elif has_session_context:
+        route_name = 'legacy_context'
         result = answer_with_context(
             question,
             raw_context=context,
@@ -81,7 +107,18 @@ def ask():
             prefer_llm=prefer_llm,
         )
     else:
+        route_name = 'legacy_qa'
         result = get_answer(question, context=context, prefer_llm=prefer_llm)
+
+    logger.info(
+        'AI ask route=%s ask_mode=%s effective_ask_mode=%s has_session_context=%s prefer_llm=%s user=%s',
+        route_name,
+        ask_mode or None,
+        effective_ask_mode,
+        has_session_context,
+        prefer_llm,
+        getattr(user, 'username', None),
+    )
 
     return jsonify({
         'success': True,

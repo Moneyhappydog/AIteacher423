@@ -1,0 +1,34 @@
+{
+  "group_id": "G01",
+  "group_name": "G01",
+  "device_id": "ESP32_G01",
+  "records": [
+    {
+      "timestamp": "2026-04-29 13:45:56",
+      "temperature": 23,
+      "humidity": 75,
+      "light": 800,
+      "oxygen": 20.5,
+      "solar_power": 150,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-29 14:26:26",
+      "temperature": 27,
+      "humidity": 65,
+      "light": 120,
+      "oxygen": 20.5,
+      "solar_power": 0,
+      "status": "normal"
+    },
+    {
+      "timestamp": "2026-04-29 14:27:27",
+      "temperature": 29,
+      "humidity": 85,
+      "light": 400,
+      "oxygen": 20.5,
+      "solar_power": 0,
+      "status": "normal"
+    }
+  ]
+}
